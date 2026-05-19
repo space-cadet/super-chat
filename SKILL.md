@@ -1,0 +1,1 @@
+This is the skill file for the super-chat project.
