@@ -129,7 +129,9 @@ export class VercelLLMAdapter implements LLMAdapter {
 		const model = provider.chat(this.profile.model);
 
 		// Convert simple {role, content} messages to UIMessage format
-		const uiMessages = this.toUIMessages(messages);
+		// Filter out system messages — the system prompt is passed via the `system` option
+		const nonSystemMessages = messages.filter((m) => m.role !== "system");
+		const uiMessages = this.toUIMessages(nonSystemMessages);
 
 		const result = streamText({
 			model: model as any,
@@ -157,7 +159,9 @@ export class VercelLLMAdapter implements LLMAdapter {
 		const model = provider.chat(this.profile.model);
 
 		const sdkTools = this.buildSdkTools(tools);
-		const uiMessages = this.toUIMessages(messages);
+		// Filter out system messages — the system prompt is passed via the `system` option
+		const nonSystemMessages = messages.filter((m) => m.role !== "system");
+		const uiMessages = this.toUIMessages(nonSystemMessages);
 
 		const result = streamText({
 			model: model as any,

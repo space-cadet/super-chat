@@ -22,6 +22,7 @@ import type {
 	ToolResult,
 } from "./types";
 import { ToolExecutor } from "./ToolExecutor";
+import { estimateTokens } from "./tokenEstimator";
 
 export interface AgentLoopOptions {
 	llmAdapter: LLMAdapter;
@@ -40,6 +41,7 @@ export interface AgentLoopOptions {
 
 export interface AgentLoopResult {
 	text: string;
+	tokenEstimate: number;
 	stepsTaken: number;
 }
 
@@ -52,11 +54,61 @@ export type ToolResultFormatter = (
 	result: ToolResult,
 ) => string;
 
-const defaultFormatter: ToolResultFormatter = (_toolName, result) => {
+const defaultFormatter: ToolResultFormatter = (toolName, result) => {
 	if (result.error) {
 		return `Error: ${result.error}`;
 	}
-	return result.content ?? JSON.stringify(result, null, 2);
+
+	// Per-tool formatting for better LLM consumption
+	switch (toolName) {
+		case "search_web": {
+			try {
+				const data = JSON.parse(result.content ?? "[]");
+				if (!Array.isArray(data) || data.length === 0) return "No search results found.";
+				let md = `Found ${data.length} result${data.length !== 1 ? "s" : ""}:\n\n`;
+				for (const item of data) {
+					md += `- **${item.title}**\n  ${item.snippet}\n  <${item.url}>\n\n`;
+				}
+				return md.trim();
+			} catch {
+				return result.content ?? "Search completed.";
+			}
+		}
+		case "get_weather": {
+			try {
+				const data = JSON.parse(result.content ?? "{}");
+				return (
+					`**${data.location}**\n\n` +
+					`- Temperature: ${data.temperature}${data.units}\n` +
+					`- Condition: ${data.condition}\n` +
+					`- Humidity: ${data.humidity}\n` +
+					`- Forecast: ${data.forecast}`
+				);
+			} catch {
+				return result.content ?? "Weather data unavailable.";
+			}
+		}
+		case "fetch_arxiv": {
+			try {
+				const data = JSON.parse(result.content ?? "[]");
+				if (!Array.isArray(data) || data.length === 0) return "No papers found.";
+				let md = `Found ${data.length} paper${data.length !== 1 ? "s" : ""}:\n\n`;
+				for (const paper of data) {
+					md += `- **${paper.title}** (${paper.year})\n`;
+					md += `  Authors: ${paper.authors.join(", ")}\n`;
+					md += `  ${paper.snippet}\n`;
+					md += `  <${paper.url}>\n\n`;
+				}
+				return md.trim();
+			} catch {
+				return result.content ?? "arXiv search completed.";
+			}
+		}
+		case "calculate":
+			return `Result: ${result.content}`;
+		default:
+			return result.content ?? JSON.stringify(result, null, 2);
+	}
 };
 
 /**
@@ -97,6 +149,11 @@ export class AgentLoop {
 		messages: ChatMessage[],
 		tools: ToolDefinition[],
 		signal?: AbortSignal,
+		callbacks?: {
+			onTextDelta?: (accumulatedText: string) => void;
+			onToolCall?: (call: ToolCall) => void;
+			onToolResult?: (call: ToolCall, result: ToolResult) => void;
+		},
 	): Promise<AgentLoopResult> {
 		const { llmAdapter, toolExecutor, maxSteps = 5, autoApply = false } =
 			this.opts;
@@ -123,10 +180,12 @@ export class AgentLoop {
 						stepText += event.text;
 						fullText += event.text;
 						this.opts.onTextDelta?.(fullText);
+						callbacks?.onTextDelta?.(fullText);
 						break;
 					case "tool-call":
 						pendingCalls.push(event.call);
 						this.opts.onToolCall?.(event.call);
+						callbacks?.onToolCall?.(event.call);
 						break;
 					case "tool-error":
 						console.warn(
@@ -150,7 +209,7 @@ export class AgentLoop {
 				console.log(
 					`[AgentLoop] done — no tool calls at step ${step}, ${fullText.length} chars`,
 				);
-				return { text: fullText, stepsTaken: step + 1 };
+				return { text: fullText, tokenEstimate: estimateTokens(fullText), stepsTaken: step + 1 };
 			}
 
 			// Execute tools (with approval if not autoApply)
@@ -182,6 +241,7 @@ export class AgentLoop {
 					result.error ?? "success",
 				);
 				this.opts.onToolResult?.(call, result);
+				callbacks?.onToolResult?.(call, result);
 				results.push({ call, result });
 			}
 
@@ -238,6 +298,6 @@ export class AgentLoop {
 			];
 		}
 
-		return { text: fullText, stepsTaken: maxSteps };
+		return { text: fullText, tokenEstimate: estimateTokens(fullText), stepsTaken: maxSteps };
 	}
 }

@@ -50,6 +50,7 @@ export { DemoToolAdapter } from './adapters/DemoToolAdapter';
 
 // Core classes
 export { ChatEngine } from './core/ChatEngine';
+export { estimateTokens } from './core/tokenEstimator';
 // export { ApprovalQueue } from './core/ApprovalQueue';
 // export { Orchestrator } from './core/Orchestrator';
 // export { MentionParser } from './core/MentionParser';

@@ -331,18 +331,46 @@ export class ChatEngine {
 	): AsyncIterable<StreamEvent> {
 		let assistantText = "";
 		let assistantMessageId = `assistant-${Date.now()}`;
+		const startTime = performance.now();
+		let firstChunkTime: number | null = null;
 
-		const result = await this.agentLoop.run(session, messages, tools, signal);
+		// Collect tool events from AgentLoop callbacks to yield them in real-time
+		const toolEvents: Array<{ type: "tool-call"; call: ToolCall } | { type: "tool-result"; callId: string; result: ToolResult }> = [];
 
-		// The AgentLoop returns final text but doesn't yield intermediate events.
-		// We need to hook into its callbacks for real-time streaming.
-		// For now, yield the final result as a single text-delta.
-		// TODO: Enhance AgentLoop to accept onTextDelta for true streaming.
+		const result = await this.agentLoop.run(session, messages, tools, signal, {
+			onTextDelta: (_text) => {
+				if (firstChunkTime === null) {
+					firstChunkTime = performance.now();
+				}
+			},
+			onToolCall: (call) => {
+				toolEvents.push({ type: "tool-call", call });
+			},
+			onToolResult: (call, result) => {
+				toolEvents.push({ type: "tool-result", callId: call.id, result });
+			},
+		});
+
+		const totalDurationMs = Math.round(performance.now() - startTime);
+		const ttftMs = firstChunkTime ? Math.round(firstChunkTime - startTime) : totalDurationMs;
+
+		// Yield all collected tool events
+		for (const event of toolEvents) {
+			if (event.type === "tool-call") {
+				yield { type: "tool-call", call: event.call };
+			} else {
+				yield { type: "tool-result", callId: event.callId, result: event.result };
+			}
+		}
 
 		if (result.text) {
 			assistantText = result.text;
 			yield { type: "text-delta", text: result.text };
 		}
+
+		// Yield metrics
+		yield { type: "usage", promptTokens: 0, completionTokens: result.tokenEstimate, totalTokens: result.tokenEstimate };
+		yield { type: "metrics", ttftMs, totalDurationMs };
 
 		// Save assistant message
 		const assistantMessage: ChatMessage = {
@@ -350,6 +378,7 @@ export class ChatEngine {
 			role: "assistant",
 			content: assistantText,
 			timestamp: Date.now(),
+			tokenCount: result.tokenEstimate,
 		};
 		session.messages.push(assistantMessage);
 		await this.saveSession(session);
@@ -370,6 +399,9 @@ export class ChatEngine {
 
 		let assistantText = "";
 		const assistantMessageId = `assistant-${Date.now()}`;
+		const startTime = performance.now();
+		let firstChunkTime: number | null = null;
+		let chunkCount = 0;
 
 		try {
 			for await (const chunk of this.opts.llmAdapter.streamChat(
@@ -377,9 +409,21 @@ export class ChatEngine {
 				signal,
 			)) {
 				if (signal.aborted) break;
+				if (chunkCount === 0) {
+					firstChunkTime = performance.now();
+				}
+				chunkCount++;
 				assistantText += chunk;
 				yield { type: "text-delta", text: chunk };
 			}
+
+			const totalDurationMs = Math.round(performance.now() - startTime);
+			const ttftMs = firstChunkTime ? Math.round(firstChunkTime - startTime) : totalDurationMs;
+			const tokenEstimate = Math.ceil(assistantText.length / 4);
+
+			// Yield metrics
+			yield { type: "usage", promptTokens: 0, completionTokens: tokenEstimate, totalTokens: tokenEstimate };
+			yield { type: "metrics", ttftMs, totalDurationMs };
 
 			// Save assistant message
 			const assistantMessage: ChatMessage = {
@@ -387,6 +431,7 @@ export class ChatEngine {
 				role: "assistant",
 				content: assistantText,
 				timestamp: Date.now(),
+				tokenCount: tokenEstimate,
 			};
 			session.messages.push(assistantMessage);
 			await this.saveSession(session);

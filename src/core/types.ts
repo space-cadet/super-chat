@@ -102,7 +102,9 @@ export type StreamEvent =
   | { type: 'rag-status'; status: string; progress?: number }
   | { type: 'step-finish'; step: number }
   | { type: 'finish'; reason: string }
-  | { type: 'error'; message: string };
+  | { type: 'error'; message: string }
+  | { type: 'usage'; promptTokens: number; completionTokens: number; totalTokens: number }
+  | { type: 'metrics'; ttftMs: number; totalDurationMs: number };
 
 // ============================================================================
 // Options Types
