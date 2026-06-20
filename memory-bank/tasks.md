@@ -27,6 +27,7 @@ A standalone, reusable chat component library that provides LLM-native tool call
 
 | ID | Title | Status | Priority | Dependencies | Details |
 |----|-------|--------|----------|--------------|---------|
+| T21 | npm Release & GitHub CI/CD | 🔄 | HIGH | — | [Details](tasks/T21.md) |
 | T13 | Tool Result Formatting | ⬜ | MEDIUM | T4 | [Details](tasks/T13.md) |
 | T6 | Multi-Agent Orchestrator | ⬜ | MEDIUM | T3, T5 | [Details](tasks/T6.md) |
 | T7 | Mention Parser & Routing | ⬜ | MEDIUM | T6 | [Details](tasks/T7.md) |
@@ -40,12 +41,14 @@ A standalone, reusable chat component library that provides LLM-native tool call
 ## Status Summary
 
 - **Completed**: 11
-- **Pending**: 10
-- **In Progress**: 0
+- **In Progress**: 1
+- **Pending**: 9
 - **Total**: 21
 
 ## Current Phase
 
 **Phase 1 — Build the Unified Core** is COMPLETE. All core engine + React UI components are functional with tests.
 
-**Next Phase**: Phase 2 — Integration (T17, T18, T19) or Phase 3 — Feature polish (T13, T15, T16).
+**Phase 2 — Publishing Infrastructure** is IN PROGRESS (T21).
+
+**Next Phase**: Phase 3 — Integration (T17, T18, T19) or Phase 4 — Feature polish (T13, T15, T16).
