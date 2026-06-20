@@ -5,3 +5,7 @@ node_modules/
 *.swo
 *~
 pnpm-workspace.yaml
+
+# Environment files (API keys)
+.env.local
+.env

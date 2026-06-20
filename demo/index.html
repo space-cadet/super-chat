@@ -12,6 +12,14 @@
 </head>
 <body>
   <div id="root"></div>
+  <script type="module">
+    window.onerror = function(msg, url, line) {
+      document.body.innerHTML = '<div style="padding:20px;color:red;font-family:monospace;"><h2>JavaScript Error</h2><p><b>' + msg + '</b></p><p>at line ' + line + '</p><p>in ' + url + '</p></div>';
+    };
+    window.onunhandledrejection = function(e) {
+      document.body.innerHTML = '<div style="padding:20px;color:red;font-family:monospace;"><h2>Unhandled Promise Rejection</h2><p><b>' + e.reason + '</b></p></div>';
+    };
+  </script>
   <script type="module" src="/main.tsx"></script>
 </body>
 </html>

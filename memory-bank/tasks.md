@@ -40,10 +40,10 @@ A standalone, reusable chat component library that provides LLM-native tool call
 
 ## Status Summary
 
-- **Completed**: 12 (11 + T6 Phase A)
-- **In Progress**: 1 (T21)
+- **Completed**: 13 (11 + T6 Phase A + T21 CI Fix + T21 Demo)
+- **In Progress**: 1 (T21 — needs NPM_TOKEN + version tag)
 - **Pending**: 8 (T6 Phase B, T7, T8, T13, T15, T16, T17, T18, T19)
-- **Total**: 21
+- **Total**: 22
 
 ## Current Phase
 
