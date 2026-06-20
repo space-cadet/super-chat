@@ -1,3 +1,5 @@
+import "./chunk-G3PMV62Z.js";
+
 // src/core/ToolExecutor.ts
 var ToolExecutor = class {
   handlers = /* @__PURE__ */ new Map();
@@ -60,12 +62,78 @@ var ToolExecutor = class {
   }
 };
 
+// src/core/tokenEstimator.ts
+var TOKEN_ESTIMATE_RATIO = 4;
+function estimateTokens(text) {
+  return Math.ceil(text.length / TOKEN_ESTIMATE_RATIO);
+}
+
 // src/core/AgentLoop.ts
-var defaultFormatter = (_toolName, result) => {
+var defaultFormatter = (toolName, result) => {
   if (result.error) {
     return `Error: ${result.error}`;
   }
-  return result.content ?? JSON.stringify(result, null, 2);
+  switch (toolName) {
+    case "search_web": {
+      try {
+        const data = JSON.parse(result.content ?? "[]");
+        if (!Array.isArray(data) || data.length === 0) return "No search results found.";
+        let md = `Found ${data.length} result${data.length !== 1 ? "s" : ""}:
+
+`;
+        for (const item of data) {
+          md += `- **${item.title}**
+  ${item.snippet}
+  <${item.url}>
+
+`;
+        }
+        return md.trim();
+      } catch {
+        return result.content ?? "Search completed.";
+      }
+    }
+    case "get_weather": {
+      try {
+        const data = JSON.parse(result.content ?? "{}");
+        return `**${data.location}**
+
+- Temperature: ${data.temperature}${data.units}
+- Condition: ${data.condition}
+- Humidity: ${data.humidity}
+- Forecast: ${data.forecast}`;
+      } catch {
+        return result.content ?? "Weather data unavailable.";
+      }
+    }
+    case "fetch_arxiv": {
+      try {
+        const data = JSON.parse(result.content ?? "[]");
+        if (!Array.isArray(data) || data.length === 0) return "No papers found.";
+        let md = `Found ${data.length} paper${data.length !== 1 ? "s" : ""}:
+
+`;
+        for (const paper of data) {
+          md += `- **${paper.title}** (${paper.year})
+`;
+          md += `  Authors: ${paper.authors.join(", ")}
+`;
+          md += `  ${paper.snippet}
+`;
+          md += `  <${paper.url}>
+
+`;
+        }
+        return md.trim();
+      } catch {
+        return result.content ?? "arXiv search completed.";
+      }
+    }
+    case "calculate":
+      return `Result: ${result.content}`;
+    default:
+      return result.content ?? JSON.stringify(result, null, 2);
+  }
 };
 function toAdapterMessages(messages) {
   return messages.map((m) => ({
@@ -83,13 +151,21 @@ var AgentLoop = class {
   /**
    * Runs the agent loop with the given initial messages and tools.
    *
+   * Yields StreamEvent in real-time as the loop progresses:
+   *   - text-delta: as text arrives from the LLM
+   *   - tool-call: when a tool call is detected
+   *   - tool-result: after tool execution completes
+   *   - pending-approval: when approval is needed (if not autoApply)
+   *   - step-finish: when a step completes (tools executed, messages updated)
+   *
+   * Returns AgentLoopResult when the loop finishes.
+   *
    * @param session - Chat session (for metadata)
    * @param messages - Conversation messages (system + history + user)
    * @param tools - Tool definitions to make available to the LLM
    * @param signal - AbortSignal for cancellation
-   * @returns Final accumulated text and metadata
    */
-  async run(session, messages, tools, signal) {
+  async *run(session, messages, tools, signal) {
     const { llmAdapter, toolExecutor, maxSteps = 5, autoApply = false } = this.opts;
     let fullText = "";
     let currentMessages = [...messages];
@@ -107,33 +183,42 @@ var AgentLoop = class {
           case "text-delta":
             stepText += event.text;
             fullText += event.text;
-            this.opts.onTextDelta?.(fullText);
+            yield event;
             break;
           case "tool-call":
             pendingCalls.push(event.call);
-            this.opts.onToolCall?.(event.call);
+            yield event;
             break;
           case "tool-error":
             console.warn(
               `[AgentLoop] tool-error from stream: ${event.callId} \u2014 ${event.error}`
             );
+            yield event;
             break;
           case "error":
             throw new Error(event.message);
-          // finish, tool-result from stream are bookkeeping
+          // finish, step-finish from stream are bookkeeping
           default:
             break;
         }
       }
       if (signal?.aborted) {
         console.log(`[AgentLoop] aborted during step ${step}`);
-        break;
+        return {
+          text: fullText,
+          tokenEstimate: estimateTokens(fullText),
+          stepsTaken: step + 1
+        };
       }
       if (pendingCalls.length === 0) {
         console.log(
           `[AgentLoop] done \u2014 no tool calls at step ${step}, ${fullText.length} chars`
         );
-        return { text: fullText, stepsTaken: step + 1 };
+        return {
+          text: fullText,
+          tokenEstimate: estimateTokens(fullText),
+          stepsTaken: step + 1
+        };
       }
       const results = [];
       for (const call of pendingCalls) {
@@ -148,6 +233,7 @@ var AgentLoop = class {
             error: "No tool executor configured"
           };
         } else {
+          yield { type: "pending-approval", call };
           result = await this.opts.requestApproval(call) ?? {
             success: false,
             error: "User rejected the tool call"
@@ -157,7 +243,7 @@ var AgentLoop = class {
           `[AgentLoop] step ${step} tool-result:`,
           result.error ?? "success"
         );
-        this.opts.onToolResult?.(call, result);
+        yield { type: "tool-result", callId: call.id, result };
         results.push({ call, result });
       }
       const assistantParts = [];
@@ -194,18 +280,18 @@ var AgentLoop = class {
         return {
           id: `tool-${call.id}`,
           role: "assistant",
-          // Vercel SDK uses "tool" role, but our types say 'user'|'assistant'|'system'
           content: JSON.stringify(toolParts),
           timestamp: Date.now()
         };
       });
-      currentMessages = [
-        ...currentMessages,
-        assistantMsg,
-        ...toolMessages
-      ];
+      currentMessages = [...currentMessages, assistantMsg, ...toolMessages];
+      yield { type: "step-finish", step: step + 1 };
     }
-    return { text: fullText, stepsTaken: maxSteps };
+    return {
+      text: fullText,
+      tokenEstimate: estimateTokens(fullText),
+      stepsTaken: maxSteps
+    };
   }
 };
 
@@ -286,7 +372,8 @@ var VercelLLMAdapter = class {
   async *streamChat(messages, signal) {
     const provider = await this.getProvider();
     const model = provider.chat(this.profile.model);
-    const uiMessages = this.toUIMessages(messages);
+    const nonSystemMessages = messages.filter((m) => m.role !== "system");
+    const uiMessages = this.toUIMessages(nonSystemMessages);
     const result = streamText({
       model,
       system: this.systemPrompt,
@@ -305,7 +392,8 @@ var VercelLLMAdapter = class {
     const provider = await this.getProvider();
     const model = provider.chat(this.profile.model);
     const sdkTools = this.buildSdkTools(tools);
-    const uiMessages = this.toUIMessages(messages);
+    const nonSystemMessages = messages.filter((m) => m.role !== "system");
+    const uiMessages = this.toUIMessages(nonSystemMessages);
     const result = streamText({
       model,
       system: this.systemPrompt,
@@ -1105,21 +1193,54 @@ var ChatEngine = class {
   // --------------------------------------------------------------------------
   async *runWithTools(session, messages, tools, signal, _options) {
     let assistantText = "";
-    let assistantMessageId = `assistant-${Date.now()}`;
-    const result = await this.agentLoop.run(session, messages, tools, signal);
-    if (result.text) {
-      assistantText = result.text;
-      yield { type: "text-delta", text: result.text };
+    const assistantMessageId = `assistant-${Date.now()}`;
+    const startTime = performance.now();
+    let firstChunkTime = null;
+    const generator = this.agentLoop.run(session, messages, tools, signal);
+    let result;
+    try {
+      while (true) {
+        const { value, done } = await generator.next();
+        if (done) {
+          result = value;
+          break;
+        }
+        if (value.type === "text-delta" && firstChunkTime === null) {
+          firstChunkTime = performance.now();
+        }
+        if (value.type === "text-delta") {
+          assistantText += value.text;
+        }
+        yield value;
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      yield { type: "error", message };
+      return;
     }
-    const assistantMessage = {
-      id: assistantMessageId,
-      role: "assistant",
-      content: assistantText,
-      timestamp: Date.now()
-    };
-    session.messages.push(assistantMessage);
-    await this.saveSession(session);
-    yield { type: "finish", reason: "complete" };
+    const totalDurationMs = Math.round(performance.now() - startTime);
+    const ttftMs = firstChunkTime ? Math.round(firstChunkTime - startTime) : totalDurationMs;
+    if (result) {
+      yield {
+        type: "usage",
+        promptTokens: 0,
+        completionTokens: result.tokenEstimate,
+        totalTokens: result.tokenEstimate
+      };
+      yield { type: "metrics", ttftMs, totalDurationMs };
+      const assistantMessage = {
+        id: assistantMessageId,
+        role: "assistant",
+        content: assistantText,
+        timestamp: Date.now(),
+        tokenCount: result.tokenEstimate
+      };
+      session.messages.push(assistantMessage);
+      await this.saveSession(session);
+    }
+    if (!signal.aborted) {
+      yield { type: "finish", reason: "complete" };
+    }
   }
   async *runTextOnly(session, messages, signal, _options) {
     const adapterMessages = messages.map((m) => ({
@@ -1128,20 +1249,38 @@ var ChatEngine = class {
     }));
     let assistantText = "";
     const assistantMessageId = `assistant-${Date.now()}`;
+    const startTime = performance.now();
+    let firstChunkTime = null;
+    let chunkCount = 0;
     try {
       for await (const chunk of this.opts.llmAdapter.streamChat(
         adapterMessages,
         signal
       )) {
         if (signal.aborted) break;
+        if (chunkCount === 0) {
+          firstChunkTime = performance.now();
+        }
+        chunkCount++;
         assistantText += chunk;
         yield { type: "text-delta", text: chunk };
       }
+      const totalDurationMs = Math.round(performance.now() - startTime);
+      const ttftMs = firstChunkTime ? Math.round(firstChunkTime - startTime) : totalDurationMs;
+      const tokenEstimate = Math.ceil(assistantText.length / 4);
+      yield {
+        type: "usage",
+        promptTokens: 0,
+        completionTokens: tokenEstimate,
+        totalTokens: tokenEstimate
+      };
+      yield { type: "metrics", ttftMs, totalDurationMs };
       const assistantMessage = {
         id: assistantMessageId,
         role: "assistant",
         content: assistantText,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        tokenCount: tokenEstimate
       };
       session.messages.push(assistantMessage);
       await this.saveSession(session);
@@ -1161,7 +1300,11 @@ var ChatEngine = class {
     for (const tool2 of tools) {
       this.toolExecutor.register(
         tool2.name,
-        (args) => adapter.executeTool({ id: `tool-${Date.now()}`, name: tool2.name, args })
+        (args) => adapter.executeTool({
+          id: `tool-${Date.now()}`,
+          name: tool2.name,
+          args
+        })
       );
     }
   }
@@ -1174,6 +1317,7 @@ export {
   MemoryPersistenceAdapter,
   ToolExecutor,
   VercelLLMAdapter,
-  createProviderProfile
+  createProviderProfile,
+  estimateTokens
 };
 //# sourceMappingURL=index.js.map

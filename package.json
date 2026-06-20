@@ -25,13 +25,15 @@
   ],
   "scripts": {
     "build": "tsup",
-    "build:demo": "vite build --config demo/vite.config.ts",
+    "demo": "pnpm build && vite --config demo/vite.config.ts",
+    "demo:build": "pnpm build && vite build --config demo/vite.config.ts",
     "dev": "vite --config demo/vite.config.ts",
     "test": "vitest",
     "test:run": "vitest run",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test:chat": "node scripts/test-chat-cli.mjs"
+    "test:chat": "node scripts/test-chat-cli.mjs",
+    "test:real": "node scripts/test-real.mjs"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",

@@ -95,6 +95,15 @@ type StreamEvent = {
 } | {
     type: 'error';
     message: string;
+} | {
+    type: 'usage';
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+} | {
+    type: 'metrics';
+    ttftMs: number;
+    totalDurationMs: number;
 };
 interface SendOptions {
     provider?: string;

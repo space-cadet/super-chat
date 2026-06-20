@@ -50,7 +50,7 @@ export interface UseChatActions {
 
 export type UseChatReturn = UseChatState & UseChatActions;
 
-export function useChat(engine: ChatEngine): UseChatReturn {
+export function useChat(engine: ChatEngine, options?: { initialSessionId?: string }): UseChatReturn {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [currentSession, setCurrentSession] = useState<ChatSession | null>(null);
@@ -78,9 +78,16 @@ export function useChat(engine: ChatEngine): UseChatReturn {
     return () => clearInterval(interval);
   }, [engine]);
 
-  // Load sessions on mount
+  // Load sessions on mount + optionally switch to initial session
   useEffect(() => {
-    loadSessions();
+    loadSessions().then(() => {
+      if (options?.initialSessionId) {
+        engine.switchSession(options.initialSessionId);
+        const session = engine.getActiveSession();
+        setCurrentSession(session);
+        setMessages(session?.messages ?? []);
+      }
+    });
   }, []);
 
   const loadSessions = useCallback(async () => {

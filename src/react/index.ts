@@ -7,3 +7,13 @@ export type { UseChatState, UseChatActions, UseChatReturn } from './hooks/useCha
 
 export { useAgent } from './hooks/useAgent';
 export type { AgentConfig, AgentState, AgentActions, UseAgentReturn } from './hooks/useAgent';
+
+export {
+  ChatApp,
+  MessageBubble,
+  ChatInput,
+  PendingToolCard,
+  SessionSidebar,
+  ToolResultCard,
+  MarkdownRenderer,
+} from './components';

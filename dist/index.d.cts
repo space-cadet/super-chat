@@ -1,5 +1,5 @@
-import { T as ToolAdapter, u as ToolHandler, t as ToolDefinition, s as ToolCall, v as ToolResult, L as LLMAdapter, g as ChatSession, f as ChatMessage, o as ProviderProfile, r as StreamEvent, n as ProviderInfo, m as ModelInfo, p as ProviderType, P as PersistenceAdapter } from './ChatEngine-CBYcBxdj.cjs';
-export { A as AgentEngine, a as AgentLoopOptions, b as AgentResponse, c as ApprovalQueue, d as ApprovalQueueState, C as ChatEngine, e as ChatEngineOptions, h as ChatSettings, i as ContextAdapter, j as ContextItem, M as Mention, k as MentionParseResult, l as MessageRole, O as OrchestratorOptions, Q as QueryAnalysisResult, R as RAGAdapter, q as RetrievedPaper, S as SendOptions } from './ChatEngine-CBYcBxdj.cjs';
+import { T as ToolAdapter, u as ToolHandler, t as ToolDefinition, s as ToolCall, v as ToolResult, L as LLMAdapter, g as ChatSession, f as ChatMessage, r as StreamEvent, o as ProviderProfile, n as ProviderInfo, m as ModelInfo, p as ProviderType, P as PersistenceAdapter } from './ChatEngine-B9j2Kx5K.cjs';
+export { A as AgentEngine, a as AgentLoopOptions, b as AgentResponse, c as ApprovalQueue, d as ApprovalQueueState, C as ChatEngine, e as ChatEngineOptions, h as ChatSettings, i as ContextAdapter, j as ContextItem, M as Mention, k as MentionParseResult, l as MessageRole, O as OrchestratorOptions, Q as QueryAnalysisResult, R as RAGAdapter, q as RetrievedPaper, S as SendOptions } from './ChatEngine-B9j2Kx5K.cjs';
 
 /**
  * ToolExecutor — Generic tool execution wrapper.
@@ -34,15 +34,14 @@ declare class ToolExecutor {
 /**
  * AgentLoop — Manual multi-step tool calling loop.
  *
- * Mirrors obsidian-ai's proven implementation but stays framework-agnostic.
- * Uses callbacks (not pure async generator) because approval requires UI
- * interaction mid-stream.
+ * Refactored to use an AsyncGenerator for real-time event streaming.
+ * All communication happens via yielded StreamEvents — no callbacks.
  *
  * Each call to run() performs up to maxSteps iterations of:
  *   1. Stream LLM response with tools (single step via stopWhen)
- *   2. Detect tool calls from the stream
+ *   2. Detect tool calls from the stream and yield them
  *   3. Execute tool (auto-approved or via user confirmation)
- *   4. Feed tool result back into conversation
+ *   4. Yield tool results and feed them back into conversation
  *   5. Repeat until no more tool calls or maxSteps reached
  */
 
@@ -51,17 +50,12 @@ interface AgentLoopOptions {
     toolExecutor?: ToolExecutor;
     maxSteps?: number;
     autoApply?: boolean;
-    /** Called with accumulated text whenever a text-delta arrives. */
-    onTextDelta?: (accumulatedText: string) => void;
-    /** Called when a tool call is detected (before execution/approval). */
-    onToolCall?: (call: ToolCall) => void;
-    /** Called when a tool result is available (after execution/approval). */
-    onToolResult?: (call: ToolCall, result: ToolResult) => void;
     /** Called to request user approval. Return result to approve, null to reject. */
     requestApproval?: (call: ToolCall) => Promise<ToolResult | null>;
 }
 interface AgentLoopResult {
     text: string;
+    tokenEstimate: number;
     stepsTaken: number;
 }
 /**
@@ -76,13 +70,21 @@ declare class AgentLoop {
     /**
      * Runs the agent loop with the given initial messages and tools.
      *
+     * Yields StreamEvent in real-time as the loop progresses:
+     *   - text-delta: as text arrives from the LLM
+     *   - tool-call: when a tool call is detected
+     *   - tool-result: after tool execution completes
+     *   - pending-approval: when approval is needed (if not autoApply)
+     *   - step-finish: when a step completes (tools executed, messages updated)
+     *
+     * Returns AgentLoopResult when the loop finishes.
+     *
      * @param session - Chat session (for metadata)
      * @param messages - Conversation messages (system + history + user)
      * @param tools - Tool definitions to make available to the LLM
      * @param signal - AbortSignal for cancellation
-     * @returns Final accumulated text and metadata
      */
-    run(session: ChatSession, messages: ChatMessage[], tools: ToolDefinition[], signal?: AbortSignal): Promise<AgentLoopResult>;
+    run(session: ChatSession, messages: ChatMessage[], tools: ToolDefinition[], signal?: AbortSignal): AsyncGenerator<StreamEvent, AgentLoopResult>;
 }
 
 /**
@@ -207,4 +209,6 @@ declare class DemoToolAdapter implements ToolAdapter {
     private simpleHash;
 }
 
-export { AgentLoop, type AgentLoopResult, type AgentLoopOptions as AgentLoopRunOptions, ChatMessage, ChatSession, DemoToolAdapter, LLMAdapter, LocalStoragePersistenceAdapter, MemoryPersistenceAdapter, ModelInfo, PersistenceAdapter, ProviderInfo, ProviderProfile, ProviderType, StreamEvent, ToolAdapter, ToolCall, ToolDefinition, ToolExecutor, ToolHandler, ToolResult, type ToolResultFormatter, VercelLLMAdapter, createProviderProfile };
+declare function estimateTokens(text: string): number;
+
+export { AgentLoop, type AgentLoopResult, type AgentLoopOptions as AgentLoopRunOptions, ChatMessage, ChatSession, DemoToolAdapter, LLMAdapter, LocalStoragePersistenceAdapter, MemoryPersistenceAdapter, ModelInfo, PersistenceAdapter, ProviderInfo, ProviderProfile, ProviderType, StreamEvent, ToolAdapter, ToolCall, ToolDefinition, ToolExecutor, ToolHandler, ToolResult, type ToolResultFormatter, VercelLLMAdapter, createProviderProfile, estimateTokens };

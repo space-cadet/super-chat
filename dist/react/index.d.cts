@@ -1,4 +1,5 @@
-import { g as ChatSession, v as ToolResult, f as ChatMessage, s as ToolCall, C as ChatEngine, b as AgentResponse } from '../ChatEngine-CBYcBxdj.cjs';
+import { g as ChatSession, v as ToolResult, f as ChatMessage, s as ToolCall, C as ChatEngine, b as AgentResponse } from '../ChatEngine-B9j2Kx5K.cjs';
+import * as react_jsx_runtime from 'react/jsx-runtime';
 
 /**
  * useChat — React hook for super-chat ChatEngine.
@@ -40,7 +41,9 @@ interface UseChatActions {
     loadSessions: () => Promise<void>;
 }
 type UseChatReturn = UseChatState & UseChatActions;
-declare function useChat(engine: ChatEngine): UseChatReturn;
+declare function useChat(engine: ChatEngine, options?: {
+    initialSessionId?: string;
+}): UseChatReturn;
 
 /**
  * useAgent — React hook for multi-agent orchestration.
@@ -78,4 +81,56 @@ interface AgentActions {
 type UseAgentReturn = AgentState & AgentActions;
 declare function useAgent(initialAgents?: AgentConfig[]): UseAgentReturn;
 
-export { type AgentActions, type AgentConfig, type AgentState, type UseAgentReturn, type UseChatActions, type UseChatReturn, type UseChatState, useAgent, useChat };
+interface ChatAppProps {
+    engine: ChatEngine;
+    initialSessionId?: string;
+    onNewChat?: () => void;
+}
+declare function ChatApp({ engine, initialSessionId, onNewChat }: ChatAppProps): react_jsx_runtime.JSX.Element;
+
+interface MessageBubbleProps {
+    message: ChatMessage;
+    onEdit?: (messageId: string, newContent: string) => Promise<void>;
+    onRetry?: (messageId: string) => Promise<void>;
+    onApproveTool?: (callId: string) => void;
+    onRejectTool?: (callId: string) => void;
+}
+declare function MessageBubble({ message, onEdit, onRetry, onApproveTool, onRejectTool }: MessageBubbleProps): react_jsx_runtime.JSX.Element;
+
+interface ChatInputProps {
+    onSend: (text: string) => void;
+    onStop: () => void;
+    isStreaming: boolean;
+}
+declare function ChatInput({ onSend, onStop, isStreaming }: ChatInputProps): react_jsx_runtime.JSX.Element;
+
+interface PendingToolCardProps {
+    toolCall: ToolCall;
+    onApprove: (callId: string) => void;
+    onReject: (callId: string) => void;
+}
+declare function PendingToolCard({ toolCall, onApprove, onReject }: PendingToolCardProps): react_jsx_runtime.JSX.Element;
+
+interface SessionSidebarProps {
+    isOpen: boolean;
+    onClose: () => void;
+    sessions: ChatSession[];
+    currentSessionId: string;
+    onSelectSession: (sessionId: string) => void;
+    onArchiveSession?: (sessionId: string) => void;
+    showProviderIndicator?: boolean;
+}
+declare function SessionSidebar({ isOpen, onClose, sessions, currentSessionId, onSelectSession, onArchiveSession, showProviderIndicator, }: SessionSidebarProps): react_jsx_runtime.JSX.Element | null;
+
+interface ToolResultCardProps {
+    toolCall: ToolCall;
+    toolResult: ToolResult;
+}
+declare function ToolResultCard({ toolCall, toolResult }: ToolResultCardProps): react_jsx_runtime.JSX.Element;
+
+interface MarkdownRendererProps {
+    content: string;
+}
+declare function MarkdownRenderer({ content }: MarkdownRendererProps): react_jsx_runtime.JSX.Element;
+
+export { type AgentActions, type AgentConfig, type AgentState, ChatApp, ChatInput, MarkdownRenderer, MessageBubble, PendingToolCard, SessionSidebar, ToolResultCard, type UseAgentReturn, type UseChatActions, type UseChatReturn, type UseChatState, useAgent, useChat };

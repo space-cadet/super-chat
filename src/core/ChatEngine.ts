@@ -31,6 +31,7 @@ import type {
 	ToolHandler,
 	ToolResult,
 } from "./types";
+import type { AgentLoopResult } from "./AgentLoop";
 
 // ============================================================================
 // Internal State
@@ -330,60 +331,70 @@ export class ChatEngine {
 		_options?: SendOptions,
 	): AsyncIterable<StreamEvent> {
 		let assistantText = "";
-		let assistantMessageId = `assistant-${Date.now()}`;
+		const assistantMessageId = `assistant-${Date.now()}`;
 		const startTime = performance.now();
 		let firstChunkTime: number | null = null;
 
-		// Collect tool events from AgentLoop callbacks to yield them in real-time
-		const toolEvents: Array<{ type: "tool-call"; call: ToolCall } | { type: "tool-result"; callId: string; result: ToolResult }> = [];
+		const generator = this.agentLoop.run(session, messages, tools, signal);
+		let result: AgentLoopResult | undefined;
 
-		const result = await this.agentLoop.run(session, messages, tools, signal, {
-			onTextDelta: (_text) => {
-				if (firstChunkTime === null) {
+		try {
+			while (true) {
+				const { value, done } = await generator.next();
+				if (done) {
+					result = value;
+					break;
+				}
+
+				// Track first chunk for metrics
+				if (value.type === "text-delta" && firstChunkTime === null) {
 					firstChunkTime = performance.now();
 				}
-			},
-			onToolCall: (call) => {
-				toolEvents.push({ type: "tool-call", call });
-			},
-			onToolResult: (call, result) => {
-				toolEvents.push({ type: "tool-result", callId: call.id, result });
-			},
-		});
+
+				// Accumulate assistant text
+				if (value.type === "text-delta") {
+					assistantText += value.text;
+				}
+
+				// Forward event immediately for real-time streaming
+				yield value;
+			}
+		} catch (err) {
+			const message = err instanceof Error ? err.message : String(err);
+			yield { type: "error", message };
+			return;
+		}
 
 		const totalDurationMs = Math.round(performance.now() - startTime);
-		const ttftMs = firstChunkTime ? Math.round(firstChunkTime - startTime) : totalDurationMs;
+		const ttftMs = firstChunkTime
+			? Math.round(firstChunkTime - startTime)
+			: totalDurationMs;
 
-		// Yield all collected tool events
-		for (const event of toolEvents) {
-			if (event.type === "tool-call") {
-				yield { type: "tool-call", call: event.call };
-			} else {
-				yield { type: "tool-result", callId: event.callId, result: event.result };
-			}
+		if (result) {
+			// Yield metrics
+			yield {
+				type: "usage",
+				promptTokens: 0,
+				completionTokens: result.tokenEstimate,
+				totalTokens: result.tokenEstimate,
+			};
+			yield { type: "metrics", ttftMs, totalDurationMs };
+
+			// Save assistant message
+			const assistantMessage: ChatMessage = {
+				id: assistantMessageId,
+				role: "assistant",
+				content: assistantText,
+				timestamp: Date.now(),
+				tokenCount: result.tokenEstimate,
+			};
+			session.messages.push(assistantMessage);
+			await this.saveSession(session);
 		}
 
-		if (result.text) {
-			assistantText = result.text;
-			yield { type: "text-delta", text: result.text };
+		if (!signal.aborted) {
+			yield { type: "finish", reason: "complete" };
 		}
-
-		// Yield metrics
-		yield { type: "usage", promptTokens: 0, completionTokens: result.tokenEstimate, totalTokens: result.tokenEstimate };
-		yield { type: "metrics", ttftMs, totalDurationMs };
-
-		// Save assistant message
-		const assistantMessage: ChatMessage = {
-			id: assistantMessageId,
-			role: "assistant",
-			content: assistantText,
-			timestamp: Date.now(),
-			tokenCount: result.tokenEstimate,
-		};
-		session.messages.push(assistantMessage);
-		await this.saveSession(session);
-
-		yield { type: "finish", reason: "complete" };
 	}
 
 	private async *runTextOnly(
@@ -418,11 +429,18 @@ export class ChatEngine {
 			}
 
 			const totalDurationMs = Math.round(performance.now() - startTime);
-			const ttftMs = firstChunkTime ? Math.round(firstChunkTime - startTime) : totalDurationMs;
+			const ttftMs = firstChunkTime
+				? Math.round(firstChunkTime - startTime)
+				: totalDurationMs;
 			const tokenEstimate = Math.ceil(assistantText.length / 4);
 
 			// Yield metrics
-			yield { type: "usage", promptTokens: 0, completionTokens: tokenEstimate, totalTokens: tokenEstimate };
+			yield {
+				type: "usage",
+				promptTokens: 0,
+				completionTokens: tokenEstimate,
+				totalTokens: tokenEstimate,
+			};
 			yield { type: "metrics", ttftMs, totalDurationMs };
 
 			// Save assistant message
@@ -453,7 +471,11 @@ export class ChatEngine {
 		const tools = adapter.getAvailableTools();
 		for (const tool of tools) {
 			this.toolExecutor.register(tool.name, (args: unknown) =>
-				adapter.executeTool({ id: `tool-${Date.now()}`, name: tool.name, args: args as Record<string, unknown> }),
+				adapter.executeTool({
+					id: `tool-${Date.now()}`,
+					name: tool.name,
+					args: args as Record<string, unknown>,
+				}),
 			);
 		}
 	}

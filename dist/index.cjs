@@ -1,4 +1,6 @@
-"use strict";Object.defineProperty(exports, "__esModule", {value: true}); function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { newObj[key] = obj[key]; } } } newObj.default = obj; return newObj; } } function _nullishCoalesce(lhs, rhsFn) { if (lhs != null) { return lhs; } else { return rhsFn(); } } async function _asyncNullishCoalesce(lhs, rhsFn) { if (lhs != null) { return lhs; } else { return await rhsFn(); } } function _optionalChain(ops) { let lastAccessLHS = undefined; let value = ops[0]; let i = 1; while (i < ops.length) { const op = ops[i]; const fn = ops[i + 1]; i += 2; if ((op === 'optionalAccess' || op === 'optionalCall') && value == null) { return undefined; } if (op === 'access' || op === 'optionalAccess') { lastAccessLHS = value; value = fn(value); } else if (op === 'call' || op === 'optionalCall') { value = fn((...args) => value.call(lastAccessLHS, ...args)); lastAccessLHS = undefined; } } return value; } var _class; var _class2; var _class3; var _class4;// src/core/ToolExecutor.ts
+"use strict";Object.defineProperty(exports, "__esModule", {value: true}); function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { newObj[key] = obj[key]; } } } newObj.default = obj; return newObj; } } function _nullishCoalesce(lhs, rhsFn) { if (lhs != null) { return lhs; } else { return rhsFn(); } } async function _asyncNullishCoalesce(lhs, rhsFn) { if (lhs != null) { return lhs; } else { return await rhsFn(); } } function _optionalChain(ops) { let lastAccessLHS = undefined; let value = ops[0]; let i = 1; while (i < ops.length) { const op = ops[i]; const fn = ops[i + 1]; i += 2; if ((op === 'optionalAccess' || op === 'optionalCall') && value == null) { return undefined; } if (op === 'access' || op === 'optionalAccess') { lastAccessLHS = value; value = fn(value); } else if (op === 'call' || op === 'optionalCall') { value = fn((...args) => value.call(lastAccessLHS, ...args)); lastAccessLHS = undefined; } } return value; } var _class; var _class2; var _class3; var _class4;require('./chunk-EMMSS5I5.cjs');
+
+// src/core/ToolExecutor.ts
 var ToolExecutor = (_class = class {
   __init() {this.handlers = /* @__PURE__ */ new Map()}
   
@@ -60,12 +62,78 @@ var ToolExecutor = (_class = class {
   }
 }, _class);
 
+// src/core/tokenEstimator.ts
+var TOKEN_ESTIMATE_RATIO = 4;
+function estimateTokens(text) {
+  return Math.ceil(text.length / TOKEN_ESTIMATE_RATIO);
+}
+
 // src/core/AgentLoop.ts
-var defaultFormatter = (_toolName, result) => {
+var defaultFormatter = (toolName, result) => {
   if (result.error) {
     return `Error: ${result.error}`;
   }
-  return _nullishCoalesce(result.content, () => ( JSON.stringify(result, null, 2)));
+  switch (toolName) {
+    case "search_web": {
+      try {
+        const data = JSON.parse(_nullishCoalesce(result.content, () => ( "[]")));
+        if (!Array.isArray(data) || data.length === 0) return "No search results found.";
+        let md = `Found ${data.length} result${data.length !== 1 ? "s" : ""}:
+
+`;
+        for (const item of data) {
+          md += `- **${item.title}**
+  ${item.snippet}
+  <${item.url}>
+
+`;
+        }
+        return md.trim();
+      } catch (e2) {
+        return _nullishCoalesce(result.content, () => ( "Search completed."));
+      }
+    }
+    case "get_weather": {
+      try {
+        const data = JSON.parse(_nullishCoalesce(result.content, () => ( "{}")));
+        return `**${data.location}**
+
+- Temperature: ${data.temperature}${data.units}
+- Condition: ${data.condition}
+- Humidity: ${data.humidity}
+- Forecast: ${data.forecast}`;
+      } catch (e3) {
+        return _nullishCoalesce(result.content, () => ( "Weather data unavailable."));
+      }
+    }
+    case "fetch_arxiv": {
+      try {
+        const data = JSON.parse(_nullishCoalesce(result.content, () => ( "[]")));
+        if (!Array.isArray(data) || data.length === 0) return "No papers found.";
+        let md = `Found ${data.length} paper${data.length !== 1 ? "s" : ""}:
+
+`;
+        for (const paper of data) {
+          md += `- **${paper.title}** (${paper.year})
+`;
+          md += `  Authors: ${paper.authors.join(", ")}
+`;
+          md += `  ${paper.snippet}
+`;
+          md += `  <${paper.url}>
+
+`;
+        }
+        return md.trim();
+      } catch (e4) {
+        return _nullishCoalesce(result.content, () => ( "arXiv search completed."));
+      }
+    }
+    case "calculate":
+      return `Result: ${result.content}`;
+    default:
+      return _nullishCoalesce(result.content, () => ( JSON.stringify(result, null, 2)));
+  }
 };
 function toAdapterMessages(messages) {
   return messages.map((m) => ({
@@ -83,13 +151,21 @@ var AgentLoop = class {
   /**
    * Runs the agent loop with the given initial messages and tools.
    *
+   * Yields StreamEvent in real-time as the loop progresses:
+   *   - text-delta: as text arrives from the LLM
+   *   - tool-call: when a tool call is detected
+   *   - tool-result: after tool execution completes
+   *   - pending-approval: when approval is needed (if not autoApply)
+   *   - step-finish: when a step completes (tools executed, messages updated)
+   *
+   * Returns AgentLoopResult when the loop finishes.
+   *
    * @param session - Chat session (for metadata)
    * @param messages - Conversation messages (system + history + user)
    * @param tools - Tool definitions to make available to the LLM
    * @param signal - AbortSignal for cancellation
-   * @returns Final accumulated text and metadata
    */
-  async run(session, messages, tools, signal) {
+  async *run(session, messages, tools, signal) {
     const { llmAdapter, toolExecutor, maxSteps = 5, autoApply = false } = this.opts;
     let fullText = "";
     let currentMessages = [...messages];
@@ -107,33 +183,42 @@ var AgentLoop = class {
           case "text-delta":
             stepText += event.text;
             fullText += event.text;
-            _optionalChain([this, 'access', _5 => _5.opts, 'access', _6 => _6.onTextDelta, 'optionalCall', _7 => _7(fullText)]);
+            yield event;
             break;
           case "tool-call":
             pendingCalls.push(event.call);
-            _optionalChain([this, 'access', _8 => _8.opts, 'access', _9 => _9.onToolCall, 'optionalCall', _10 => _10(event.call)]);
+            yield event;
             break;
           case "tool-error":
             console.warn(
               `[AgentLoop] tool-error from stream: ${event.callId} \u2014 ${event.error}`
             );
+            yield event;
             break;
           case "error":
             throw new Error(event.message);
-          // finish, tool-result from stream are bookkeeping
+          // finish, step-finish from stream are bookkeeping
           default:
             break;
         }
       }
-      if (_optionalChain([signal, 'optionalAccess', _11 => _11.aborted])) {
+      if (_optionalChain([signal, 'optionalAccess', _5 => _5.aborted])) {
         console.log(`[AgentLoop] aborted during step ${step}`);
-        break;
+        return {
+          text: fullText,
+          tokenEstimate: estimateTokens(fullText),
+          stepsTaken: step + 1
+        };
       }
       if (pendingCalls.length === 0) {
         console.log(
           `[AgentLoop] done \u2014 no tool calls at step ${step}, ${fullText.length} chars`
         );
-        return { text: fullText, stepsTaken: step + 1 };
+        return {
+          text: fullText,
+          tokenEstimate: estimateTokens(fullText),
+          stepsTaken: step + 1
+        };
       }
       const results = [];
       for (const call of pendingCalls) {
@@ -148,6 +233,7 @@ var AgentLoop = class {
             error: "No tool executor configured"
           };
         } else {
+          yield { type: "pending-approval", call };
           result = await _asyncNullishCoalesce(await this.opts.requestApproval(call), async () => ( {
             success: false,
             error: "User rejected the tool call"
@@ -157,7 +243,7 @@ var AgentLoop = class {
           `[AgentLoop] step ${step} tool-result:`,
           _nullishCoalesce(result.error, () => ( "success"))
         );
-        _optionalChain([this, 'access', _12 => _12.opts, 'access', _13 => _13.onToolResult, 'optionalCall', _14 => _14(call, result)]);
+        yield { type: "tool-result", callId: call.id, result };
         results.push({ call, result });
       }
       const assistantParts = [];
@@ -194,18 +280,18 @@ var AgentLoop = class {
         return {
           id: `tool-${call.id}`,
           role: "assistant",
-          // Vercel SDK uses "tool" role, but our types say 'user'|'assistant'|'system'
           content: JSON.stringify(toolParts),
           timestamp: Date.now()
         };
       });
-      currentMessages = [
-        ...currentMessages,
-        assistantMsg,
-        ...toolMessages
-      ];
+      currentMessages = [...currentMessages, assistantMsg, ...toolMessages];
+      yield { type: "step-finish", step: step + 1 };
     }
-    return { text: fullText, stepsTaken: maxSteps };
+    return {
+      text: fullText,
+      tokenEstimate: estimateTokens(fullText),
+      stepsTaken: maxSteps
+    };
   }
 };
 
@@ -234,7 +320,7 @@ var providerModules = {
     const { createAzure } = await Promise.resolve().then(() => _interopRequireWildcard(require("@ai-sdk/azure")));
     return (apiKey, baseUrl) => createAzure({
       apiKey,
-      resourceName: _nullishCoalesce(_optionalChain([baseUrl, 'optionalAccess', _15 => _15.split, 'call', _16 => _16("."), 'access', _17 => _17[0]]), () => ( ""))
+      resourceName: _nullishCoalesce(_optionalChain([baseUrl, 'optionalAccess', _6 => _6.split, 'call', _7 => _7("."), 'access', _8 => _8[0]]), () => ( ""))
     });
   },
   ollama: async () => {
@@ -286,7 +372,8 @@ var VercelLLMAdapter = class {
   async *streamChat(messages, signal) {
     const provider = await this.getProvider();
     const model = provider.chat(this.profile.model);
-    const uiMessages = this.toUIMessages(messages);
+    const nonSystemMessages = messages.filter((m) => m.role !== "system");
+    const uiMessages = this.toUIMessages(nonSystemMessages);
     const result = _ai.streamText.call(void 0, {
       model,
       system: this.systemPrompt,
@@ -294,7 +381,7 @@ var VercelLLMAdapter = class {
       abortSignal: signal
     });
     for await (const chunk of result.textStream) {
-      if (_optionalChain([signal, 'optionalAccess', _18 => _18.aborted])) break;
+      if (_optionalChain([signal, 'optionalAccess', _9 => _9.aborted])) break;
       yield chunk;
     }
   }
@@ -305,7 +392,8 @@ var VercelLLMAdapter = class {
     const provider = await this.getProvider();
     const model = provider.chat(this.profile.model);
     const sdkTools = this.buildSdkTools(tools);
-    const uiMessages = this.toUIMessages(messages);
+    const nonSystemMessages = messages.filter((m) => m.role !== "system");
+    const uiMessages = this.toUIMessages(nonSystemMessages);
     const result = _ai.streamText.call(void 0, {
       model,
       system: this.systemPrompt,
@@ -317,7 +405,7 @@ var VercelLLMAdapter = class {
     let accumulatedText = "";
     const pendingCalls = [];
     for await (const chunk of result.fullStream) {
-      if (_optionalChain([signal, 'optionalAccess', _19 => _19.aborted])) break;
+      if (_optionalChain([signal, 'optionalAccess', _10 => _10.aborted])) break;
       const event = this.convertChunk(chunk);
       if (!event) continue;
       if (event.type === "text-delta") {
@@ -328,7 +416,7 @@ var VercelLLMAdapter = class {
       }
       yield event;
     }
-    if (!_optionalChain([signal, 'optionalAccess', _20 => _20.aborted])) {
+    if (!_optionalChain([signal, 'optionalAccess', _11 => _11.aborted])) {
       const reason = pendingCalls.length > 0 ? "tool-calls-detected" : accumulatedText.length > 0 ? "text-complete" : "empty";
       yield { type: "finish", reason };
     }
@@ -518,12 +606,12 @@ function createProviderProfile(provider, model, apiKey, options) {
   };
   return {
     id,
-    name: _nullishCoalesce(_optionalChain([options, 'optionalAccess', _21 => _21.name]), () => ( `${provider} / ${model}`)),
+    name: _nullishCoalesce(_optionalChain([options, 'optionalAccess', _12 => _12.name]), () => ( `${provider} / ${model}`)),
     provider,
     model,
     apiKey,
-    baseUrl: _optionalChain([options, 'optionalAccess', _22 => _22.baseUrl]),
-    models: _nullishCoalesce(_nullishCoalesce(_optionalChain([options, 'optionalAccess', _23 => _23.models]), () => ( defaultModels[provider])), () => ( [])),
+    baseUrl: _optionalChain([options, 'optionalAccess', _13 => _13.baseUrl]),
+    models: _nullishCoalesce(_nullishCoalesce(_optionalChain([options, 'optionalAccess', _14 => _14.models]), () => ( defaultModels[provider])), () => ( [])),
     createdAt: Date.now(),
     updatedAt: Date.now()
   };
@@ -572,7 +660,7 @@ var SESSION_PREFIX = "super-chat:session:";
 var LocalStoragePersistenceAdapter = class {
   
   constructor(options) {
-    this.maxSessions = _nullishCoalesce(_optionalChain([options, 'optionalAccess', _24 => _24.maxSessions]), () => ( 100));
+    this.maxSessions = _nullishCoalesce(_optionalChain([options, 'optionalAccess', _15 => _15.maxSessions]), () => ( 100));
   }
   async loadSessions() {
     if (typeof localStorage === "undefined") {
@@ -587,12 +675,12 @@ var LocalStoragePersistenceAdapter = class {
         if (sessionJson) {
           try {
             sessions.push(JSON.parse(sessionJson));
-          } catch (e2) {
+          } catch (e5) {
           }
         }
       }
       return sessions.sort((a, b) => b.updatedAt - a.updatedAt);
-    } catch (e3) {
+    } catch (e6) {
       return [];
     }
   }
@@ -918,8 +1006,8 @@ var ChatEngine = (_class4 = class {
     this.agentLoop = new AgentLoop({
       llmAdapter: options.llmAdapter,
       toolExecutor: this.toolExecutor,
-      maxSteps: _nullishCoalesce(_optionalChain([options, 'access', _25 => _25.agentLoopOptions, 'optionalAccess', _26 => _26.maxSteps]), () => ( 5)),
-      autoApply: _nullishCoalesce(_optionalChain([options, 'access', _27 => _27.agentLoopOptions, 'optionalAccess', _28 => _28.autoApply]), () => ( false))
+      maxSteps: _nullishCoalesce(_optionalChain([options, 'access', _16 => _16.agentLoopOptions, 'optionalAccess', _17 => _17.maxSteps]), () => ( 5)),
+      autoApply: _nullishCoalesce(_optionalChain([options, 'access', _18 => _18.agentLoopOptions, 'optionalAccess', _19 => _19.autoApply]), () => ( false))
     });
     this.state = {
       sessions: [],
@@ -960,7 +1048,7 @@ var ChatEngine = (_class4 = class {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       messages: [],
-      llmProvider: _optionalChain([this, 'access', _29 => _29.opts, 'access', _30 => _30.llmAdapter, 'access', _31 => _31.getProviders, 'call', _32 => _32(), 'access', _33 => _33[0], 'optionalAccess', _34 => _34.id])
+      llmProvider: _optionalChain([this, 'access', _20 => _20.opts, 'access', _21 => _21.llmAdapter, 'access', _22 => _22.getProviders, 'call', _23 => _23(), 'access', _24 => _24[0], 'optionalAccess', _25 => _25.id])
     };
     this.state.sessions.unshift(session);
     this.state.activeSessionId = session.id;
@@ -981,7 +1069,7 @@ var ChatEngine = (_class4 = class {
       (s) => s.id !== sessionId
     );
     if (this.state.activeSessionId === sessionId) {
-      this.state.activeSessionId = _nullishCoalesce(_optionalChain([this, 'access', _35 => _35.state, 'access', _36 => _36.sessions, 'access', _37 => _37[0], 'optionalAccess', _38 => _38.id]), () => ( null));
+      this.state.activeSessionId = _nullishCoalesce(_optionalChain([this, 'access', _26 => _26.state, 'access', _27 => _27.sessions, 'access', _28 => _28[0], 'optionalAccess', _29 => _29.id]), () => ( null));
     }
     if (this.opts.persistenceAdapter) {
       await this.opts.persistenceAdapter.deleteSession(sessionId);
@@ -1039,7 +1127,7 @@ var ChatEngine = (_class4 = class {
     const signal = this.state.abortController.signal;
     this.state.isStreaming = true;
     const tools = this.getAvailableTools();
-    const enableTools = _nullishCoalesce(_optionalChain([options, 'optionalAccess', _39 => _39.enableTools]), () => ( this.state.settings.enableTools));
+    const enableTools = _nullishCoalesce(_optionalChain([options, 'optionalAccess', _30 => _30.enableTools]), () => ( this.state.settings.enableTools));
     try {
       if (enableTools && tools.length > 0) {
         yield* this.runWithTools(session, messages, tools, signal, options);
@@ -1081,7 +1169,7 @@ var ChatEngine = (_class4 = class {
    * Get all available tool definitions (from adapter + custom).
    */
   getAvailableTools() {
-    const adapterTools = _nullishCoalesce(_optionalChain([this, 'access', _40 => _40.opts, 'access', _41 => _41.toolAdapter, 'optionalAccess', _42 => _42.getAvailableTools, 'call', _43 => _43()]), () => ( []));
+    const adapterTools = _nullishCoalesce(_optionalChain([this, 'access', _31 => _31.opts, 'access', _32 => _32.toolAdapter, 'optionalAccess', _33 => _33.getAvailableTools, 'call', _34 => _34()]), () => ( []));
     const customToolDefs = [];
     return [...adapterTools, ...customToolDefs];
   }
@@ -1105,21 +1193,54 @@ var ChatEngine = (_class4 = class {
   // --------------------------------------------------------------------------
   async *runWithTools(session, messages, tools, signal, _options) {
     let assistantText = "";
-    let assistantMessageId = `assistant-${Date.now()}`;
-    const result = await this.agentLoop.run(session, messages, tools, signal);
-    if (result.text) {
-      assistantText = result.text;
-      yield { type: "text-delta", text: result.text };
+    const assistantMessageId = `assistant-${Date.now()}`;
+    const startTime = performance.now();
+    let firstChunkTime = null;
+    const generator = this.agentLoop.run(session, messages, tools, signal);
+    let result;
+    try {
+      while (true) {
+        const { value, done } = await generator.next();
+        if (done) {
+          result = value;
+          break;
+        }
+        if (value.type === "text-delta" && firstChunkTime === null) {
+          firstChunkTime = performance.now();
+        }
+        if (value.type === "text-delta") {
+          assistantText += value.text;
+        }
+        yield value;
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      yield { type: "error", message };
+      return;
     }
-    const assistantMessage = {
-      id: assistantMessageId,
-      role: "assistant",
-      content: assistantText,
-      timestamp: Date.now()
-    };
-    session.messages.push(assistantMessage);
-    await this.saveSession(session);
-    yield { type: "finish", reason: "complete" };
+    const totalDurationMs = Math.round(performance.now() - startTime);
+    const ttftMs = firstChunkTime ? Math.round(firstChunkTime - startTime) : totalDurationMs;
+    if (result) {
+      yield {
+        type: "usage",
+        promptTokens: 0,
+        completionTokens: result.tokenEstimate,
+        totalTokens: result.tokenEstimate
+      };
+      yield { type: "metrics", ttftMs, totalDurationMs };
+      const assistantMessage = {
+        id: assistantMessageId,
+        role: "assistant",
+        content: assistantText,
+        timestamp: Date.now(),
+        tokenCount: result.tokenEstimate
+      };
+      session.messages.push(assistantMessage);
+      await this.saveSession(session);
+    }
+    if (!signal.aborted) {
+      yield { type: "finish", reason: "complete" };
+    }
   }
   async *runTextOnly(session, messages, signal, _options) {
     const adapterMessages = messages.map((m) => ({
@@ -1128,20 +1249,38 @@ var ChatEngine = (_class4 = class {
     }));
     let assistantText = "";
     const assistantMessageId = `assistant-${Date.now()}`;
+    const startTime = performance.now();
+    let firstChunkTime = null;
+    let chunkCount = 0;
     try {
       for await (const chunk of this.opts.llmAdapter.streamChat(
         adapterMessages,
         signal
       )) {
         if (signal.aborted) break;
+        if (chunkCount === 0) {
+          firstChunkTime = performance.now();
+        }
+        chunkCount++;
         assistantText += chunk;
         yield { type: "text-delta", text: chunk };
       }
+      const totalDurationMs = Math.round(performance.now() - startTime);
+      const ttftMs = firstChunkTime ? Math.round(firstChunkTime - startTime) : totalDurationMs;
+      const tokenEstimate = Math.ceil(assistantText.length / 4);
+      yield {
+        type: "usage",
+        promptTokens: 0,
+        completionTokens: tokenEstimate,
+        totalTokens: tokenEstimate
+      };
+      yield { type: "metrics", ttftMs, totalDurationMs };
       const assistantMessage = {
         id: assistantMessageId,
         role: "assistant",
         content: assistantText,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        tokenCount: tokenEstimate
       };
       session.messages.push(assistantMessage);
       await this.saveSession(session);
@@ -1161,7 +1300,11 @@ var ChatEngine = (_class4 = class {
     for (const tool2 of tools) {
       this.toolExecutor.register(
         tool2.name,
-        (args) => adapter.executeTool({ id: `tool-${Date.now()}`, name: tool2.name, args })
+        (args) => adapter.executeTool({
+          id: `tool-${Date.now()}`,
+          name: tool2.name,
+          args
+        })
       );
     }
   }
@@ -1175,5 +1318,6 @@ var ChatEngine = (_class4 = class {
 
 
 
-exports.AgentLoop = AgentLoop; exports.ChatEngine = ChatEngine; exports.DemoToolAdapter = DemoToolAdapter; exports.LocalStoragePersistenceAdapter = LocalStoragePersistenceAdapter; exports.MemoryPersistenceAdapter = MemoryPersistenceAdapter; exports.ToolExecutor = ToolExecutor; exports.VercelLLMAdapter = VercelLLMAdapter; exports.createProviderProfile = createProviderProfile;
+
+exports.AgentLoop = AgentLoop; exports.ChatEngine = ChatEngine; exports.DemoToolAdapter = DemoToolAdapter; exports.LocalStoragePersistenceAdapter = LocalStoragePersistenceAdapter; exports.MemoryPersistenceAdapter = MemoryPersistenceAdapter; exports.ToolExecutor = ToolExecutor; exports.VercelLLMAdapter = VercelLLMAdapter; exports.createProviderProfile = createProviderProfile; exports.estimateTokens = estimateTokens;
 //# sourceMappingURL=index.cjs.map

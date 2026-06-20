@@ -1,52 +1,49 @@
-# Session Cache
-*Created: 2026-05-19 11:15:00 IST*
-*Last Updated: 2026-05-19 12:24:00 IST*
+# Session Cache — super-chat
 
-## Current Session
-**Started**: 2026-05-19 11:54:00 IST
-**Ended**: 2026-05-19 12:24:00 IST
-**Focus Task**: T3/T4: AgentLoop + ToolExecutor
-**Session File**: `sessions/2026-05-19-morning.md`
+*Session Started*: 2026-06-20 09:52 IST
+*Session Ended*: 2026-06-20 11:50 IST
 
-## Overview
-- Active: 0 | Paused: 0 | Completed: 3
-- Last Session: `sessions/2026-05-19-morning.md`
-- Current Period: morning
+## What Was Accomplished
 
-## Task Registry
-- T1: Project Bootstrap — ✅ COMPLETE
-- T2: Core Types — ✅ COMPLETE (part of T1)
-- T3: AgentLoop — ✅ COMPLETE
-- T4: ToolExecutor — ✅ COMPLETE
-- T5-T10: ⬜ PENDING
+### T20: Fix ChatEngine Real-Time Streaming ✅
+- Refactored AgentLoop to AsyncGenerator<StreamEvent, AgentLoopResult>
+- ChatEngine forwards events via yield*
+- 33/33 tests pass (15 AgentLoop + 18 ChatEngine)
+- Real-world verified: 3/3 API tests pass
 
-## Completed Tasks (This Session)
-### T3: AgentLoop
-**Status:** ✅ **Priority:** HIGH
-**Started:** 2026-05-19 12:00 IST **Completed:** 2026-05-19 12:06 IST
-**Context**: Manual multi-step tool calling loop with callback-based approval
-**Files**: `src/core/AgentLoop.ts`, `src/index.ts`
-**Progress**:
-1. ✅ Callback-based API design (onTextDelta, onToolCall, onToolResult, requestApproval)
-2. ✅ Message reconstruction for Vercel AI SDK v6 format
-3. ✅ Pluggable ToolResultFormatter
-4. ✅ TypeScript typecheck passes
+### T14: Port chimera-chat React UI ✅
+- 6 components ported, obsidian deps removed
+- 48 new React component tests
+- 81/81 total tests pass
+- Ported via subagent (t14_ui_port, k2.7-code, completed in 3m25s)
 
-### T4: ToolExecutor
-**Status:** ✅ **Priority:** HIGH
-**Started:** 2026-05-19 12:00 IST **Completed:** 2026-05-19 12:06 IST
-**Context**: Generic tool execution wrapper with dynamic registration
-**Files**: `src/core/ToolExecutor.ts`, `src/index.ts`
-**Progress**:
-1. ✅ Two-tier execution (handlers → adapter)
-2. ✅ Batch execution with executeBatch()
-3. ✅ Error wrapping and result serialization
-4. ✅ TypeScript typecheck passes
+### T10: Demo App & Real-World Tests ✅
+- React demo with API key input → ChatApp
+- CLI test: OPENROUTER_API_KEY=*** pnpm test:real
+- 3/3 real API tests pass (simple chat, tool use, multi-step)
 
-## Session History (Last 5)
-1. `sessions/2026-05-19-morning.md` - T3/T4 AgentLoop + ToolExecutor implementation
+## Open Items (For Next Session)
+- [ ] Commit all changes (T20 + T14 + T10 all unstaged)
+- [ ] T17: Flip arxivite useSuperChat default (fastest win)
+- [ ] T15: Port obsidian-ai mature agent logic
+- [ ] T13: Tool Result Formatting
 
-## Next Session Focus
-- T5: VercelLLMAdapter reference implementation
-- T9: ChatEngine Core
-- Fix npm install for tsup
+## Context for Next Session
+- Phase 1 (Unified Core) is COMPLETE
+- Next: Phase 2 (Integration) or Phase 3 (Feature Polish)
+- T17 is fastest win: just change `useState(false)` → `useState(true)` in arxivite
+- T15 requires more work: AgentLoop enhancements, error handling, retries
+- All git changes are unstaged — waiting for review
+
+## Files in Flight (Unstaged)
+- src/core/AgentLoop.ts (refactored)
+- src/core/ChatEngine.ts (updated)
+- src/react/components/*.tsx (6 new components)
+- src/react/components/__tests__/*.test.tsx (48 tests)
+- demo/* (new)
+- scripts/test-real.mjs (new)
+- package.json (new scripts)
+
+## Memory Bank Updated
+- tasks.md, activeContext.md, edit_history.md, T10.md, T14.md, T20.md
+- Edit chunk: edits/2026-06-20/1150-T20-T14-T10-completion.md

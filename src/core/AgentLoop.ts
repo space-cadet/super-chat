@@ -1,15 +1,14 @@
 /**
  * AgentLoop — Manual multi-step tool calling loop.
  *
- * Mirrors obsidian-ai's proven implementation but stays framework-agnostic.
- * Uses callbacks (not pure async generator) because approval requires UI
- * interaction mid-stream.
+ * Refactored to use an AsyncGenerator for real-time event streaming.
+ * All communication happens via yielded StreamEvents — no callbacks.
  *
  * Each call to run() performs up to maxSteps iterations of:
  *   1. Stream LLM response with tools (single step via stopWhen)
- *   2. Detect tool calls from the stream
+ *   2. Detect tool calls from the stream and yield them
  *   3. Execute tool (auto-approved or via user confirmation)
- *   4. Feed tool result back into conversation
+ *   4. Yield tool results and feed them back into conversation
  *   5. Repeat until no more tool calls or maxSteps reached
  */
 
@@ -17,6 +16,7 @@ import type {
 	ChatMessage,
 	ChatSession,
 	LLMAdapter,
+	StreamEvent,
 	ToolCall,
 	ToolDefinition,
 	ToolResult,
@@ -29,12 +29,6 @@ export interface AgentLoopOptions {
 	toolExecutor?: ToolExecutor;
 	maxSteps?: number;
 	autoApply?: boolean;
-	/** Called with accumulated text whenever a text-delta arrives. */
-	onTextDelta?: (accumulatedText: string) => void;
-	/** Called when a tool call is detected (before execution/approval). */
-	onToolCall?: (call: ToolCall) => void;
-	/** Called when a tool result is available (after execution/approval). */
-	onToolResult?: (call: ToolCall, result: ToolResult) => void;
 	/** Called to request user approval. Return result to approve, null to reject. */
 	requestApproval?: (call: ToolCall) => Promise<ToolResult | null>;
 }
@@ -138,23 +132,26 @@ export class AgentLoop {
 	/**
 	 * Runs the agent loop with the given initial messages and tools.
 	 *
+	 * Yields StreamEvent in real-time as the loop progresses:
+	 *   - text-delta: as text arrives from the LLM
+	 *   - tool-call: when a tool call is detected
+	 *   - tool-result: after tool execution completes
+	 *   - pending-approval: when approval is needed (if not autoApply)
+	 *   - step-finish: when a step completes (tools executed, messages updated)
+	 *
+	 * Returns AgentLoopResult when the loop finishes.
+	 *
 	 * @param session - Chat session (for metadata)
 	 * @param messages - Conversation messages (system + history + user)
 	 * @param tools - Tool definitions to make available to the LLM
 	 * @param signal - AbortSignal for cancellation
-	 * @returns Final accumulated text and metadata
 	 */
-	async run(
+	async *run(
 		session: ChatSession,
 		messages: ChatMessage[],
 		tools: ToolDefinition[],
 		signal?: AbortSignal,
-		callbacks?: {
-			onTextDelta?: (accumulatedText: string) => void;
-			onToolCall?: (call: ToolCall) => void;
-			onToolResult?: (call: ToolCall, result: ToolResult) => void;
-		},
-	): Promise<AgentLoopResult> {
+	): AsyncGenerator<StreamEvent, AgentLoopResult> {
 		const { llmAdapter, toolExecutor, maxSteps = 5, autoApply = false } =
 			this.opts;
 
@@ -179,22 +176,21 @@ export class AgentLoop {
 					case "text-delta":
 						stepText += event.text;
 						fullText += event.text;
-						this.opts.onTextDelta?.(fullText);
-						callbacks?.onTextDelta?.(fullText);
+						yield event;
 						break;
 					case "tool-call":
 						pendingCalls.push(event.call);
-						this.opts.onToolCall?.(event.call);
-						callbacks?.onToolCall?.(event.call);
+						yield event;
 						break;
 					case "tool-error":
 						console.warn(
 							`[AgentLoop] tool-error from stream: ${event.callId} — ${event.error}`,
 						);
+						yield event;
 						break;
 					case "error":
 						throw new Error(event.message);
-					// finish, tool-result from stream are bookkeeping
+					// finish, step-finish from stream are bookkeeping
 					default:
 						break;
 				}
@@ -202,14 +198,22 @@ export class AgentLoop {
 
 			if (signal?.aborted) {
 				console.log(`[AgentLoop] aborted during step ${step}`);
-				break;
+				return {
+					text: fullText,
+					tokenEstimate: estimateTokens(fullText),
+					stepsTaken: step + 1,
+				};
 			}
 
 			if (pendingCalls.length === 0) {
 				console.log(
 					`[AgentLoop] done — no tool calls at step ${step}, ${fullText.length} chars`,
 				);
-				return { text: fullText, tokenEstimate: estimateTokens(fullText), stepsTaken: step + 1 };
+				return {
+					text: fullText,
+					tokenEstimate: estimateTokens(fullText),
+					stepsTaken: step + 1,
+				};
 			}
 
 			// Execute tools (with approval if not autoApply)
@@ -229,6 +233,8 @@ export class AgentLoop {
 								error: "No tool executor configured",
 							};
 				} else {
+					// Notify consumer that approval is needed
+					yield { type: "pending-approval", call };
 					result =
 						(await this.opts.requestApproval(call)) ?? {
 							success: false,
@@ -240,8 +246,7 @@ export class AgentLoop {
 					`[AgentLoop] step ${step} tool-result:`,
 					result.error ?? "success",
 				);
-				this.opts.onToolResult?.(call, result);
-				callbacks?.onToolResult?.(call, result);
+				yield { type: "tool-result", callId: call.id, result };
 				results.push({ call, result });
 			}
 
@@ -285,19 +290,21 @@ export class AgentLoop {
 				];
 				return {
 					id: `tool-${call.id}`,
-					role: "assistant", // Vercel SDK uses "tool" role, but our types say 'user'|'assistant'|'system'
+					role: "assistant",
 					content: JSON.stringify(toolParts),
 					timestamp: Date.now(),
 				};
 			});
 
-			currentMessages = [
-				...currentMessages,
-				assistantMsg,
-				...toolMessages,
-			];
+			currentMessages = [...currentMessages, assistantMsg, ...toolMessages];
+
+			yield { type: "step-finish", step: step + 1 };
 		}
 
-		return { text: fullText, tokenEstimate: estimateTokens(fullText), stepsTaken: maxSteps };
+		return {
+			text: fullText,
+			tokenEstimate: estimateTokens(fullText),
+			stepsTaken: maxSteps,
+		};
 	}
 }
