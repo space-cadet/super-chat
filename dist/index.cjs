@@ -1,4 +1,4 @@
-"use strict";Object.defineProperty(exports, "__esModule", {value: true}); function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { newObj[key] = obj[key]; } } } newObj.default = obj; return newObj; } } function _nullishCoalesce(lhs, rhsFn) { if (lhs != null) { return lhs; } else { return rhsFn(); } } async function _asyncNullishCoalesce(lhs, rhsFn) { if (lhs != null) { return lhs; } else { return await rhsFn(); } } function _optionalChain(ops) { let lastAccessLHS = undefined; let value = ops[0]; let i = 1; while (i < ops.length) { const op = ops[i]; const fn = ops[i + 1]; i += 2; if ((op === 'optionalAccess' || op === 'optionalCall') && value == null) { return undefined; } if (op === 'access' || op === 'optionalAccess') { lastAccessLHS = value; value = fn(value); } else if (op === 'call' || op === 'optionalCall') { value = fn((...args) => value.call(lastAccessLHS, ...args)); lastAccessLHS = undefined; } } return value; } var _class; var _class2; var _class3; var _class4;require('./chunk-EMMSS5I5.cjs');
+"use strict";Object.defineProperty(exports, "__esModule", {value: true}); function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { newObj[key] = obj[key]; } } } newObj.default = obj; return newObj; } } function _nullishCoalesce(lhs, rhsFn) { if (lhs != null) { return lhs; } else { return rhsFn(); } } async function _asyncNullishCoalesce(lhs, rhsFn) { if (lhs != null) { return lhs; } else { return await rhsFn(); } } function _optionalChain(ops) { let lastAccessLHS = undefined; let value = ops[0]; let i = 1; while (i < ops.length) { const op = ops[i]; const fn = ops[i + 1]; i += 2; if ((op === 'optionalAccess' || op === 'optionalCall') && value == null) { return undefined; } if (op === 'access' || op === 'optionalAccess') { lastAccessLHS = value; value = fn(value); } else if (op === 'call' || op === 'optionalCall') { value = fn((...args) => value.call(lastAccessLHS, ...args)); lastAccessLHS = undefined; } } return value; } var _class; var _class2; var _class3; var _class4; var _class5;require('./chunk-EMMSS5I5.cjs');
 
 // src/core/ToolExecutor.ts
 var ToolExecutor = (_class = class {
@@ -292,6 +292,404 @@ var AgentLoop = class {
       tokenEstimate: estimateTokens(fullText),
       stepsTaken: maxSteps
     };
+  }
+};
+
+// src/core/Topology.ts
+var USER_ID = "__user__";
+var FullyConnectedTopology = class {
+  
+  constructor(agentIds) {
+    this.agentIds = [...agentIds];
+  }
+  neighbors(agentId) {
+    return this.agentIds.filter((id) => id !== agentId);
+  }
+  allAgentIds() {
+    return [...this.agentIds];
+  }
+  canReceiveFrom(agentId, fromId) {
+    return fromId !== agentId && this.agentIds.includes(agentId);
+  }
+};
+var RingTopology = class {
+  
+  constructor(agentIds) {
+    if (agentIds.length < 2) {
+      throw new Error("RingTopology requires at least 2 agents");
+    }
+    this.agentIds = [...agentIds];
+  }
+  neighbors(agentId) {
+    const idx = this.agentIds.indexOf(agentId);
+    if (idx === -1) return [];
+    const n = this.agentIds.length;
+    const prev = this.agentIds[(idx - 1 + n) % n];
+    const next = this.agentIds[(idx + 1) % n];
+    return [prev, next];
+  }
+  allAgentIds() {
+    return [...this.agentIds];
+  }
+  canReceiveFrom(agentId, fromId) {
+    if (fromId === USER_ID) return this.agentIds.includes(agentId);
+    return this.neighbors(agentId).includes(fromId);
+  }
+};
+var StarTopology = class {
+  
+  
+  constructor(hubId, leafIds) {
+    if (leafIds.includes(hubId)) {
+      throw new Error("Hub ID cannot also be a leaf ID");
+    }
+    this.hubId = hubId;
+    this.leafIds = [...leafIds];
+  }
+  neighbors(agentId) {
+    if (agentId === this.hubId) {
+      return [...this.leafIds];
+    }
+    if (this.leafIds.includes(agentId)) {
+      return [this.hubId];
+    }
+    return [];
+  }
+  allAgentIds() {
+    return [this.hubId, ...this.leafIds];
+  }
+  canReceiveFrom(agentId, fromId) {
+    if (fromId === USER_ID) return this.allAgentIds().includes(agentId);
+    return this.neighbors(agentId).includes(fromId);
+  }
+};
+
+// src/core/AgentInbox.ts
+var InMemoryAgentInbox = (_class2 = class {constructor() { _class2.prototype.__init2.call(this); }
+  __init2() {this.store = /* @__PURE__ */ new Map()}
+  push(message) {
+    const recipient = message.to;
+    if (!this.store.has(recipient)) {
+      this.store.set(recipient, []);
+    }
+    this.store.get(recipient).push(message);
+  }
+  messages(agentId) {
+    return _nullishCoalesce(this.store.get(agentId), () => ( []));
+  }
+  messagesForRound(agentId, round) {
+    return this.messages(agentId).filter((m) => m.round === round);
+  }
+  clear(agentId) {
+    this.store.delete(agentId);
+  }
+  clearAll() {
+    this.store.clear();
+  }
+}, _class2);
+var InboxRouter = class {
+  
+  
+  constructor(opts) {
+    this.topology = opts.topology;
+    this.inbox = _nullishCoalesce(opts.inbox, () => ( new InMemoryAgentInbox()));
+  }
+  /** Send a message from one entity to another, respecting topology. */
+  route(message) {
+    const { from, to } = message;
+    if (to !== "*") {
+      if (this.topology.canReceiveFrom(to, from)) {
+        this.inbox.push({ ...message, to });
+      }
+      return;
+    }
+    for (const agentId of this.topology.allAgentIds()) {
+      if (this.topology.canReceiveFrom(agentId, from)) {
+        this.inbox.push({ ...message, to: agentId });
+      }
+    }
+  }
+  /** Send a user message to all agents that can see the user. */
+  broadcastUserMessage(content, round) {
+    const message = {
+      from: USER_ID,
+      to: "*",
+      content,
+      timestamp: Date.now(),
+      round
+    };
+    this.route(message);
+  }
+  /** Send an agent's response to its neighbors. */
+  broadcastAgentResponse(fromAgentId, content, round) {
+    const message = {
+      from: fromAgentId,
+      to: "*",
+      content,
+      timestamp: Date.now(),
+      round
+    };
+    this.route(message);
+  }
+  /** Get all messages visible to a specific agent. */
+  getMessages(agentId) {
+    return this.inbox.messages(agentId);
+  }
+  /** Get messages for a specific round. */
+  getMessagesForRound(agentId, round) {
+    return this.inbox.messagesForRound(agentId, round);
+  }
+  /** Clear all inboxes. */
+  clear() {
+    this.inbox.clearAll();
+  }
+};
+
+// src/core/Orchestrator.ts
+async function collectAgentResponse(entry, text) {
+  if (!entry.engine.getActiveSession()) {
+    entry.engine.createSession(`Session: ${entry.name}`);
+  }
+  const events = [];
+  let fullText = "";
+  let errorMessage = null;
+  for await (const event of entry.engine.sendMessage(text)) {
+    events.push(event);
+    if (event.type === "text-delta") {
+      fullText += event.text;
+    } else if (event.type === "error") {
+      errorMessage = event.message;
+    }
+  }
+  if (errorMessage) {
+    throw new Error(errorMessage);
+  }
+  const message = {
+    id: `msg-${entry.id}-${Date.now()}`,
+    role: "assistant",
+    content: fullText,
+    timestamp: Date.now()
+  };
+  return {
+    agentId: entry.id,
+    agentName: entry.name,
+    message
+  };
+}
+function makeErrorResponse(entry, err) {
+  const message = {
+    id: `error-${entry.id}-${Date.now()}`,
+    role: "assistant",
+    content: `[ERROR] ${err instanceof Error ? err.message : String(err)}`,
+    timestamp: Date.now()
+  };
+  return {
+    agentId: entry.id,
+    agentName: entry.name,
+    message
+  };
+}
+var ManyBodyOrchestrator = class {
+  
+  
+  
+  
+  
+  constructor(opts) {
+    this.agents = new Map(opts.agents.map((a) => [a.id, a]));
+    this.topology = opts.topology;
+    this.mode = _nullishCoalesce(opts.mode, () => ( "parallel"));
+    this.debateRounds = _nullishCoalesce(opts.debateRounds, () => ( 2));
+    const topologyIds = new Set(opts.topology.allAgentIds());
+    for (const agent of opts.agents) {
+      if (!topologyIds.has(agent.id)) {
+        throw new Error(
+          `Agent "${agent.id}" not found in topology. Known IDs: ${Array.from(topologyIds).join(", ")}`
+        );
+      }
+    }
+    this.router = new InboxRouter({
+      topology: opts.topology,
+      inbox: _nullishCoalesce(opts.inbox, () => ( new InMemoryAgentInbox()))
+    });
+  }
+  // --------------------------------------------------------------------------
+  // Public API
+  // --------------------------------------------------------------------------
+  /**
+   * Send a user message to the orchestrator.
+   *
+   * Yields AgentResponse objects as agents produce them.
+   * The order depends on the mode:
+   *   - sequential: one at a time, in agent order
+   *   - parallel: as they complete (fastest first)
+   *   - debate: round by round, all agents per round
+   */
+  async *userMessage(text) {
+    this.router.broadcastUserMessage(text);
+    switch (this.mode) {
+      case "sequential":
+        yield* this.runSequential(text);
+        break;
+      case "parallel":
+        yield* this.runParallel(text);
+        break;
+      case "debate":
+        yield* this.runDebate(text);
+        break;
+    }
+  }
+  /**
+   * Dispatch a user message to all agents that can see the user,
+   * without collecting responses. Used when you want to populate
+   * agent sessions before a subsequent operation.
+   */
+  dispatch(text) {
+    this.router.broadcastUserMessage(text);
+    for (const [id, entry] of this.agents) {
+      if (!this.topology.canReceiveFrom(id, USER_ID)) continue;
+      if (!entry.engine.getActiveSession()) {
+        entry.engine.createSession(`Session: ${entry.name}`);
+      }
+      void this.runAgentAndIgnore(entry, text);
+    }
+  }
+  /** Get the IDs of agents that can see the user. */
+  getVisibleAgentIds() {
+    return this.topology.allAgentIds().filter((id) => this.topology.canReceiveFrom(id, USER_ID));
+  }
+  /** Get all agent IDs in the topology. */
+  getAllAgentIds() {
+    return this.topology.allAgentIds();
+  }
+  /** Get an agent by ID. */
+  getAgent(id) {
+    return this.agents.get(id);
+  }
+  /** Access the inbox router (for advanced use cases). */
+  getRouter() {
+    return this.router;
+  }
+  // --------------------------------------------------------------------------
+  // Mode Implementations
+  // --------------------------------------------------------------------------
+  /**
+   * Sequential mode: agents respond one after another.
+   * Each agent sees the original user message.
+   * Responses are broadcast to neighbors via the inbox.
+   */
+  async *runSequential(text) {
+    for (const [id, entry] of this.agents) {
+      if (!this.topology.canReceiveFrom(id, USER_ID)) continue;
+      try {
+        const response = await collectAgentResponse(entry, text);
+        this.router.broadcastAgentResponse(
+          response.agentId,
+          response.message.content
+        );
+        yield response;
+      } catch (err) {
+        yield makeErrorResponse(entry, err);
+      }
+    }
+  }
+  /**
+   * Parallel mode: all visible agents respond simultaneously.
+   * Results are yielded as they complete (fastest-first order).
+   */
+  async *runParallel(text) {
+    const visibleAgents = Array.from(this.agents.entries()).filter(
+      ([id]) => this.topology.canReceiveFrom(id, USER_ID)
+    );
+    if (visibleAgents.length === 0) return;
+    const pending = /* @__PURE__ */ new Map();
+    for (const [id, entry] of visibleAgents) {
+      pending.set(
+        id,
+        collectAgentResponse(entry, text).catch(
+          (err) => makeErrorResponse(entry, err)
+        )
+      );
+    }
+    while (pending.size > 0) {
+      const entries = Array.from(pending.entries());
+      const result = await Promise.race(
+        entries.map(async ([agentId, promise]) => {
+          const response = await promise;
+          return { agentId, response };
+        })
+      );
+      pending.delete(result.agentId);
+      if (!result.response.message.content.startsWith("[ERROR]")) {
+        this.router.broadcastAgentResponse(
+          result.response.agentId,
+          result.response.message.content
+        );
+      }
+      yield result.response;
+    }
+  }
+  /**
+   * Debate mode: multiple rounds of agent interaction.
+   *
+   * Round 0: All visible agents respond to the original user message.
+   * Round N: Each agent receives its neighbors' responses from round N-1
+   *          and responds again.
+   */
+  async *runDebate(text) {
+    for (let round = 0; round < this.debateRounds; round++) {
+      const roundResponses = [];
+      for (const [id, entry] of this.agents) {
+        if (round === 0 && !this.topology.canReceiveFrom(id, USER_ID)) {
+          continue;
+        }
+        const prompt = round === 0 ? text : this.buildDebatePrompt(id, text, round);
+        try {
+          const response = await collectAgentResponse(entry, prompt);
+          this.router.broadcastAgentResponse(
+            response.agentId,
+            response.message.content,
+            round
+          );
+          roundResponses.push(response);
+        } catch (err) {
+          roundResponses.push(makeErrorResponse(entry, err));
+        }
+      }
+      for (const response of roundResponses) {
+        yield response;
+      }
+    }
+  }
+  // --------------------------------------------------------------------------
+  // Helpers
+  // --------------------------------------------------------------------------
+  buildDebatePrompt(agentId, originalQuestion, round) {
+    const neighborMessages = this.router.getMessagesForRound(
+      agentId,
+      round - 1
+    );
+    let prompt = "";
+    if (neighborMessages.length > 0) {
+      prompt += "Here are responses from your neighbors in the previous round:\n\n";
+      for (const msg of neighborMessages) {
+        prompt += `[${msg.from}]: ${msg.content}
+`;
+      }
+      prompt += "\n---\n\n";
+    }
+    prompt += `Original question: ${originalQuestion}
+
+`;
+    prompt += `Please share your response for round ${round + 1}.`;
+    return prompt;
+  }
+  async runAgentAndIgnore(entry, text) {
+    try {
+      for await (const _event of entry.engine.sendMessage(text)) {
+      }
+    } catch (e5) {
+    }
   }
 };
 
@@ -618,8 +1016,8 @@ function createProviderProfile(provider, model, apiKey, options) {
 }
 
 // src/adapters/MemoryPersistence.ts
-var MemoryPersistenceAdapter = (_class2 = class {constructor() { _class2.prototype.__init2.call(this); }
-  __init2() {this.sessions = /* @__PURE__ */ new Map()}
+var MemoryPersistenceAdapter = (_class3 = class {constructor() { _class3.prototype.__init3.call(this); }
+  __init3() {this.sessions = /* @__PURE__ */ new Map()}
   async loadSessions() {
     return Array.from(this.sessions.values()).sort(
       (a, b) => b.updatedAt - a.updatedAt
@@ -652,7 +1050,7 @@ var MemoryPersistenceAdapter = (_class2 = class {constructor() { _class2.prototy
   getCount() {
     return this.sessions.size;
   }
-}, _class2);
+}, _class3);
 
 // src/adapters/LocalStoragePersistence.ts
 var STORAGE_KEY = "super-chat:sessions";
@@ -675,12 +1073,12 @@ var LocalStoragePersistenceAdapter = class {
         if (sessionJson) {
           try {
             sessions.push(JSON.parse(sessionJson));
-          } catch (e5) {
+          } catch (e6) {
           }
         }
       }
       return sessions.sort((a, b) => b.updatedAt - a.updatedAt);
-    } catch (e6) {
+    } catch (e7) {
       return [];
     }
   }
@@ -762,8 +1160,8 @@ var LocalStoragePersistenceAdapter = class {
 };
 
 // src/adapters/DemoToolAdapter.ts
-var DemoToolAdapter = (_class3 = class {constructor() { _class3.prototype.__init3.call(this); }
-  __init3() {this.tools = [
+var DemoToolAdapter = (_class4 = class {constructor() { _class4.prototype.__init4.call(this); }
+  __init4() {this.tools = [
     {
       name: "calculate",
       description: "Evaluate a mathematical expression. Use this when the user asks for calculations, conversions, or numerical analysis.",
@@ -973,7 +1371,7 @@ var DemoToolAdapter = (_class3 = class {constructor() { _class3.prototype.__init
     }
     return Math.abs(hash);
   }
-}, _class3);
+}, _class4);
 
 // src/core/ChatEngine.ts
 var defaultSettings = {
@@ -991,13 +1389,13 @@ var defaultSettings = {
   autoApply: false,
   showProviderIndicator: true
 };
-var ChatEngine = (_class4 = class {
+var ChatEngine = (_class5 = class {
   
   
   
   
-  __init4() {this.customTools = /* @__PURE__ */ new Map()}
-  constructor(options) {;_class4.prototype.__init4.call(this);
+  __init5() {this.customTools = /* @__PURE__ */ new Map()}
+  constructor(options) {;_class5.prototype.__init5.call(this);
     this.opts = options;
     this.toolExecutor = new ToolExecutor();
     if (options.toolAdapter) {
@@ -1308,7 +1706,7 @@ var ChatEngine = (_class4 = class {
       );
     }
   }
-}, _class4);
+}, _class5);
 
 
 
@@ -1319,5 +1717,12 @@ var ChatEngine = (_class4 = class {
 
 
 
-exports.AgentLoop = AgentLoop; exports.ChatEngine = ChatEngine; exports.DemoToolAdapter = DemoToolAdapter; exports.LocalStoragePersistenceAdapter = LocalStoragePersistenceAdapter; exports.MemoryPersistenceAdapter = MemoryPersistenceAdapter; exports.ToolExecutor = ToolExecutor; exports.VercelLLMAdapter = VercelLLMAdapter; exports.createProviderProfile = createProviderProfile; exports.estimateTokens = estimateTokens;
+
+
+
+
+
+
+
+exports.AgentLoop = AgentLoop; exports.ChatEngine = ChatEngine; exports.DemoToolAdapter = DemoToolAdapter; exports.FullyConnectedTopology = FullyConnectedTopology; exports.InMemoryAgentInbox = InMemoryAgentInbox; exports.InboxRouter = InboxRouter; exports.LocalStoragePersistenceAdapter = LocalStoragePersistenceAdapter; exports.ManyBodyOrchestrator = ManyBodyOrchestrator; exports.MemoryPersistenceAdapter = MemoryPersistenceAdapter; exports.RingTopology = RingTopology; exports.StarTopology = StarTopology; exports.ToolExecutor = ToolExecutor; exports.USER_ID = USER_ID; exports.VercelLLMAdapter = VercelLLMAdapter; exports.createProviderProfile = createProviderProfile; exports.estimateTokens = estimateTokens;
 //# sourceMappingURL=index.cjs.map

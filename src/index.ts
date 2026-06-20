@@ -42,6 +42,23 @@ export { ToolExecutor } from './core/ToolExecutor';
 export { AgentLoop } from './core/AgentLoop';
 export type { AgentLoopOptions as AgentLoopRunOptions, AgentLoopResult, ToolResultFormatter } from './core/AgentLoop';
 
+// Topology
+export {
+	FullyConnectedTopology,
+	RingTopology,
+	StarTopology,
+	USER_ID,
+} from './core/Topology';
+export type { Topology } from './core/Topology';
+
+// Agent Inbox
+export { InMemoryAgentInbox, InboxRouter } from './core/AgentInbox';
+export type { AgentInbox, AgentMessage, InboxRouterOptions } from './core/AgentInbox';
+
+// Orchestrator
+export { ManyBodyOrchestrator } from './core/Orchestrator';
+export type { OrchestratorAgent, ManyBodyOrchestratorOptions, OrchestratorRunResult } from './core/Orchestrator';
+
 // Adapters
 export { VercelLLMAdapter, createProviderProfile } from './adapters/VercelLLMAdapter';
 export { MemoryPersistenceAdapter } from './adapters/MemoryPersistence';

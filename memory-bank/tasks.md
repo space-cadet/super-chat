@@ -29,7 +29,7 @@ A standalone, reusable chat component library that provides LLM-native tool call
 |----|-------|--------|----------|--------------|---------|
 | T21 | npm Release & GitHub CI/CD | 🔄 | HIGH | — | [Details](tasks/T21.md) |
 | T13 | Tool Result Formatting | ⬜ | MEDIUM | T4 | [Details](tasks/T13.md) |
-| T6 | Multi-Agent Orchestrator | ⬜ | MEDIUM | T3, T5 | [Details](tasks/T6.md) |
+| T6 | Multi-Agent Orchestrator — Many-Body Agent System | ✅ **PHASE A** | **HIGH** | T3, T5 | [Details](tasks/T6.md) |
 | T7 | Mention Parser & Routing | ⬜ | MEDIUM | T6 | [Details](tasks/T7.md) |
 | T8 | React UI Components (PendingToolCard, ToolResultCard) | ⬜ | MEDIUM | T4 | [Details](tasks/T8.md) |
 | T15 | Port obsidian-ai mature agent logic | ⬜ | HIGH | T20, T14 | [Details](tasks/T15.md) |
@@ -40,9 +40,9 @@ A standalone, reusable chat component library that provides LLM-native tool call
 
 ## Status Summary
 
-- **Completed**: 11
-- **In Progress**: 1
-- **Pending**: 9
+- **Completed**: 12 (11 + T6 Phase A)
+- **In Progress**: 1 (T21)
+- **Pending**: 8 (T6 Phase B, T7, T8, T13, T15, T16, T17, T18, T19)
 - **Total**: 21
 
 ## Current Phase
@@ -51,4 +51,4 @@ A standalone, reusable chat component library that provides LLM-native tool call
 
 **Phase 2 — Publishing Infrastructure** is IN PROGRESS (T21).
 
-**Next Phase**: Phase 3 — Integration (T17, T18, T19) or Phase 4 — Feature polish (T13, T15, T16).
+**Next Phase**: Phase 3 — Many-Body Agent Runtime (T6, T7) → Phase 4 — Integration (T17, T18, T19) + Feature polish (T13, T15, T16).
