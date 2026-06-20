@@ -25,6 +25,7 @@
   ],
   "scripts": {
     "build": "tsup",
+    "prepublishOnly": "npx tsup",
     "demo": "pnpm build && vite --config demo/vite.config.ts",
     "demo:build": "pnpm build && vite build --config demo/vite.config.ts",
     "dev": "vite --config demo/vite.config.ts",
