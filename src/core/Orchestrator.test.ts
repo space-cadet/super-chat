@@ -6,7 +6,6 @@ import {
 	FullyConnectedTopology,
 	RingTopology,
 	StarTopology,
-	USER_ID,
 } from "./Topology";
 import type { LLMAdapter, StreamEvent, ToolDefinition } from "./types";
 
