@@ -6,7 +6,13 @@
 export type {
 	MessageRole,
 	ChatMessage,
+	ChatModelMessage,
 	ChatSession,
+	ChatTurn,
+	ChatTurnStatus,
+	ExternalSessionIdentity,
+	SessionId,
+	SessionPersistenceMetadata,
 	ToolCall,
 	ToolResult,
 	ToolDefinition,
@@ -26,6 +32,8 @@ export type {
 	ChatSettings,
 	LLMAdapter,
 	PersistenceAdapter,
+	SessionWriteReason,
+	SessionWriteContext,
 	RAGAdapter,
 	ContextAdapter,
 	ToolAdapter,
@@ -70,6 +78,18 @@ export { DemoToolAdapter } from './adapters/DemoToolAdapter';
 // Core classes
 export { ChatEngine } from './core/ChatEngine';
 export { estimateTokens } from './core/tokenEstimator';
+export {
+	CURRENT_SESSION_SCHEMA_VERSION,
+	SESSION_MIGRATION_ID,
+	createSessionId,
+	createTurnId,
+	createExternalSessionIdentity,
+	createSessionPersistenceMetadata,
+	cloneSession,
+	normalizePersistedSession,
+	isEngineWrite,
+} from './core/sessionPersistence';
+export type { SessionLoadReport, NormalizedSessionResult } from './core/sessionPersistence';
 
 // Host contracts
 export type {

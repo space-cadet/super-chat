@@ -1,6 +1,6 @@
 # Session Cache — super-chat
 
-*Last Updated*: 2026-08-31 23:22:41 IST
+*Last Updated*: 2026-09-01 00:10:17 IST
 
 ## Global Program Tracker
 
@@ -17,10 +17,14 @@
   `super-chat/contracts`, plus a plain-language guide.
 - Verification passed: TypeScript, 10 test files / 111 tests, and ESM/CJS/DTS
   builds including the contracts export.
-- Session closed after Phases 1 and 2 were committed and pushed.
-- Next: Phase 3 shared session saving and restore rules.
+- Phase 3 is complete locally: shared identity, migration, reload, turn
+  lifecycle, model history, partial-output saves, and one serialized engine
+  write owner are implemented and tested.
+- Verification passed: TypeScript, 11 test files / 118 tests, ESM/CJS/DTS
+  builds, and `git diff --check`.
+- Phase 3 is not committed or pushed yet. Next: Phase 4 fixture-host proof.
 
-## Current Session: T22 Platform Architecture
+## Current Session: T22 Phase 3 Session Persistence
 
 - Recorded `super-chat` as the complete chat application and reusable runtime.
 - Defined products as capability hosts rather than owners of chat mechanics.
@@ -28,10 +32,13 @@
   `implementation-details/embeddable-super-chat-platform.md`.
 - Created T22 and reconciled T15–T19.
 - Retired T17's premature Arxivite feature-toggle flip.
-- Completed this session: Phase 1 safe approvals and Phase 2 neutral host
-  services. Commits `be9802e` and `44e1c1e` are on `origin/main`.
-- Next action: define and test the shared session save and restore rules before
-  migrating either product.
+- Completed this session: Phase 3 shared session identity, versioned migration,
+  durable turn state, model continuation history, partial/cancelled/failed
+  lifecycle saves, and the serialized engine-owned persistence queue.
+- Verification passed: TypeScript, 118 tests, ESM/CJS/DTS builds, and diff
+  checks.
+- Next action: build the fixture-host vertical slice. Do not migrate either
+  product before that host proves the full flow.
 
 ## Previous Session
 

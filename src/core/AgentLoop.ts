@@ -14,6 +14,7 @@
 
 import type {
 	ChatMessage,
+	ChatModelMessage,
 	ChatSession,
 	LLMAdapter,
 	StreamEvent,
@@ -37,6 +38,8 @@ export interface AgentLoopResult {
 	text: string;
 	tokenEstimate: number;
 	stepsTaken: number;
+	/** Complete provider-neutral history after the turn, including tool steps. */
+	modelMessages?: ChatModelMessage[];
 }
 
 /**
@@ -157,6 +160,7 @@ export class AgentLoop {
 
 		let fullText = "";
 		let currentMessages = [...messages];
+		let hasToolHistory = false;
 
 		for (let step = 0; step < maxSteps; step++) {
 			let stepText = "";
@@ -202,10 +206,24 @@ export class AgentLoop {
 					text: fullText,
 					tokenEstimate: estimateTokens(fullText),
 					stepsTaken: step + 1,
+					...(currentMessages.length > messages.length
+						? { modelMessages: toAdapterMessages(currentMessages) }
+						: {}),
 				};
 			}
 
 			if (pendingCalls.length === 0) {
+				if (stepText) {
+					currentMessages = [
+						...currentMessages,
+						{
+							id: `assistant-${session.id}-${step}-final`,
+							role: "assistant",
+							content: stepText,
+							timestamp: Date.now(),
+						},
+					];
+				}
 				console.log(
 					`[AgentLoop] done — no tool calls at step ${step}, ${fullText.length} chars`,
 				);
@@ -213,6 +231,9 @@ export class AgentLoop {
 					text: fullText,
 					tokenEstimate: estimateTokens(fullText),
 					stepsTaken: step + 1,
+					...(hasToolHistory
+						? { modelMessages: toAdapterMessages(currentMessages) }
+						: {}),
 				};
 			}
 
@@ -300,6 +321,7 @@ export class AgentLoop {
 			});
 
 			currentMessages = [...currentMessages, assistantMsg, ...toolMessages];
+			hasToolHistory = true;
 
 			yield { type: "step-finish", step: step + 1 };
 		}
@@ -308,6 +330,9 @@ export class AgentLoop {
 			text: fullText,
 			tokenEstimate: estimateTokens(fullText),
 			stepsTaken: maxSteps,
+			...(hasToolHistory
+				? { modelMessages: toAdapterMessages(currentMessages) }
+				: {}),
 		};
 	}
 }

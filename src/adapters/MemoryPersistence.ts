@@ -7,22 +7,27 @@
  * - Development (quick reset by refreshing)
  */
 
-import type { PersistenceAdapter, ChatSession } from "../core/types";
+import type {
+	PersistenceAdapter,
+	ChatSession,
+	SessionWriteContext,
+} from "../core/types";
+import { cloneSession } from "../core/sessionPersistence";
 
 export class MemoryPersistenceAdapter implements PersistenceAdapter {
 	private sessions = new Map<string, ChatSession>();
 
 	async loadSessions(): Promise<ChatSession[]> {
-		return Array.from(this.sessions.values()).sort(
+		return Array.from(this.sessions.values()).map(cloneSession).sort(
 			(a, b) => b.updatedAt - a.updatedAt,
 		);
 	}
 
-	async saveSession(session: ChatSession): Promise<void> {
-		this.sessions.set(session.id, {
-			...session,
-			updatedAt: Date.now(),
-		});
+	async saveSession(
+		session: ChatSession,
+		_context?: SessionWriteContext,
+	): Promise<void> {
+		this.sessions.set(session.id, cloneSession({ ...session, updatedAt: Date.now() }));
 	}
 
 	async deleteSession(sessionId: string): Promise<void> {
@@ -32,11 +37,11 @@ export class MemoryPersistenceAdapter implements PersistenceAdapter {
 	async archiveSession(sessionId: string): Promise<void> {
 		const session = this.sessions.get(sessionId);
 		if (session) {
-			this.sessions.set(sessionId, {
+			this.sessions.set(sessionId, cloneSession({
 				...session,
 				archived: true,
 				updatedAt: Date.now(),
-			});
+			}));
 		}
 	}
 

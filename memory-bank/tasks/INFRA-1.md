@@ -1,7 +1,7 @@
 # INFRA-1: Unified super-chat Application Platform Program
 
 *Created: 2026-08-31 22:44:08 IST*
-*Last Updated: 2026-08-31 23:19:22 IST*
+*Last Updated: 2026-09-01 00:10:17 IST*
 
 **Status**: 🔄 **IN PROGRESS**
 **Priority**: CRITICAL
@@ -95,16 +95,30 @@ passing raw product objects to `super-chat`.
 ### Phase 3: Shared session saving and restore rules
 
 **Owner**: T22  
-**Status**: 🔄 Next
+**Status**: ✅ Complete (2026-09-01)
 
-- [ ] Define internal and typed external session identities.
-- [ ] Establish exactly one persistence write owner.
-- [ ] Define saves for user input, partial output, completed turns, tools,
+- [x] Define internal and typed external session identities.
+- [x] Establish exactly one persistence write owner.
+- [x] Define saves for user input, partial output, completed turns, tools,
       cancellation, and failures.
-- [ ] Define reload, migration, versioning, and recovery behavior.
+- [x] Define reload, migration, versioning, and recovery behavior.
 
 **Exit criterion**: a persisted session reloads into a valid visible transcript
 and model continuation without parallel session synchronization.
+
+**Evidence**:
+
+- `ChatEngine` owns the session/turn lifecycle and serializes all persistence
+  writes with explicit `chat-engine` ownership and lifecycle reasons.
+- Schema version 1 records stable internal IDs, typed external identities,
+  visible messages, model history, turn/tool state, and migration metadata.
+- Reload restores the most recent active session, migrates version 0 records,
+  repairs malformed messages, skips invalid records individually, and reports
+  the outcome.
+- Verification: TypeScript passed; 11 test files / 118 tests passed; ESM, CJS,
+  and declaration builds passed; `git diff --check` passed.
+
+**Implementation record**: `implementation-details/session-persistence.md`.
 
 ### Phase 4: Fixture-host vertical slice
 

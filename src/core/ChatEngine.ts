@@ -23,9 +23,13 @@ import type {
 	ChatEngineListener,
 	ChatEngineSnapshot,
 	ChatMessage,
+	ChatModelMessage,
 	ChatSession,
 	ChatSettings,
+	ChatTurn,
+	ExternalSessionIdentity,
 	SendOptions,
+	SessionWriteContext,
 	StreamEvent,
 	ToolAdapter,
 	ToolCall,
@@ -34,6 +38,14 @@ import type {
 	ToolResult,
 } from "./types";
 import type { AgentLoopResult } from "./AgentLoop";
+import {
+	cloneSession,
+	createSessionId,
+	createSessionPersistenceMetadata,
+	createTurn,
+	normalizePersistedSession,
+} from "./sessionPersistence";
+import type { SessionLoadReport } from "./sessionPersistence";
 
 // ============================================================================
 // Internal State
@@ -81,6 +93,12 @@ export class ChatEngine {
 	private customTools: Map<string, ToolHandler> = new Map();
 	private listeners = new Set<ChatEngineListener>();
 	private pendingApprovals = new Map<string, PendingApproval>();
+	private persistenceQueue: Promise<void> = Promise.resolve();
+	private lastLoadReport: SessionLoadReport = {
+		migratedSessionIds: [],
+		recoveredSessionIds: [],
+		skippedSessionIds: [],
+	};
 	private disposed = false;
 
 	constructor(options: ChatEngineOptions) {
@@ -115,48 +133,96 @@ export class ChatEngine {
 	// --------------------------------------------------------------------------
 
 	async loadSessions(): Promise<ChatSession[]> {
+		await this.persistenceQueue;
 		if (this.opts.persistenceAdapter) {
-			this.state.sessions = await this.opts.persistenceAdapter.loadSessions();
+			const loaded = await this.opts.persistenceAdapter.loadSessions();
+			const report: SessionLoadReport = {
+				migratedSessionIds: [],
+				recoveredSessionIds: [],
+				skippedSessionIds: [],
+			};
+			const sessions: ChatSession[] = [];
+			const seen = new Set<string>();
+			for (const value of loaded) {
+				const normalized = normalizePersistedSession(value);
+				if (!normalized.session || seen.has(normalized.session.id)) {
+					if (value?.id && typeof value.id === "string") {
+						report.skippedSessionIds.push(value.id);
+					}
+					continue;
+				}
+				seen.add(normalized.session.id);
+				sessions.push(normalized.session);
+				if (normalized.migrated) {
+					report.migratedSessionIds.push(normalized.session.id);
+				}
+				if (normalized.recovered) {
+					report.recoveredSessionIds.push(normalized.session.id);
+				}
+			}
+			this.state.sessions = sessions.sort((a, b) => b.updatedAt - a.updatedAt);
+			this.lastLoadReport = report;
+			if (
+				this.state.activeSessionId === null ||
+				!this.state.sessions.some((session) => session.id === this.state.activeSessionId)
+			) {
+				this.state.activeSessionId = this.state.sessions[0]?.id ?? null;
+			}
+			for (const session of this.state.sessions) {
+				if (
+					report.migratedSessionIds.includes(session.id) ||
+					report.recoveredSessionIds.includes(session.id)
+				) {
+					await this.persistSession(session, {
+						owner: "chat-engine",
+						reason: "migration",
+					});
+				}
+			}
 		}
 		this.emitState();
 		return [...this.state.sessions];
 	}
 
+	getLastLoadReport(): SessionLoadReport {
+		return {
+			migratedSessionIds: [...this.lastLoadReport.migratedSessionIds],
+			recoveredSessionIds: [...this.lastLoadReport.recoveredSessionIds],
+			skippedSessionIds: [...this.lastLoadReport.skippedSessionIds],
+		};
+	}
+
 	async saveSession(session?: ChatSession): Promise<void> {
 		const target = session ?? this.getActiveSession();
 		if (!target || !this.opts.persistenceAdapter) return;
-
-		const updated = {
-			...target,
-			updatedAt: Date.now(),
-		};
-
-		await this.opts.persistenceAdapter.saveSession(updated);
-
-		// Update in-memory list
-		const idx = this.state.sessions.findIndex((s) => s.id === updated.id);
-		if (idx >= 0) {
-			this.state.sessions[idx] = updated;
-		} else {
-			this.state.sessions.unshift(updated);
-		}
-		this.emitState();
+		await this.persistSession(target, { owner: "chat-engine", reason: "manual" });
 	}
 
-	createSession(title?: string): ChatSession {
+	createSession(
+		title?: string,
+		externalIdentity?: ExternalSessionIdentity,
+	): ChatSession {
 		if (this.state.isStreaming) this.stopStreaming();
 		const session: ChatSession = {
-			id: `sess-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+			id: createSessionId(),
 			title: title ?? "Untitled Chat",
 			createdAt: Date.now(),
 			updatedAt: Date.now(),
 			messages: [],
+			persistence: createSessionPersistenceMetadata(),
+			turns: [],
+			modelHistory: [],
+			...(externalIdentity ? { externalIdentity } : {}),
 			llmProvider: this.opts.llmAdapter.getProviders()[0]?.id,
 		};
 
 		this.state.sessions.unshift(session);
 		this.state.activeSessionId = session.id;
 		this.emitState();
+		void this.persistSession(session, {
+			owner: "chat-engine",
+			reason: "create",
+		}).catch(() => undefined);
 		return session;
 	}
 
@@ -179,6 +245,11 @@ export class ChatEngine {
 	}
 
 	async deleteSession(sessionId: string): Promise<void> {
+		if (this.opts.persistenceAdapter) {
+			await this.enqueuePersistence(() =>
+				this.opts.persistenceAdapter!.deleteSession(sessionId),
+			);
+		}
 		this.state.sessions = this.state.sessions.filter(
 			(s) => s.id !== sessionId,
 		);
@@ -186,20 +257,19 @@ export class ChatEngine {
 			this.state.activeSessionId =
 				this.state.sessions[0]?.id ?? null;
 		}
-		if (this.opts.persistenceAdapter) {
-			await this.opts.persistenceAdapter.deleteSession(sessionId);
-		}
 		this.emitState();
 	}
 
 	async archiveSession(sessionId: string): Promise<void> {
+		if (this.opts.persistenceAdapter) {
+			await this.enqueuePersistence(() =>
+				this.opts.persistenceAdapter!.archiveSession(sessionId),
+			);
+		}
 		const session = this.state.sessions.find((s) => s.id === sessionId);
 		if (session) {
 			session.archived = true;
 			session.updatedAt = Date.now();
-		}
-		if (this.opts.persistenceAdapter) {
-			await this.opts.persistenceAdapter.archiveSession(sessionId);
 		}
 		this.emitState();
 	}
@@ -236,13 +306,21 @@ export class ChatEngine {
 			return;
 		}
 
-		// Build message list
+		const priorModelHistory = this.getModelHistory(session);
 		const userMessage: ChatMessage = {
 			id: `msg-${Date.now()}`,
 			role: "user",
 			content: text,
 			timestamp: Date.now(),
 		};
+		const userModelMessage: ChatModelMessage = {
+			role: "user",
+			content: text,
+		};
+		const turn = createTurn(userMessage, [userModelMessage]);
+		turn.assistantMessageId = `assistant-${turn.id}`;
+		session.turns = [...(session.turns ?? []), turn];
+		session.modelHistory = [...priorModelHistory, userModelMessage];
 
 		const messages: ChatMessage[] = [
 			...(this.opts.systemPrompt
@@ -255,13 +333,23 @@ export class ChatEngine {
 						},
 					]
 				: []),
-			...session.messages,
+			...priorModelHistory.map((message, index) => ({
+				id: `history-${session.id}-${index}`,
+				role: message.role as ChatMessage["role"],
+				content: message.content,
+				timestamp: 0,
+			})),
 			userMessage,
 		];
 
-		// Save user message
+		// The engine is the only write owner. Persist the user input before
+		// provider work starts so a reload cannot lose the submitted turn.
 		session.messages.push(userMessage);
-		await this.saveSession(session);
+		await this.persistSession(session, {
+			owner: "chat-engine",
+			reason: "user-message",
+			turnId: turn.id,
+		});
 
 		// Setup abort
 		this.state.abortController = new AbortController();
@@ -276,10 +364,25 @@ export class ChatEngine {
 		try {
 			if (enableTools && tools.length > 0) {
 				// Use AgentLoop for tool-capable streaming
-				yield* this.runWithTools(session, messages, tools, signal, options);
+				yield* this.runWithTools(
+					session,
+					messages,
+					tools,
+					signal,
+					turn,
+					priorModelHistory.length,
+					options,
+				);
 			} else {
 				// Simple text streaming (no tools)
-				yield* this.runTextOnly(session, messages, signal, options);
+				yield* this.runTextOnly(
+					session,
+					messages,
+					signal,
+					turn,
+					priorModelHistory,
+					options,
+				);
 			}
 		} finally {
 			this.cancelPendingApprovals();
@@ -401,10 +504,12 @@ export class ChatEngine {
 		messages: ChatMessage[],
 		tools: ToolDefinition[],
 		signal: AbortSignal,
+		turn: ChatTurn,
+		priorModelHistoryLength: number,
 		_options?: SendOptions,
 	): AsyncIterable<StreamEvent> {
 		let assistantText = "";
-		const assistantMessageId = `assistant-${Date.now()}`;
+		const assistantMessageId = turn.assistantMessageId ?? `assistant-${turn.id}`;
 		const startTime = performance.now();
 		let firstChunkTime: number | null = null;
 
@@ -427,6 +532,28 @@ export class ChatEngine {
 				// Accumulate assistant text
 				if (value.type === "text-delta") {
 					assistantText += value.text;
+					this.updateAssistantMessage(session, turn, assistantMessageId, assistantText, "streaming");
+					await this.persistSession(session, {
+						owner: "chat-engine",
+						reason: "partial-output",
+						turnId: turn.id,
+					});
+				} else if (value.type === "tool-call") {
+					turn.toolCalls.push({ ...value.call, args: { ...value.call.args } });
+					turn.updatedAt = Date.now();
+					await this.persistSession(session, {
+						owner: "chat-engine",
+						reason: "tool-call",
+						turnId: turn.id,
+					});
+				} else if (value.type === "tool-result") {
+					turn.toolResults[value.callId] = { ...value.result };
+					turn.updatedAt = Date.now();
+					await this.persistSession(session, {
+						owner: "chat-engine",
+						reason: "tool-result",
+						turnId: turn.id,
+					});
 				}
 
 				// Forward event immediately for real-time streaming
@@ -434,6 +561,23 @@ export class ChatEngine {
 			}
 		} catch (err) {
 			const message = err instanceof Error ? err.message : String(err);
+			turn.status = signal.aborted ? "cancelled" : "failed";
+			turn.error = signal.aborted ? undefined : message;
+			turn.updatedAt = Date.now();
+			if (assistantText) {
+				this.updateAssistantMessage(
+					session,
+					turn,
+					assistantMessageId,
+					assistantText,
+					turn.status,
+				);
+			}
+			await this.persistSession(session, {
+				owner: "chat-engine",
+				reason: signal.aborted ? "turn-cancelled" : "turn-failed",
+				turnId: turn.id,
+			});
 			yield { type: "error", message };
 			return;
 		}
@@ -443,7 +587,19 @@ export class ChatEngine {
 			? Math.round(firstChunkTime - startTime)
 			: totalDurationMs;
 
-		if (result) {
+		if (result && !signal.aborted) {
+			const modelHistory = result.modelMessages
+				? this.withoutSystemMessages(result.modelMessages)
+				: [
+						...(session.modelHistory ?? []),
+						{ role: "assistant", content: result.text },
+					];
+			const generatedMessages = modelHistory.slice(priorModelHistoryLength);
+			session.modelHistory = modelHistory;
+			turn.modelMessages = generatedMessages;
+			turn.status = "completed";
+			turn.updatedAt = Date.now();
+			this.updateAssistantMessage(session, turn, assistantMessageId, assistantText, "completed");
 			// Yield metrics
 			yield {
 				type: "usage",
@@ -453,16 +609,26 @@ export class ChatEngine {
 			};
 			yield { type: "metrics", ttftMs, totalDurationMs };
 
-			// Save assistant message
-			const assistantMessage: ChatMessage = {
-				id: assistantMessageId,
-				role: "assistant",
-				content: assistantText,
-				timestamp: Date.now(),
-				tokenCount: result.tokenEstimate,
-			};
-			session.messages.push(assistantMessage);
-			await this.saveSession(session);
+			const assistantMessage = session.messages.find(
+				(message) => message.id === assistantMessageId,
+			);
+			if (assistantMessage) assistantMessage.tokenCount = result.tokenEstimate;
+			await this.persistSession(session, {
+				owner: "chat-engine",
+				reason: "turn-complete",
+				turnId: turn.id,
+			});
+		} else if (result && signal.aborted) {
+			turn.status = "cancelled";
+			turn.updatedAt = Date.now();
+			if (assistantText) {
+				this.updateAssistantMessage(session, turn, assistantMessageId, assistantText, "cancelled");
+			}
+			await this.persistSession(session, {
+				owner: "chat-engine",
+				reason: "turn-cancelled",
+				turnId: turn.id,
+			});
 		}
 
 		if (!signal.aborted) {
@@ -474,6 +640,8 @@ export class ChatEngine {
 		session: ChatSession,
 		messages: ChatMessage[],
 		signal: AbortSignal,
+		turn: ChatTurn,
+		priorModelHistory: ChatModelMessage[],
 		_options?: SendOptions,
 	): AsyncIterable<StreamEvent> {
 		const adapterMessages = messages.map((m) => ({
@@ -482,7 +650,7 @@ export class ChatEngine {
 		}));
 
 		let assistantText = "";
-		const assistantMessageId = `assistant-${Date.now()}`;
+		const assistantMessageId = turn.assistantMessageId ?? `assistant-${turn.id}`;
 		const startTime = performance.now();
 		let firstChunkTime: number | null = null;
 		let chunkCount = 0;
@@ -498,7 +666,33 @@ export class ChatEngine {
 				}
 				chunkCount++;
 				assistantText += chunk;
+				this.updateAssistantMessage(session, turn, assistantMessageId, assistantText, "streaming");
+				await this.persistSession(session, {
+					owner: "chat-engine",
+					reason: "partial-output",
+					turnId: turn.id,
+				});
 				yield { type: "text-delta", text: chunk };
+			}
+
+			if (signal.aborted) {
+				turn.status = "cancelled";
+				turn.updatedAt = Date.now();
+				if (assistantText) {
+					this.updateAssistantMessage(
+						session,
+						turn,
+						assistantMessageId,
+						assistantText,
+						"cancelled",
+					);
+				}
+				await this.persistSession(session, {
+					owner: "chat-engine",
+					reason: "turn-cancelled",
+					turnId: turn.id,
+				});
+				return;
 			}
 
 			const totalDurationMs = Math.round(performance.now() - startTime);
@@ -516,22 +710,58 @@ export class ChatEngine {
 			};
 			yield { type: "metrics", ttftMs, totalDurationMs };
 
-			// Save assistant message
-			const assistantMessage: ChatMessage = {
-				id: assistantMessageId,
+			const assistantModelMessage: ChatModelMessage = {
 				role: "assistant",
 				content: assistantText,
-				timestamp: Date.now(),
-				tokenCount: tokenEstimate,
 			};
-			session.messages.push(assistantMessage);
-			await this.saveSession(session);
+			const userModelMessage = turn.modelMessages[0] ?? {
+				role: "user",
+				content: "",
+			};
+			session.modelHistory = [
+				...priorModelHistory,
+				userModelMessage,
+				assistantModelMessage,
+			];
+			turn.modelMessages = [
+				...turn.modelMessages,
+				assistantModelMessage,
+			];
+			turn.status = "completed";
+			turn.updatedAt = Date.now();
+			this.updateAssistantMessage(session, turn, assistantMessageId, assistantText, "completed");
+			const assistantMessage = session.messages.find(
+				(message) => message.id === assistantMessageId,
+			);
+			if (assistantMessage) assistantMessage.tokenCount = tokenEstimate;
+			await this.persistSession(session, {
+				owner: "chat-engine",
+				reason: "turn-complete",
+				turnId: turn.id,
+			});
 
 			if (!signal.aborted) {
 				yield { type: "finish", reason: "complete" };
 			}
 		} catch (err) {
 			const message = err instanceof Error ? err.message : String(err);
+			turn.status = signal.aborted ? "cancelled" : "failed";
+			turn.error = signal.aborted ? undefined : message;
+			turn.updatedAt = Date.now();
+			if (assistantText) {
+				this.updateAssistantMessage(
+					session,
+					turn,
+					assistantMessageId,
+					assistantText,
+					turn.status,
+				);
+			}
+			await this.persistSession(session, {
+				owner: "chat-engine",
+				reason: signal.aborted ? "turn-cancelled" : "turn-failed",
+				turnId: turn.id,
+			});
 			yield { type: "error", message };
 		}
 	}
@@ -539,6 +769,82 @@ export class ChatEngine {
 	// --------------------------------------------------------------------------
 	// Helpers
 	// --------------------------------------------------------------------------
+
+	private getModelHistory(session: ChatSession): ChatModelMessage[] {
+		if (session.modelHistory) {
+			return this.withoutSystemMessages(session.modelHistory);
+		}
+		return session.messages
+			.filter((message) => message.role !== "system")
+			.map(({ role, content }) => ({ role, content }));
+	}
+
+	private withoutSystemMessages(
+		messages: ChatModelMessage[],
+	): ChatModelMessage[] {
+		return messages
+			.filter((message) => message.role !== "system")
+			.map(({ role, content }) => ({ role, content }));
+	}
+
+	private updateAssistantMessage(
+		session: ChatSession,
+		turn: ChatTurn,
+		messageId: string,
+		content: string,
+		status: ChatMessage["status"],
+	): void {
+		const existing = session.messages.find((message) => message.id === messageId);
+		if (existing) {
+			existing.content = content;
+			existing.status = status;
+			existing.turnId = turn.id;
+			return;
+		}
+		session.messages.push({
+			id: messageId,
+			role: "assistant",
+			content,
+			timestamp: Date.now(),
+			status,
+			turnId: turn.id,
+		});
+	}
+
+	private async persistSession(
+		session: ChatSession,
+		context: SessionWriteContext,
+	): Promise<void> {
+		if (!this.opts.persistenceAdapter) return;
+
+		const updated = cloneSession({
+			...session,
+			updatedAt: Date.now(),
+			persistence: {
+				...(session.persistence ?? createSessionPersistenceMetadata()),
+				schemaVersion: 1,
+			},
+		});
+		await this.enqueuePersistence(() =>
+			this.opts.persistenceAdapter!.saveSession(updated, context),
+		);
+
+		// Keep the live object and its nested turn/message arrays used by the
+		// current generator. The adapter only ever receives the clone above, so
+		// later mutations cannot rewrite a previously queued snapshot.
+		session.updatedAt = updated.updatedAt;
+		session.persistence = updated.persistence;
+		const index = this.state.sessions.findIndex((item) => item.id === session.id);
+		if (index >= 0) this.state.sessions[index] = session;
+		else this.state.sessions.unshift(session);
+		this.emitState();
+	}
+
+	private enqueuePersistence(work: () => Promise<void>): Promise<void> {
+		const next = this.persistenceQueue.then(work, work);
+		this.persistenceQueue = next.catch(() => undefined);
+		return next;
+	}
 
 	private registerAdapterTools(adapter: ToolAdapter): void {
 		const tools = adapter.getAvailableTools();

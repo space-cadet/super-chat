@@ -9,11 +9,54 @@
 
 export type MessageRole = 'user' | 'assistant' | 'system';
 
+export type SessionId = string;
+
+/** A product identity that can be mapped to a stable super-chat session. */
+export interface ExternalSessionIdentity {
+  namespace: string;
+  id: string;
+  version?: string;
+}
+
+/** Metadata needed to migrate and recover a persisted session safely. */
+export interface SessionPersistenceMetadata {
+  schemaVersion: number;
+  migratedFromVersion?: number;
+  migrationId?: string;
+}
+
+export type ChatTurnStatus =
+  | 'streaming'
+  | 'completed'
+  | 'cancelled'
+  | 'failed';
+
+export interface ChatModelMessage {
+  role: string;
+  content: string;
+}
+
+/** The durable lifecycle record for one user turn. */
+export interface ChatTurn {
+  id: string;
+  userMessageId: string;
+  assistantMessageId?: string;
+  status: ChatTurnStatus;
+  startedAt: number;
+  updatedAt: number;
+  toolCalls: ToolCall[];
+  toolResults: Record<string, ToolResult>;
+  modelMessages: ChatModelMessage[];
+  error?: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: MessageRole;
   content: string;
   timestamp: number;
+  status?: ChatTurnStatus;
+  turnId?: string;
   citations?: RetrievedPaper[];
   toolCalls?: ToolCall[];
   toolResults?: ToolResult[];
@@ -22,11 +65,18 @@ export interface ChatMessage {
 }
 
 export interface ChatSession {
-  id: string;
+  /** Stable super-chat-owned session ID. */
+  id: SessionId;
   title: string;
   createdAt: number;
   updatedAt: number;
   messages: ChatMessage[];
+  /** Optional product mapping; never used as the primary session key. */
+  externalIdentity?: ExternalSessionIdentity;
+  persistence?: SessionPersistenceMetadata;
+  turns?: ChatTurn[];
+  /** Provider-neutral history used to continue a reloaded conversation. */
+  modelHistory?: ChatModelMessage[];
   llmProvider?: string;
   llmModel?: string;
   archived?: boolean;
@@ -143,6 +193,26 @@ export interface ChatEngineOptions {
   agentLoopOptions?: AgentLoopOptions;
 }
 
+export type SessionWriteReason =
+  | 'create'
+  | 'user-message'
+  | 'partial-output'
+  | 'tool-call'
+  | 'tool-result'
+  | 'turn-complete'
+  | 'turn-cancelled'
+  | 'turn-failed'
+  | 'migration'
+  | 'manual'
+  | 'archive';
+
+/** All persistence writes originate from the ChatEngine owner. */
+export interface SessionWriteContext {
+  owner: 'chat-engine';
+  reason: SessionWriteReason;
+  turnId?: string;
+}
+
 // ============================================================================
 // Provider Types
 // ============================================================================
@@ -226,7 +296,7 @@ export interface LLMAdapter {
 
 export interface PersistenceAdapter {
   loadSessions(): Promise<ChatSession[]>;
-  saveSession(session: ChatSession): Promise<void>;
+  saveSession(session: ChatSession, context?: SessionWriteContext): Promise<void>;
   deleteSession(sessionId: string): Promise<void>;
   archiveSession(sessionId: string): Promise<void>;
 }

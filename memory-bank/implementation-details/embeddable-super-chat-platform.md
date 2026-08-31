@@ -121,6 +121,19 @@ This phase only defines the shapes and checks them. It does not yet make
 `ChatEngine` use a host. That requires the session saving and fixture-host work
 in later phases.
 
+### Implemented Phase 3 Surface
+
+The engine now owns the shared session persistence workflow. Sessions have a
+stable internal ID, an optional typed external identity, schema metadata, a
+provider-neutral model history, and durable turn records. The engine writes
+user input before provider work, saves partial output and tool lifecycle
+events, records completion/cancellation/failure, and restores the most recent
+session as active after reload. A serialized write queue makes the engine the
+single write owner while adapters receive cloned snapshots.
+
+Details and lifecycle reasons are documented in
+`implementation-details/session-persistence.md`.
+
 ## 5. Tool Safety Contract
 
 Current behavior executes tools when no approval callback exists. This must
@@ -293,8 +306,8 @@ Do not begin the broad Obsidian migration until this slice is green.
 - Tool risk classification and per-capability policy remain Phase 2 host-
   policy follow-up; `autoApply` is still the only explicit bypass.
 - Phase 2 host service shapes and checks are complete. Session identity, one
-  save owner, migration, reload, and host-to-engine wiring remain Phase 3 and
-  Phase 4 work.
+  save owner, migration, and reload are implemented in Phase 3. Host-to-engine
+  wiring and the fixture browser flow remain Phase 4 work.
 - `ragAdapter` and `contextAdapter` are declared but not consumed by the main
   send path.
 - Arxivite creates a second in-memory session, adds an untyped mapping, owns

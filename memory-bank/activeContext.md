@@ -1,6 +1,6 @@
 # Active Context
 
-*Last Updated: 2026-08-31 23:22:41 IST*
+*Last Updated: 2026-09-01 00:10:17 IST*
 
 ## Current Program: INFRA-1 Unified super-chat Application Platform
 
@@ -26,13 +26,20 @@ owned; React uses observable snapshots instead of polling. `super-chat/contracts
 now provides optional host services without importing product platform types.
 TypeScript, 111 tests, and ESM/CJS/declaration builds pass.
 
-The Phase 1 and Phase 2 work is committed and pushed in `be9802e` and
-`44e1c1e`. The 2026-08-31 session is closed with local `main` matching
-`origin/main` and a clean working tree.
+Phase 3 is complete in the working tree: sessions have stable internal and
+typed external identities, versioned migration metadata, durable turn/model
+history, serialized engine-owned writes, and reload recovery. TypeScript, 118
+tests, and ESM/CJS/declaration builds pass.
 
-Immediate next implementation slice is Phase 3: define shared session IDs,
-save/restore rules, migration information, and exactly one owner for writes.
-Phase 4 will then prove those rules with a fixture host.
+The Phase 1 and Phase 2 work is committed and pushed in `be9802e` and
+`44e1c1e`. Phase 3 is implemented locally but not yet committed or pushed.
+The next implementation slice is Phase 4: prove the rules with a fixture host
+before starting Obsidian or Arxivite migration.
+
+Immediate next implementation slice is Phase 4: mount a fixture host and prove
+reload, streaming, cancellation, one read tool, one approval-required write
+tool, and retrieval provenance. Product migrations remain deferred until that
+slice is green.
 
 T15 owns behavior-preserving extraction from `obsidian-ai`; T18 owns the
 Obsidian host migration; T19 makes Arxivite a `SuperChatApp` harness; T16 owns
