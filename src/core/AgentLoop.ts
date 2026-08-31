@@ -247,8 +247,11 @@ export class AgentLoop {
 
 				let approved = autoApply;
 				let rejectionReason = "Tool approval is required but unavailable";
+				const definition = tools.find((tool) => tool.name === call.name);
+				const requiresApproval = definition?.approval !== "never";
+				if (!requiresApproval) approved = true;
 
-				if (!autoApply && this.opts.requestApproval) {
+				if (requiresApproval && !autoApply && this.opts.requestApproval) {
 					// Notify consumer that approval is needed
 					yield { type: "pending-approval", call };
 					approved = await this.opts.requestApproval(call, signal);

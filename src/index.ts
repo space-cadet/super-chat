@@ -7,6 +7,7 @@ export type {
 	MessageRole,
 	ChatMessage,
 	ChatModelMessage,
+	ChatRetrievedSource,
 	ChatSession,
 	ChatTurn,
 	ChatTurnStatus,
@@ -74,6 +75,8 @@ export { VercelLLMAdapter, createProviderProfile } from './adapters/VercelLLMAda
 export { MemoryPersistenceAdapter } from './adapters/MemoryPersistence';
 export { LocalStoragePersistenceAdapter } from './adapters/LocalStoragePersistence';
 export { DemoToolAdapter } from './adapters/DemoToolAdapter';
+export { HostPersistenceAdapter, HostRAGAdapter, HostToolAdapter, createChatEngineForHost } from './adapters/HostAdapters';
+export { FixtureSuperChatHost } from './adapters/FixtureSuperChatHost';
 
 // Core classes
 export { ChatEngine } from './core/ChatEngine';

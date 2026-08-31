@@ -1,6 +1,6 @@
 # Session Cache — super-chat
 
-*Last Updated*: 2026-09-01 00:10:17 IST
+*Last Updated*: 2026-09-01 01:50:00 IST
 
 ## Global Program Tracker
 
@@ -17,14 +17,19 @@
   `super-chat/contracts`, plus a plain-language guide.
 - Verification passed: TypeScript, 10 test files / 111 tests, and ESM/CJS/DTS
   builds including the contracts export.
-- Phase 3 is complete locally: shared identity, migration, reload, turn
+- Phase 3 is complete and pushed as `a07a18e`: shared identity, migration, reload, turn
   lifecycle, model history, partial-output saves, and one serialized engine
   write owner are implemented and tested.
 - Verification passed: TypeScript, 11 test files / 118 tests, ESM/CJS/DTS
   builds, and `git diff --check`.
-- Phase 3 is not committed or pushed yet. Next: Phase 4 fixture-host proof.
+- Phase 4 is complete and pushed as the follow-up checkpoint: the fixture host,
+  host-to-engine adapters, `SuperChatApp`, read/write approval flow, retrieval
+  provenance UI, reload/archive/delete flow, and render/engine acceptance tests
+  are implemented.
+- Verification passed: TypeScript, 13 test files / 122 tests, package ESM/CJS/
+  declaration build, Vite demo build, and `git diff --check`.
 
-## Current Session: T22 Phase 3 Session Persistence
+## Current Session: T22 Phase 4 Fixture Host
 
 - Recorded `super-chat` as the complete chat application and reusable runtime.
 - Defined products as capability hosts rather than owners of chat mechanics.
@@ -32,13 +37,17 @@
   `implementation-details/embeddable-super-chat-platform.md`.
 - Created T22 and reconciled T15–T19.
 - Retired T17's premature Arxivite feature-toggle flip.
-- Completed this session: Phase 3 shared session identity, versioned migration,
-  durable turn state, model continuation history, partial/cancelled/failed
-  lifecycle saves, and the serialized engine-owned persistence queue.
-- Verification passed: TypeScript, 118 tests, ESM/CJS/DTS builds, and diff
-  checks.
-- Next action: build the fixture-host vertical slice. Do not migrate either
-  product before that host proves the full flow.
+- Completed this session: Phase 3 was committed/pushed, then Phase 4 added the
+  fixture host, capability bridge, host-driven `SuperChatApp`, source
+  provenance, safe read execution, explicit write approval, persistence reload,
+  archive/delete behavior, and acceptance coverage.
+- Verification passed: TypeScript, 122 tests, package ESM/CJS/DTS build, Vite
+  demo build, and diff checks. The `pnpm build` wrapper was not usable in this
+  non-interactive environment because pnpm attempted to remove `node_modules`;
+  the pinned local tsup build completed successfully.
+- Next action: T16 Phase 5 shared host-backed RAG hardening. Keep Obsidian and
+  Arxivite migrations deferred until their host adapters pass equivalent
+  acceptance.
 
 ## Previous Session
 

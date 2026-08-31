@@ -83,6 +83,28 @@ describe('MessageBubble', () => {
     expect(screen.getByText(/Quantum Computing Basics/)).toBeInTheDocument();
   });
 
+  it('shows retrieved sources with provenance when present', () => {
+    const messageWithSource: ChatMessage = {
+      ...assistantMessage,
+      sources: [
+        {
+          id: 'source-1',
+          title: 'Fixture host guide',
+          content: 'Fixture content',
+          uri: 'fixture://guide',
+          provenance: {
+            capabilityId: 'fixture.retrieval',
+            sourceId: 'source-1',
+            retrievedAt: Date.now(),
+          },
+        },
+      ],
+    };
+    render(<MessageBubble message={messageWithSource} />);
+    expect(screen.getByText('Fixture host guide')).toHaveAttribute('href', 'fixture://guide');
+    expect(screen.getByText(/fixture\.retrieval \/ source-1/)).toBeInTheDocument();
+  });
+
   it('shows pending tool cards when toolCalls exist without results', () => {
     const messageWithTool: ChatMessage = {
       ...assistantMessage,

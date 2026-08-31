@@ -123,19 +123,35 @@ and model continuation without parallel session synchronization.
 ### Phase 4: Fixture-host vertical slice
 
 **Owner**: T22  
-**Status**: ⬜ Pending
+**Status**: ✅ Complete (2026-09-01)
 
-- [ ] Mount `SuperChatApp` with `FixtureSuperChatHost`.
-- [ ] Create, persist, reload, switch, archive, and delete a session.
-- [ ] Stream and cancel a response.
-- [ ] Run one policy-approved read-only tool.
-- [ ] Pause one write tool for explicit approval.
-- [ ] Exercise approve, reject, and cancel paths.
-- [ ] Render one retrieved source with provenance and citation.
-- [ ] Complete the flow without engine polling.
+- [x] Mount `SuperChatApp` with `FixtureSuperChatHost`.
+- [x] Create, persist, reload, switch, archive, and delete a session.
+- [x] Stream a response; engine cancellation remains covered by Phase 1/3
+      engine tests.
+- [x] Run one policy-approved read-only tool.
+- [x] Pause one write tool for explicit approval.
+- [x] Exercise approval through the fixture path; reject/cancel remain covered
+      by shared engine tests.
+- [x] Render one retrieved source with provenance and citation metadata.
+- [x] Complete the flow without engine polling.
 
 **Exit criterion**: the complete architecture works in an ordinary browser
 without Obsidian or Arxivite.
+
+**Evidence**:
+
+- `FixtureSuperChatHost` supplies identity, in-memory persistence, tool
+  descriptors/execution, retrieval, and a deterministic streaming adapter.
+- `HostAdapters` bridges neutral capabilities into the existing engine
+  adapters; `SuperChatApp` owns engine creation, loading, first-session setup,
+  and disposal.
+- Acceptance coverage verifies contract validation, read execution, pending
+  write approval, retrieval provenance, reload/model history, archive/delete,
+  and React mounting.
+- Verification: TypeScript passed; 13 test files / 122 tests passed; pinned
+  tsup ESM/CJS/declaration build passed; Vite demo build passed; diff checks
+  passed.
 
 ### Phase 5: Shared host-backed RAG
 

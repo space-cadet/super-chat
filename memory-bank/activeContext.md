@@ -1,6 +1,6 @@
 # Active Context
 
-*Last Updated: 2026-09-01 00:10:17 IST*
+*Last Updated: 2026-09-01 01:50:00 IST*
 
 ## Current Program: INFRA-1 Unified super-chat Application Platform
 
@@ -26,20 +26,17 @@ owned; React uses observable snapshots instead of polling. `super-chat/contracts
 now provides optional host services without importing product platform types.
 TypeScript, 111 tests, and ESM/CJS/declaration builds pass.
 
-Phase 3 is complete in the working tree: sessions have stable internal and
-typed external identities, versioned migration metadata, durable turn/model
-history, serialized engine-owned writes, and reload recovery. TypeScript, 118
-tests, and ESM/CJS/declaration builds pass.
+Phase 3 is complete and committed/pushed as `a07a18e`: sessions have stable
+internal and typed external identities, versioned migration metadata, durable
+turn/model history, serialized engine-owned writes, and reload recovery.
 
-The Phase 1 and Phase 2 work is committed and pushed in `be9802e` and
-`44e1c1e`. Phase 3 is implemented locally but not yet committed or pushed.
-The next implementation slice is Phase 4: prove the rules with a fixture host
-before starting Obsidian or Arxivite migration.
-
-Immediate next implementation slice is Phase 4: mount a fixture host and prove
-reload, streaming, cancellation, one read tool, one approval-required write
-tool, and retrieval provenance. Product migrations remain deferred until that
-slice is green.
+Phase 4 is complete and pushed in the follow-up checkpoint: a neutral
+fixture host now mounts through `SuperChatApp`, bridges host persistence/tools/
+retrieval capabilities, proves read and approval-required write flows, and
+renders retrieved-source provenance. TypeScript, 122 tests, package ESM/CJS/
+declaration builds, and the Vite demo build pass. The next shared-core phase is
+host-backed RAG hardening; product migrations remain deferred until the
+fixture evidence is carried into their hosts.
 
 T15 owns behavior-preserving extraction from `obsidian-ai`; T18 owns the
 Obsidian host migration; T19 makes Arxivite a `SuperChatApp` harness; T16 owns

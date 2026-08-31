@@ -4,6 +4,7 @@ import type {
 	ChatSession,
 	ChatTurn,
 	ExternalSessionIdentity,
+	ChatRetrievedSource,
 	SessionPersistenceMetadata,
 	SessionWriteContext,
 } from "./types";
@@ -152,7 +153,18 @@ function normalizeTurns(value: unknown): ChatTurn[] | null {
 		toolCalls: turn.toolCalls.map((call) => ({ ...call, args: { ...call.args } })),
 		toolResults: { ...turn.toolResults },
 		modelMessages: cloneModelMessages(turn.modelMessages),
+		...(turn.retrievedSources
+			? { retrievedSources: turn.retrievedSources.map(cloneRetrievedSource) }
+			: {}),
 	}));
+}
+
+function cloneRetrievedSource(source: ChatRetrievedSource): ChatRetrievedSource {
+	return {
+		...source,
+		metadata: source.metadata ? { ...source.metadata } : undefined,
+		provenance: { ...source.provenance },
+	};
 }
 
 function normalizeModelHistory(value: unknown): ChatModelMessage[] | null {

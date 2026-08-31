@@ -104,6 +104,33 @@ export function MessageBubble({ message, onEdit, onRetry, onApproveTool, onRejec
           </div>
         )}
 
+        {message.sources && message.sources.length > 0 && (
+          <div className="mt-2 pt-2 border-t border-gray-200/50">
+            <p className="text-xs font-medium text-gray-500 mb-1.5">Sources:</p>
+            <div className="space-y-1.5">
+              {message.sources.map((source) => (
+                <div key={source.id} className="text-xs text-gray-600">
+                  {source.uri ? (
+                    <a
+                      href={source.uri}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline font-medium"
+                    >
+                      {source.title}
+                    </a>
+                  ) : (
+                    <span className="font-medium">{source.title}</span>
+                  )}
+                  <span className="ml-1 text-gray-400">
+                    ({source.provenance.capabilityId} / {source.provenance.sourceId})
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Pending tool calls (no results yet) */}
         {message.toolCalls && message.toolCalls.length > 0 && (!message.toolResults || message.toolResults.length === 0) && onApproveTool && onRejectTool && (
           <div className="mt-2 space-y-2">

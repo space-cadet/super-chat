@@ -10,6 +10,7 @@ export type { AgentConfig, AgentState, AgentActions, UseAgentReturn } from './ho
 
 export {
   ChatApp,
+  SuperChatApp,
   MessageBubble,
   ChatInput,
   PendingToolCard,
@@ -17,3 +18,5 @@ export {
   ToolResultCard,
   MarkdownRenderer,
 } from './components';
+
+export type { SuperChatAppProps } from './components';

@@ -36,6 +36,20 @@ export interface ChatModelMessage {
   content: string;
 }
 
+export interface ChatRetrievedSource {
+  id: string;
+  title: string;
+  content: string;
+  uri?: string;
+  score?: number;
+  metadata?: Record<string, unknown>;
+  provenance: {
+    capabilityId: string;
+    sourceId: string;
+    retrievedAt: number;
+  };
+}
+
 /** The durable lifecycle record for one user turn. */
 export interface ChatTurn {
   id: string;
@@ -47,6 +61,7 @@ export interface ChatTurn {
   toolCalls: ToolCall[];
   toolResults: Record<string, ToolResult>;
   modelMessages: ChatModelMessage[];
+  retrievedSources?: ChatRetrievedSource[];
   error?: string;
 }
 
@@ -57,6 +72,7 @@ export interface ChatMessage {
   timestamp: number;
   status?: ChatTurnStatus;
   turnId?: string;
+  sources?: ChatRetrievedSource[];
   citations?: RetrievedPaper[];
   toolCalls?: ToolCall[];
   toolResults?: ToolResult[];
@@ -104,6 +120,9 @@ export interface ToolDefinition {
   name: string;
   description: string;
   parameters: Record<string, unknown>;
+  risk?: 'read' | 'write' | 'destructive' | 'external';
+  approval?: 'never' | 'always' | 'host-policy';
+  title?: string;
 }
 
 // ============================================================================
@@ -305,6 +324,7 @@ export interface RAGAdapter {
   analyzeQuery(query: string): Promise<QueryAnalysisResult>;
   retrievePapers(analysis: QueryAnalysisResult): Promise<RetrievedPaper[]>;
   buildContext(papers: RetrievedPaper[]): Promise<string>;
+  retrieveSources?(query: string): Promise<ChatRetrievedSource[]>;
 }
 
 export interface ContextAdapter {

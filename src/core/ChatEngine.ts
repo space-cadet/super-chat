@@ -319,6 +319,10 @@ export class ChatEngine {
 		};
 		const turn = createTurn(userMessage, [userModelMessage]);
 		turn.assistantMessageId = `assistant-${turn.id}`;
+		const enableRAG = options?.enableRAG ?? this.state.settings.enableRAG;
+		if (enableRAG && this.opts.ragAdapter?.retrieveSources) {
+			turn.retrievedSources = await this.opts.ragAdapter.retrieveSources(text);
+		}
 		session.turns = [...(session.turns ?? []), turn];
 		session.modelHistory = [...priorModelHistory, userModelMessage];
 
@@ -333,12 +337,20 @@ export class ChatEngine {
 						},
 					]
 				: []),
-			...priorModelHistory.map((message, index) => ({
+				...priorModelHistory.map((message, index) => ({
 				id: `history-${session.id}-${index}`,
 				role: message.role as ChatMessage["role"],
 				content: message.content,
-				timestamp: 0,
-			})),
+					timestamp: 0,
+				})),
+			...(turn.retrievedSources?.length
+				? [{
+						id: `retrieval-${turn.id}`,
+						role: "system" as const,
+						content: this.formatRetrievedSources(turn.retrievedSources),
+						timestamp: 0,
+					}]
+				: []),
 			userMessage,
 		];
 
@@ -799,6 +811,7 @@ export class ChatEngine {
 			existing.content = content;
 			existing.status = status;
 			existing.turnId = turn.id;
+			existing.sources = turn.retrievedSources;
 			return;
 		}
 		session.messages.push({
@@ -808,7 +821,15 @@ export class ChatEngine {
 			timestamp: Date.now(),
 			status,
 			turnId: turn.id,
+			sources: turn.retrievedSources,
 		});
+	}
+
+	private formatRetrievedSources(sources: NonNullable<ChatTurn["retrievedSources"]>): string {
+		return [
+			"Retrieved context:",
+			...sources.map((source) => `- ${source.title}: ${source.content}`),
+		].join("\n");
 	}
 
 	private async persistSession(
