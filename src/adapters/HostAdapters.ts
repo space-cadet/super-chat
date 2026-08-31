@@ -2,6 +2,7 @@ import type {
 	ChatEngineOptions,
 	PersistenceAdapter,
 	RAGAdapter,
+	RetrievalResult,
 	ToolAdapter,
 	ToolCall,
 	ToolDefinition,
@@ -85,7 +86,7 @@ export class HostRAGAdapter implements RAGAdapter {
 		query: string,
 		signal?: AbortSignal,
 		options?: { maxResults?: number },
-	): Promise<RetrievedSource[]> {
+	): Promise<RetrievedSource[] | RetrievalResult> {
 		return this.capability.retrieve(
 			{ query, ...(options?.maxResults !== undefined ? { maxResults: options.maxResults } : {}) },
 			createOperationContext(signal),
@@ -93,7 +94,8 @@ export class HostRAGAdapter implements RAGAdapter {
 	}
 
 	async retrievePapers(analysis: Awaited<ReturnType<HostRAGAdapter["analyzeQuery"]>>) {
-		const sources = await this.retrieveSources(analysis.keywords.join(" "));
+		const result = await this.retrieveSources(analysis.keywords.join(" "));
+		const sources = Array.isArray(result) ? result : result.sources;
 		return sources.map((source) => ({
 			id: source.id,
 			title: source.title,

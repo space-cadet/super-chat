@@ -379,8 +379,67 @@ describe("ChatEngine", () => {
 			expect(retrieveSources).toHaveBeenCalledOnce();
 
 			const latestTurnId = engine.getActiveSession()?.turns?.at(-1)?.id;
-			await collectEvents(engine.replayTurn(latestTurnId!, { refreshRetrieval: true, enableRAG: true }));
+			await collectEvents(engine.replayTurn(latestTurnId!, { refreshRetrieval: true }));
 			expect(retrieveSources).toHaveBeenCalledTimes(2);
+		});
+
+		it("replays a saved zero-result retrieval without silently searching or using the provider", async () => {
+			const persistence = createMockPersistenceAdapter();
+			const retrieveSources = vi.fn(async () => []);
+			const streamChat = vi.fn(async function* () {
+				yield "answer";
+			});
+			const rag: RAGAdapter = {
+				analyzeQuery: async () => ({ intent: "test", keywords: [], requiresRetrieval: true }),
+				retrievePapers: async () => [],
+				buildContext: async () => "",
+				retrieveSources,
+			};
+			const engine = new ChatEngine({
+				llmAdapter: { ...createMockLLMAdapter(), streamChat },
+				ragAdapter: rag,
+				persistenceAdapter: persistence,
+			});
+			engine.createSession("Empty retrieval");
+			await collectEvents(engine.sendMessage("nothing", { enableRAG: true }));
+			const turnId = engine.getActiveSession()?.turns?.at(-1)?.id;
+
+			const events = await collectEvents(engine.replayTurn(turnId!));
+
+			expect(retrieveSources).toHaveBeenCalledOnce();
+			expect(streamChat).toHaveBeenCalledTimes(2);
+			expect(events).toContainEqual({ type: "finish", reason: "complete" });
+			expect(engine.getActiveSession()?.turns?.at(-1)).toMatchObject({
+				retrievalStatus: "complete",
+				retrievedContext: "",
+			});
+		});
+
+		it("replays a failed retrieval as a terminal failure until explicitly refreshed", async () => {
+			const retrieveSources = vi.fn(async () => {
+				throw new Error("host unavailable");
+			});
+			const streamChat = vi.fn(async function* () {
+				yield "should not run";
+			});
+			const engine = new ChatEngine({
+				llmAdapter: { ...createMockLLMAdapter(), streamChat },
+				ragAdapter: {
+					analyzeQuery: async () => ({ intent: "test", keywords: [], requiresRetrieval: true }),
+					retrievePapers: async () => [],
+					buildContext: async () => "",
+					retrieveSources,
+				},
+			});
+			engine.createSession("Failed retrieval");
+			await collectEvents(engine.sendMessage("retry me", { enableRAG: true }));
+			const turnId = engine.getActiveSession()?.turns?.at(-1)?.id;
+
+			const events = await collectEvents(engine.replayTurn(turnId!));
+
+			expect(retrieveSources).toHaveBeenCalledOnce();
+			expect(streamChat).not.toHaveBeenCalled();
+			expect(events).toContainEqual({ type: "error", message: "host unavailable" });
 		});
 	});
 

@@ -73,7 +73,7 @@ interface PendingApproval {
 interface ReplayContext {
 	sources: NonNullable<ChatTurn["retrievedSources"]>;
 	context: string;
-	status: "complete" | "partial";
+	status: NonNullable<ChatTurn["retrievalStatus"]>;
 	warnings: string[];
 	error?: RetrievalError;
 }
@@ -335,19 +335,25 @@ export class ChatEngine {
 			return;
 		}
 
+		const hasSavedRetrieval =
+			turn.retrievalStatus !== undefined ||
+			turn.retrievedContext !== undefined ||
+			turn.retrievedSources !== undefined;
 		const replayContext: ReplayContext | undefined =
-			!options?.refreshRetrieval && turn.retrievedContext
+			!options?.refreshRetrieval && hasSavedRetrieval
 				? {
 						sources: structuredClone(turn.retrievedSources ?? []),
-						context: turn.retrievedContext,
-						status: turn.retrievalStatus === "partial" ? "partial" : "complete",
+						context: turn.retrievedContext ?? "",
+						status: turn.retrievalStatus ?? "complete",
 						warnings: [...(turn.retrievalWarnings ?? [])],
 						...(turn.retrievalError ? { error: { ...turn.retrievalError } } : {}),
 					}
 				: undefined;
-		const replayOptions = replayContext
-			? { ...options, enableRAG: false }
-			: options;
+		const replayOptions = options?.refreshRetrieval
+			? { ...options, enableRAG: true }
+			: replayContext
+				? { ...options, enableRAG: false }
+				: options;
 		yield* this.runMessage(userMessage.content, replayOptions, replayContext);
 	}
 
@@ -429,8 +435,15 @@ export class ChatEngine {
 		const enableRAG = replayContext
 			? false
 			: options?.enableRAG ?? this.state.settings.enableRAG;
+		const replaySnapshotStatus = replayContext
+			? replayContext.status === "complete" || replayContext.status === "partial"
+				? replayContext.status
+				: replayContext.status === "cancelled"
+					? "cancelled"
+					: "failed"
+			: undefined;
 		this.setRetrievalState({
-			status: replayContext ? replayContext.status : enableRAG ? "retrieving" : "idle",
+			status: replaySnapshotStatus ?? (enableRAG ? "retrieving" : "idle"),
 			progress: replayContext ? 1 : 0,
 			sources: replayContext?.sources ?? [],
 			warnings: replayContext?.warnings ?? [],
@@ -458,6 +471,31 @@ export class ChatEngine {
 				for (const warning of replayContext.warnings) {
 					yield { type: "rag-warning", message: warning };
 				}
+				if (replayContext.status !== "complete" && replayContext.status !== "partial") {
+					const message = replayContext.error?.message ??
+						`Saved retrieval was ${replayContext.status}.`;
+					if (replayContext.status === "cancelled") abortController.abort();
+					this.setRetrievalState({
+						status: replayContext.status === "cancelled" ? "cancelled" : "failed",
+						progress: 1,
+						sources: [],
+						warnings: replayContext.warnings,
+						...(replayContext.error ? { error: { ...replayContext.error } } : {}),
+					});
+					yield {
+						type: "rag-status",
+						status: replayContext.status === "cancelled" ? "cancelled" : "failed",
+					};
+					await this.persistSession(session, {
+						owner: "chat-engine",
+						reason: "retrieval",
+						turnId: turn.id,
+					});
+					await this.finishPreProviderTurn(session, turn, signal, message);
+					if (replayContext.status !== "cancelled") yield { type: "error", message };
+					return;
+				}
+
 				await this.persistSession(session, {
 					owner: "chat-engine",
 					reason: "retrieval",
@@ -565,6 +603,14 @@ export class ChatEngine {
 				}
 
 				if (signal.aborted) {
+					turn.retrievalStatus = "cancelled";
+					turn.retrievedSources = undefined;
+					turn.retrievedContext = undefined;
+					turn.retrievalError = {
+						code: "cancelled",
+						message: "Retrieval cancelled",
+						retryable: false,
+					};
 					this.setRetrievalState({
 						status: "cancelled",
 						progress: 1,

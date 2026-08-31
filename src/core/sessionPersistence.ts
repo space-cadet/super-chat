@@ -104,7 +104,9 @@ export function normalizePersistedSession(
 
 	const rawVersion = getSchemaVersion(value.persistence);
 	const migrated = rawVersion !== CURRENT_SESSION_SCHEMA_VERSION;
-	const messages = value.messages.filter(isChatMessage);
+	const messages = value.messages.filter(isChatMessage).map((message) =>
+		structuredClone(message),
+	);
 	const recovered = messages.length !== value.messages.length;
 	const turns = normalizeTurns(value.turns);
 	const modelHistory = normalizeModelHistory(value.modelHistory);
@@ -191,7 +193,9 @@ function isChatMessage(value: unknown): value is ChatMessage {
 		typeof value.id === "string" &&
 		(value.role === "user" || value.role === "assistant" || value.role === "system") &&
 		typeof value.content === "string" &&
-		typeof value.timestamp === "number"
+		typeof value.timestamp === "number" &&
+		(value.sources === undefined ||
+			(Array.isArray(value.sources) && value.sources.every(isRetrievedSource)))
 	);
 }
 

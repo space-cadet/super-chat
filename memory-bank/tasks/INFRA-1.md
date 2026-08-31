@@ -192,13 +192,15 @@ package build, and `git diff --check`.
 
 The bounded context slice is also verified: source validation, deduplication,
 deterministic ordering, result/context limits, untrusted-evidence formatting,
-and durable assembled context are implemented. Full replay behavior and host
-conformance remain open.
+and durable assembled context are implemented. Latest-turn replay now reuses
+saved retrieval outcomes safely, with explicit refresh behavior; richer host
+conformance remains open.
 
 Normalized retrieval outcomes and observable React retrieval state are now
 verified: partial results continue provider work with warnings, while unsafe
-or unavailable outcomes stop the turn with typed errors. The remaining Phase 5
-gap is replay behavior and host conformance.
+or unavailable outcomes stop the turn with typed errors. Replay policy and
+durable retrieval presence are now hardened; the remaining Phase 5 gap is
+richer host conformance.
 
 ### Phase 6: Package and compatibility discipline
 

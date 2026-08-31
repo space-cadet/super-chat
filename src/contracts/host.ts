@@ -1,5 +1,6 @@
 import type {
 	ChatSession,
+	RetrievalResult,
 	ToolCall,
 	ToolDefinition,
 	ToolResult,
@@ -129,10 +130,10 @@ export interface RetrievedSource {
 
 export interface RetrievalCapability extends HostCapabilityBase {
 	kind: "retrieval";
-	retrieve(
+	 retrieve(
 		request: RetrievalRequest,
 		context: HostOperationContext,
-	): Promise<RetrievedSource[]>;
+	): Promise<RetrievedSource[] | RetrievalResult>;
 }
 
 export interface HostDocument {

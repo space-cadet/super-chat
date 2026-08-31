@@ -85,7 +85,8 @@ approval, and recovery before either product migration begins.
 `ChatEngine.replayTurn` and `replayMessage` replay only the latest turn. They
 append a new durable turn using the original user message, preserving the
 original turn and response rather than overwriting history. If the original
-turn has persisted retrieval context, replay uses that bounded context and
-does not call the host retrieval capability again. `refreshRetrieval: true`
-explicitly opts into a new host search. Older-turn replay is rejected until a
-separate branching model can define how later history should be handled.
+turn has a persisted retrieval outcome, replay uses that bounded context or
+reproduces the saved terminal retrieval outcome without calling the host again.
+`refreshRetrieval: true` explicitly enables a new host search. Older-turn
+replay is rejected until a separate branching model can define how later
+history should be handled.

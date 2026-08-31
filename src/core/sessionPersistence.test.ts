@@ -249,4 +249,53 @@ describe("session persistence contract", () => {
 		]);
 		expect(normalizePersistedSession({ id: "broken", messages: [] }).session).toBeNull();
 	});
+
+	it("recovers valid messages while dropping malformed persisted source provenance", () => {
+		const persisted: ChatSession = {
+			id: "source-recovery",
+			title: "Source recovery",
+			createdAt: 1,
+			updatedAt: 2,
+			messages: [
+				{
+					id: "valid",
+					role: "assistant",
+					content: "valid",
+					timestamp: 1,
+					sources: [{
+						id: "source-1",
+						title: "Source",
+						content: "Evidence",
+						provenance: {
+							capabilityId: "fixture.retrieval",
+							sourceId: "source-1",
+							retrievedAt: 1,
+						},
+					}],
+				},
+				{
+					id: "malformed",
+					role: "assistant",
+					content: "malformed",
+					timestamp: 2,
+					sources: [{
+						id: "source-2",
+						title: "Source",
+						content: "Evidence",
+						provenance: { capabilityId: "fixture.retrieval", sourceId: "", retrievedAt: 1 },
+					}],
+				},
+			],
+		};
+
+		const normalized = normalizePersistedSession(persisted);
+
+		expect(normalized.recovered).toBe(true);
+		expect(normalized.session?.messages).toHaveLength(1);
+		expect(normalized.session?.messages[0].sources?.[0].provenance).toEqual({
+			capabilityId: "fixture.retrieval",
+			sourceId: "source-1",
+			retrievedAt: 1,
+		});
+	});
 });

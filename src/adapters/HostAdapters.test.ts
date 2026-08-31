@@ -22,4 +22,23 @@ describe("HostRAGAdapter", () => {
 		expect(receivedRequest).toEqual({ query: "host query", maxResults: 4 });
 		expect(receivedSignal).toBe(signal);
 	});
+
+	it("passes rich retrieval outcomes through the neutral host adapter", async () => {
+		const capability: RetrievalCapability = {
+			id: "test.retrieval",
+			kind: "retrieval",
+			retrieve: async () => ({
+				sources: [],
+				status: "partial",
+				warnings: ["One source was unavailable"],
+				error: { code: "unavailable", message: "Partial result" },
+			}),
+		};
+		const adapter = new HostRAGAdapter(capability);
+
+		expect(await adapter.retrieveSources("partial query")).toMatchObject({
+			status: "partial",
+			warnings: ["One source was unavailable"],
+		});
+	});
 });

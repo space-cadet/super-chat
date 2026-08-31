@@ -121,6 +121,19 @@
 - Product-host conformance remains open. Shared latest-turn replay behavior is
   implemented and wired to the React retry action.
 
+## Current Continuation — T16 Replay Review Fixes
+
+- Refresh replay now forces retrieval even when the default RAG setting is off.
+- Zero-result, failed, unavailable, unauthorized, and cancelled retrieval
+  outcomes are represented independently of whether context text is non-empty.
+- The public host retrieval capability accepts either plain source arrays or
+  normalized rich outcomes, preserving compatibility with existing hosts.
+- Persisted visible-message sources now receive provenance validation and deep
+  cloning during recovery.
+- Verification passed: TypeScript, 15 Vitest files / 138 tests, pinned tsup
+  ESM/CJS/declaration build, and `git diff --check`. The next planned work is
+  richer host conformance.
+
 ## Previous Session
 
 *Session Started*: 2026-06-20 15:23 IST
