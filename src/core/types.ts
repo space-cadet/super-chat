@@ -62,6 +62,7 @@ export interface ChatTurn {
   toolResults: Record<string, ToolResult>;
   modelMessages: ChatModelMessage[];
   retrievedSources?: ChatRetrievedSource[];
+  retrievedContext?: string;
   error?: string;
 }
 
@@ -194,6 +195,7 @@ export interface SendOptions {
   enableRAG?: boolean;
   enableTools?: boolean;
   maxSteps?: number;
+  maxRetrievalResults?: number;
   signal?: AbortSignal;
 }
 
@@ -330,7 +332,11 @@ export interface RAGAdapter {
    * existing paper-oriented adapters remain source-compatible while newer
    * adapters can cancel work with the active chat turn.
    */
-  retrieveSources?(query: string, signal?: AbortSignal): Promise<ChatRetrievedSource[]>;
+  retrieveSources?(
+    query: string,
+    signal?: AbortSignal,
+    options?: { maxResults?: number },
+  ): Promise<ChatRetrievedSource[]>;
 }
 
 export interface ContextAdapter {

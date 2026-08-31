@@ -81,8 +81,15 @@ export class HostRAGAdapter implements RAGAdapter {
 		};
 	}
 
-	async retrieveSources(query: string, signal?: AbortSignal): Promise<RetrievedSource[]> {
-		return this.capability.retrieve({ query }, createOperationContext(signal));
+	async retrieveSources(
+		query: string,
+		signal?: AbortSignal,
+		options?: { maxResults?: number },
+	): Promise<RetrievedSource[]> {
+		return this.capability.retrieve(
+			{ query, ...(options?.maxResults !== undefined ? { maxResults: options.maxResults } : {}) },
+			createOperationContext(signal),
+		);
 	}
 
 	async retrievePapers(analysis: Awaited<ReturnType<HostRAGAdapter["analyzeQuery"]>>) {

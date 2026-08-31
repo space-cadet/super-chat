@@ -82,6 +82,17 @@ export { FixtureSuperChatHost } from './adapters/FixtureSuperChatHost';
 export { ChatEngine } from './core/ChatEngine';
 export { estimateTokens } from './core/tokenEstimator';
 export {
+  DEFAULT_RETRIEVAL_CONTEXT_TOKENS,
+  normalizeRetrievedSources,
+  assembleRetrievedContext,
+  estimateContextTokens,
+} from './core/retrieval';
+export type {
+  RetrievalContextOptions,
+  NormalizedRetrievedSources,
+  RetrievedContext,
+} from './core/retrieval';
+export {
 	CURRENT_SESSION_SCHEMA_VERSION,
 	SESSION_MIGRATION_ID,
 	createSessionId,

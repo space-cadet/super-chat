@@ -1,7 +1,7 @@
 # INFRA-1: Unified super-chat Application Platform Program
 
 *Created: 2026-08-31 22:44:08 IST*
-*Last Updated: 2026-09-01 02:33:00 IST*
+*Last Updated: 2026-09-01 02:47:00 IST*
 
 **Status**: 🔄 **IN PROGRESS**
 **Priority**: CRITICAL
@@ -162,7 +162,8 @@ without Obsidian or Arxivite.
 - [x] Define the initial normalized host source shape and provenance.
 - [x] Move retrieval into the protected turn lifecycle with cancellation and
       durable failure handling.
-- [ ] Apply shared context budgeting, progress, citations, and replay.
+- [ ] Apply shared progress, citations, and replay; context budgeting is now
+      implemented.
 - [ ] Keep domain retrieval algorithms in their host repositories.
 
 **Exit criterion**: `enableRAG` affects the actual turn path, and provenance
@@ -188,6 +189,11 @@ persists the user turn first, passes cancellation into host retrieval, emits
 retrieval status events, and durably records retrieval failure/cancellation.
 Verification passed with 13 test files / 124 tests, TypeScript, the pinned
 package build, and `git diff --check`.
+
+The bounded context slice is also verified: source validation, deduplication,
+deterministic ordering, result/context limits, untrusted-evidence formatting,
+and durable assembled context are implemented. Full progress/citation/replay
+behavior and normalized error outcomes remain open.
 
 ### Phase 6: Package and compatibility discipline
 

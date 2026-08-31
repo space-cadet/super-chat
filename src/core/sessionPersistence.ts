@@ -156,6 +156,9 @@ function normalizeTurns(value: unknown): ChatTurn[] | null {
 		...(turn.retrievedSources
 			? { retrievedSources: turn.retrievedSources.map(cloneRetrievedSource) }
 			: {}),
+		...(turn.retrievedContext !== undefined
+			? { retrievedContext: turn.retrievedContext }
+			: {}),
 	}));
 }
 
@@ -204,6 +207,7 @@ function isChatTurn(value: unknown): value is ChatTurn {
 		isRecord(value.toolResults) &&
 		Object.values(value.toolResults).every(isToolResult) &&
 		value.modelMessages.every(isModelMessage)
+		&& (value.retrievedContext === undefined || typeof value.retrievedContext === "string")
 	);
 }
 

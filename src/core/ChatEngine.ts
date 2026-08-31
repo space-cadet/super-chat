@@ -46,6 +46,7 @@ import {
 	normalizePersistedSession,
 } from "./sessionPersistence";
 import type { SessionLoadReport } from "./sessionPersistence";
+import { assembleRetrievedContext } from "./retrieval";
 
 // ============================================================================
 // Internal State
@@ -356,9 +357,21 @@ export class ChatEngine {
 				yield { type: "rag-status", status: "retrieving", progress: 0 };
 				try {
 					const retrievalPromise = Promise.resolve().then(() =>
-						this.opts.ragAdapter!.retrieveSources!(text, signal),
+						this.opts.ragAdapter!.retrieveSources!(
+							text,
+							signal,
+							options?.maxRetrievalResults !== undefined
+								? { maxResults: options.maxRetrievalResults }
+								: undefined,
+						),
 					);
-					turn.retrievedSources = await this.awaitWithAbort(retrievalPromise, signal);
+					const retrievedSources = await this.awaitWithAbort(retrievalPromise, signal);
+					const retrievalContext = assembleRetrievedContext(retrievedSources, {
+						maxContextTokens: this.state.settings.maxContextTokens,
+						maxResults: options?.maxRetrievalResults,
+					});
+					turn.retrievedSources = retrievalContext.sources;
+					turn.retrievedContext = retrievalContext.context;
 				} catch (error) {
 					const message = error instanceof Error ? error.message : String(error);
 					yield { type: "rag-status", status: signal.aborted ? "cancelled" : "failed" };
@@ -406,7 +419,7 @@ export class ChatEngine {
 					? [{
 							id: `retrieval-${turn.id}`,
 							role: "system" as const,
-							content: this.formatRetrievedSources(turn.retrievedSources),
+							content: turn.retrievedContext ?? this.formatRetrievedSources(turn.retrievedSources),
 							timestamp: 0,
 						}]
 					: []),
@@ -870,10 +883,7 @@ export class ChatEngine {
 	}
 
 	private formatRetrievedSources(sources: NonNullable<ChatTurn["retrievedSources"]>): string {
-		return [
-			"Retrieved context:",
-			...sources.map((source) => `- ${source.title}: ${source.content}`),
-		].join("\n");
+		return assembleRetrievedContext(sources).context;
 	}
 
 	private async finishPreProviderTurn(

@@ -84,6 +84,20 @@
   evidence formatting, normalized partial/error results, replay shaping, and
   shared React retrieval state. Product migrations remain deferred.
 
+## Current Continuation — T16 Phase 5 Context Slice
+
+- Added pure retrieval/context helpers for required-field validation,
+  capability/source deduplication, deterministic score ordering, result limits,
+  and configured context-token limits.
+- Formatted retrieved evidence with provenance and explicit untrusted-data
+  delimiters; persisted the assembled context on each durable turn.
+- Passed `maxRetrievalResults` through `HostRAGAdapter` and exported the helper
+  API from the package entry point.
+- Verification passed: TypeScript, 14 test files / 127 tests, pinned tsup
+  ESM/CJS/declaration build, and `git diff --check`.
+- Remaining: normalized result/error contracts, partial/warning handling,
+  replay behavior, and shared React retrieval state.
+
 ## Previous Session
 
 *Session Started*: 2026-06-20 15:23 IST
