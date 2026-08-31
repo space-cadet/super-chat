@@ -221,6 +221,7 @@ export type SessionWriteReason =
   | 'turn-complete'
   | 'turn-cancelled'
   | 'turn-failed'
+  | 'retrieval'
   | 'migration'
   | 'manual'
   | 'archive';
@@ -324,7 +325,12 @@ export interface RAGAdapter {
   analyzeQuery(query: string): Promise<QueryAnalysisResult>;
   retrievePapers(analysis: QueryAnalysisResult): Promise<RetrievedPaper[]>;
   buildContext(papers: RetrievedPaper[]): Promise<string>;
-  retrieveSources?(query: string): Promise<ChatRetrievedSource[]>;
+  /**
+   * Neutral host-backed retrieval entry point. The signal is optional so
+   * existing paper-oriented adapters remain source-compatible while newer
+   * adapters can cancel work with the active chat turn.
+   */
+  retrieveSources?(query: string, signal?: AbortSignal): Promise<ChatRetrievedSource[]>;
 }
 
 export interface ContextAdapter {

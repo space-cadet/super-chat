@@ -8,6 +8,8 @@ import type {
 	ToolDefinition,
 	ToolResult,
 	ToolCall,
+	RAGAdapter,
+	ChatRetrievedSource,
 } from "./types";
 
 // ============================================================================
@@ -156,6 +158,96 @@ describe("ChatEngine", () => {
 
 			expect(events.some((e) => e.type === "usage")).toBe(true);
 			expect(events.some((e) => e.type === "metrics")).toBe(true);
+		});
+
+		it("locks and persists the turn before slow retrieval", async () => {
+			let retrievalStarted!: () => void;
+			let releaseRetrieval!: (sources: ChatRetrievedSource[]) => void;
+			const started = new Promise<void>((resolve) => {
+				retrievalStarted = resolve;
+			});
+			const retrieval = new Promise<ChatRetrievedSource[]>((resolve) => {
+				releaseRetrieval = resolve;
+			});
+			const rag: RAGAdapter = {
+				analyzeQuery: async () => ({ intent: "test", keywords: [], requiresRetrieval: true }),
+				retrievePapers: async () => [],
+				buildContext: async () => "",
+				retrieveSources: vi.fn(async (_query, signal) => {
+					retrievalStarted();
+					expect(signal).toBeInstanceOf(AbortSignal);
+					return retrieval;
+				}),
+			};
+			const persistence = createMockPersistenceAdapter();
+			const engine = new ChatEngine({
+				llmAdapter: createMockLLMAdapter([], ["unused"]),
+				ragAdapter: rag,
+				persistenceAdapter: persistence,
+			});
+			engine.createSession("Retrieval lock");
+
+			const stream = engine.sendMessage("slow query", { enableRAG: true })[Symbol.asyncIterator]();
+			expect((await stream.next()).value).toEqual({
+				type: "rag-status",
+				status: "retrieving",
+				progress: 0,
+			});
+			const pendingRetrieval = stream.next();
+			await started;
+			expect(engine.isStreaming).toBe(true);
+			expect(rag.retrieveSources).toHaveBeenCalledOnce();
+			const saveSessionMock = persistence.saveSession as ReturnType<typeof vi.fn>;
+			const savedUserTurn = saveSessionMock.mock.calls.at(-1)?.[0];
+			expect(savedUserTurn?.messages[0]).toMatchObject({
+				role: "user",
+				content: "slow query",
+			});
+			expect(savedUserTurn?.turns?.[0]).toMatchObject({ status: "streaming" });
+
+			engine.stopStreaming();
+			const afterCancellation = await pendingRetrieval;
+			expect(afterCancellation.value).toEqual({
+				type: "rag-status",
+				status: "cancelled",
+			});
+			expect((await stream.next()).done).toBe(true);
+			expect(engine.getActiveSession()?.turns?.at(-1)).toMatchObject({
+				status: "cancelled",
+			});
+			releaseRetrieval([]);
+		});
+
+		it("persists a retrieval failure without calling the provider", async () => {
+			const persistence = createMockPersistenceAdapter();
+			const streamChat = vi.fn(async function* () {
+				yield "should not run";
+			});
+			const rag: RAGAdapter = {
+				analyzeQuery: async () => ({ intent: "test", keywords: [], requiresRetrieval: true }),
+				retrievePapers: async () => [],
+				buildContext: async () => "",
+				retrieveSources: async () => {
+					throw new Error("retrieval unavailable");
+				},
+			};
+			const adapter = { ...createMockLLMAdapter(), streamChat };
+			const engine = new ChatEngine({ llmAdapter: adapter, ragAdapter: rag, persistenceAdapter: persistence });
+			engine.createSession("Retrieval failure");
+
+			const events = await collectEvents(engine.sendMessage("unavailable", { enableRAG: true }));
+			expect(events).toContainEqual({ type: "rag-status", status: "failed" });
+			expect(events).toContainEqual({ type: "error", message: "retrieval unavailable" });
+			expect(streamChat).not.toHaveBeenCalled();
+			expect(engine.getActiveSession()?.turns?.at(-1)).toMatchObject({
+				status: "failed",
+				error: "retrieval unavailable",
+			});
+			const saveSessionMock = persistence.saveSession as ReturnType<typeof vi.fn>;
+			expect(saveSessionMock.mock.calls.at(-1)?.[0]?.turns?.at(-1)).toMatchObject({
+				status: "failed",
+				error: "retrieval unavailable",
+			});
 		});
 	});
 

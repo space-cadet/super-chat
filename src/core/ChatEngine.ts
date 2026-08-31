@@ -306,6 +306,20 @@ export class ChatEngine {
 			return;
 		}
 
+		// Establish the engine-owned turn lock before any host work. Retrieval
+		// can be slow, and it must be cancellable just like provider streaming.
+		const abortController = new AbortController();
+		const signal = abortController.signal;
+		const externalSignal = options?.signal;
+		const onExternalAbort = () => abortController.abort();
+		if (externalSignal) {
+			if (externalSignal.aborted) abortController.abort();
+			else externalSignal.addEventListener("abort", onExternalAbort, { once: true });
+		}
+		this.state.abortController = abortController;
+		this.state.isStreaming = true;
+		this.emitState();
+
 		const priorModelHistory = this.getModelHistory(session);
 		const userMessage: ChatMessage = {
 			id: `msg-${Date.now()}`,
@@ -320,60 +334,89 @@ export class ChatEngine {
 		const turn = createTurn(userMessage, [userModelMessage]);
 		turn.assistantMessageId = `assistant-${turn.id}`;
 		const enableRAG = options?.enableRAG ?? this.state.settings.enableRAG;
-		if (enableRAG && this.opts.ragAdapter?.retrieveSources) {
-			turn.retrievedSources = await this.opts.ragAdapter.retrieveSources(text);
-		}
 		session.turns = [...(session.turns ?? []), turn];
 		session.modelHistory = [...priorModelHistory, userModelMessage];
 
-		const messages: ChatMessage[] = [
-			...(this.opts.systemPrompt
-				? [
-						{
-							id: "system",
-							role: "system" as const,
-							content: this.opts.systemPrompt,
-							timestamp: 0,
-						},
-					]
-				: []),
+		// The engine is the only write owner. Persist the user input before
+		// retrieval or provider work starts so a reload cannot lose the turn.
+		session.messages.push(userMessage);
+		try {
+			await this.persistSession(session, {
+				owner: "chat-engine",
+				reason: "user-message",
+				turnId: turn.id,
+			});
+
+			if (signal.aborted) {
+				await this.finishPreProviderTurn(session, turn, signal);
+				return;
+			}
+
+			if (enableRAG && this.opts.ragAdapter?.retrieveSources) {
+				yield { type: "rag-status", status: "retrieving", progress: 0 };
+				try {
+					const retrievalPromise = Promise.resolve().then(() =>
+						this.opts.ragAdapter!.retrieveSources!(text, signal),
+					);
+					turn.retrievedSources = await this.awaitWithAbort(retrievalPromise, signal);
+				} catch (error) {
+					const message = error instanceof Error ? error.message : String(error);
+					yield { type: "rag-status", status: signal.aborted ? "cancelled" : "failed" };
+					await this.finishPreProviderTurn(session, turn, signal, message);
+					if (!signal.aborted) yield { type: "error", message };
+					return;
+				}
+
+				if (signal.aborted) {
+					yield { type: "rag-status", status: "cancelled" };
+					await this.finishPreProviderTurn(session, turn, signal);
+					return;
+				}
+
+				await this.persistSession(session, {
+					owner: "chat-engine",
+					reason: "retrieval",
+					turnId: turn.id,
+				});
+				yield {
+					type: "rag-status",
+					status: "complete",
+					progress: 1,
+				};
+			}
+
+			const messages: ChatMessage[] = [
+				...(this.opts.systemPrompt
+					? [
+							{
+								id: "system",
+								role: "system" as const,
+								content: this.opts.systemPrompt,
+								timestamp: 0,
+							},
+						]
+					: []),
 				...priorModelHistory.map((message, index) => ({
-				id: `history-${session.id}-${index}`,
-				role: message.role as ChatMessage["role"],
-				content: message.content,
+					id: `history-${session.id}-${index}`,
+					role: message.role as ChatMessage["role"],
+					content: message.content,
 					timestamp: 0,
 				})),
-			...(turn.retrievedSources?.length
-				? [{
-						id: `retrieval-${turn.id}`,
-						role: "system" as const,
-						content: this.formatRetrievedSources(turn.retrievedSources),
-						timestamp: 0,
-					}]
-				: []),
-			userMessage,
-		];
+				...(turn.retrievedSources?.length
+					? [{
+							id: `retrieval-${turn.id}`,
+							role: "system" as const,
+							content: this.formatRetrievedSources(turn.retrievedSources),
+							timestamp: 0,
+						}]
+					: []),
+				userMessage,
+			];
 
-		// The engine is the only write owner. Persist the user input before
-		// provider work starts so a reload cannot lose the submitted turn.
-		session.messages.push(userMessage);
-		await this.persistSession(session, {
-			owner: "chat-engine",
-			reason: "user-message",
-			turnId: turn.id,
-		});
-
-		// Setup abort
-		this.state.abortController = new AbortController();
-		const signal = this.state.abortController.signal;
-		this.state.isStreaming = true;
-		this.emitState();
-
-		// Get tools
-		const tools = this.getAvailableTools();
-		const enableTools = options?.enableTools ?? this.state.settings.enableTools;
-
-		try {
+			// Get tools only after retrieval has completed, keeping all turn work
+			// behind the same engine-owned lock.
+			const tools = this.getAvailableTools();
+			const enableTools = options?.enableTools ?? this.state.settings.enableTools;
 			if (enableTools && tools.length > 0) {
 				// Use AgentLoop for tool-capable streaming
 				yield* this.runWithTools(
@@ -400,6 +443,7 @@ export class ChatEngine {
 			this.cancelPendingApprovals();
 			this.state.isStreaming = false;
 			this.state.abortController = null;
+			externalSignal?.removeEventListener("abort", onExternalAbort);
 			this.emitState();
 		}
 	}
@@ -830,6 +874,45 @@ export class ChatEngine {
 			"Retrieved context:",
 			...sources.map((source) => `- ${source.title}: ${source.content}`),
 		].join("\n");
+	}
+
+	private async finishPreProviderTurn(
+		session: ChatSession,
+		turn: ChatTurn,
+		signal: AbortSignal,
+		error?: string,
+	): Promise<void> {
+		turn.status = signal.aborted ? "cancelled" : "failed";
+		turn.error = signal.aborted ? undefined : error;
+		turn.updatedAt = Date.now();
+		await this.persistSession(session, {
+			owner: "chat-engine",
+			reason: signal.aborted ? "turn-cancelled" : "turn-failed",
+			turnId: turn.id,
+		});
+	}
+
+	private awaitWithAbort<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
+		if (signal.aborted) return Promise.reject(new Error("Operation cancelled"));
+
+		return new Promise<T>((resolve, reject) => {
+			const onAbort = () => {
+				cleanup();
+				reject(new Error("Operation cancelled"));
+			};
+			const cleanup = () => signal.removeEventListener("abort", onAbort);
+			signal.addEventListener("abort", onAbort, { once: true });
+			promise.then(
+				(value) => {
+					cleanup();
+					resolve(value);
+				},
+				(error) => {
+					cleanup();
+					reject(error);
+				},
+			);
+		});
 	}
 
 	private async persistSession(

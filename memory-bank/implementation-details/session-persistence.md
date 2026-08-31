@@ -13,7 +13,7 @@ session key.
 
 New sessions are written immediately. The engine also writes before provider
 work begins, so the submitted user message survives a reload even if the
-provider later fails or the user cancels the turn.
+provider or host retrieval later fails or the user cancels the turn.
 
 ## Durable record
 
@@ -38,9 +38,14 @@ in order and receive `SessionWriteContext.owner === "chat-engine"` plus a
 reason:
 
 ```text
-create -> user-message -> partial-output / tool-call / tool-result
+create -> user-message -> retrieval -> partial-output / tool-call / tool-result
        -> turn-complete, turn-cancelled, or turn-failed
 ```
+
+When retrieval is enabled, the engine persists the streaming turn before the
+host search starts, then saves the retrieval result before provider
+work. A retrieval failure or cancellation is recorded as the terminal turn
+outcome through the same engine-owned queue.
 
 Loading a version `0` or recovered record also writes the normalized version
 back through the same owner with reason `migration`.

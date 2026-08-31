@@ -19,9 +19,10 @@ import type {
 } from "../contracts/host";
 import { assertHostContract, hasHostCapability } from "../contracts/validation";
 
-function createOperationContext(): HostOperationContext {
+function createOperationContext(signal?: AbortSignal): HostOperationContext {
 	return {
 		requestId: `host-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+		...(signal ? { signal } : {}),
 	};
 }
 
@@ -80,8 +81,8 @@ export class HostRAGAdapter implements RAGAdapter {
 		};
 	}
 
-	async retrieveSources(query: string): Promise<RetrievedSource[]> {
-		return this.capability.retrieve({ query }, createOperationContext());
+	async retrieveSources(query: string, signal?: AbortSignal): Promise<RetrievedSource[]> {
+		return this.capability.retrieve({ query }, createOperationContext(signal));
 	}
 
 	async retrievePapers(analysis: Awaited<ReturnType<HostRAGAdapter["analyzeQuery"]>>) {

@@ -67,6 +67,23 @@
 - Next action: implement the lifecycle-first Phase 5 slice. Keep product
   migrations deferred until their host adapters pass equivalent acceptance.
 
+## Current Continuation — T16 Phase 5 Lifecycle Slice
+
+- Implemented the first Phase 5 hardening slice in `ChatEngine`: the active
+  turn lock and abort controller are established before any host retrieval.
+- Persisted the user message and streaming turn before retrieval begins.
+- Passed the active abort signal through `HostRAGAdapter` into the neutral host
+  operation context, and raced slow retrieval against cancellation.
+- Added `rag-status` events for retrieving, complete, failed, and cancelled
+  retrieval; successful retrieval is persisted before provider work.
+- Retrieval failures and cancellations are recorded as durable turn outcomes;
+  failed retrieval does not call the provider.
+- Verification passed: TypeScript, 13 test files / 124 tests, pinned tsup
+  ESM/CJS/declaration build, and `git diff --check`.
+- Remaining: bounded source validation/deduplication, context budgeting and
+  evidence formatting, normalized partial/error results, replay shaping, and
+  shared React retrieval state. Product migrations remain deferred.
+
 ## Previous Session
 
 *Session Started*: 2026-06-20 15:23 IST

@@ -194,8 +194,12 @@ and paper ranking inside its retrieval capability. Obsidian may retrieve vault
 notes. The standalone host may retrieve local files. UI and conversation
 mechanics remain shared.
 
-Phase 4 now proves a thin `enableRAG` path through the fixture host. Phase 5
-must harden its lifecycle, budgeting, error handling, progress, and replay
+Phase 4 proved a thin `enableRAG` path through the fixture host. The first
+Phase 5 lifecycle slice now establishes the engine turn lock and abort signal
+before retrieval, persists the user turn first, passes cancellation through
+the host adapter, emits retrieval status events, and durably records retrieval
+success, failure, or cancellation. Phase 5 still needs bounded context
+assembly, normalized source/error handling, richer progress, and replay
 behavior before product hosts depend on it.
 
 ## 8. Capability Extraction from obsidian-ai
@@ -309,11 +313,13 @@ Do not begin the broad Obsidian migration until this slice is green.
 - Phase 2 host service shapes and checks are complete. Session identity, one
   save owner, migration, and reload are implemented in Phase 3. Host-to-engine
   wiring and the fixture browser flow were added in Phase 4.
-- Host-backed retrieval is now consumed through the optional
-  `retrieveSources` path, but the legacy paper-oriented RAG methods remain
-  split from the neutral host contract. Retrieval also still needs lifecycle-
-  safe cancellation, bounded context assembly, normalized errors, progress,
-  and replay. `contextAdapter` remains declared but unused.
+- Host-backed retrieval is consumed through the optional `retrieveSources`
+  path. The engine now protects that path with its turn lock, initial user-turn
+  persistence, cancellation signal, status events, and durable failure
+  handling, but the legacy paper-oriented RAG methods remain split from the
+  neutral host contract. Retrieval still needs bounded context assembly,
+  normalized source/error handling, richer progress, and replay. `contextAdapter`
+  remains declared but unused.
 - Arxivite creates a second in-memory session, adds an untyped mapping, owns
   the stream loop, and writes messages separately.
 - Arxivite's persistence and RAG adapters exist but are not wired into its

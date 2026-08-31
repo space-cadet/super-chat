@@ -1,7 +1,7 @@
 # INFRA-1: Unified super-chat Application Platform Program
 
 *Created: 2026-08-31 22:44:08 IST*
-*Last Updated: 2026-09-01 00:10:17 IST*
+*Last Updated: 2026-09-01 02:33:00 IST*
 
 **Status**: 🔄 **IN PROGRESS**
 **Priority**: CRITICAL
@@ -156,11 +156,11 @@ without Obsidian or Arxivite.
 ### Phase 5: Shared host-backed RAG
 
 **Owner**: T16  
-**Status**: 🔄 Plan verified (2026-09-01); implementation pending
+**Status**: 🔄 Lifecycle slice implemented (2026-09-01); hardening in progress
 
 - [x] Put the first retrieval path through `super-chat`; hardening remains.
 - [x] Define the initial normalized host source shape and provenance.
-- [ ] Move retrieval into the protected turn lifecycle with cancellation and
+- [x] Move retrieval into the protected turn lifecycle with cancellation and
       durable failure handling.
 - [ ] Apply shared context budgeting, progress, citations, and replay.
 - [ ] Keep domain retrieval algorithms in their host repositories.
@@ -182,6 +182,12 @@ survives persistence and reload.
 - Full-suite review evidence included a timing-sensitive `SuperChatApp` test:
   121/122 passed under parallel load and the isolated test passed. Stabilize it
   before the Phase 5 all-green gate.
+
+The first lifecycle slice is now verified: the engine locks before retrieval,
+persists the user turn first, passes cancellation into host retrieval, emits
+retrieval status events, and durably records retrieval failure/cancellation.
+Verification passed with 13 test files / 124 tests, TypeScript, the pinned
+package build, and `git diff --check`.
 
 ### Phase 6: Package and compatibility discipline
 
