@@ -1,6 +1,6 @@
 # Session Cache — super-chat
 
-*Last Updated*: 2026-08-31 23:19:22 IST
+*Last Updated*: 2026-08-31 23:22:41 IST
 
 ## Global Program Tracker
 
@@ -17,6 +17,7 @@
   `super-chat/contracts`, plus a plain-language guide.
 - Verification passed: TypeScript, 10 test files / 111 tests, and ESM/CJS/DTS
   builds including the contracts export.
+- Session closed after Phases 1 and 2 were committed and pushed.
 - Next: Phase 3 shared session saving and restore rules.
 
 ## Current Session: T22 Platform Architecture
@@ -27,7 +28,10 @@
   `implementation-details/embeddable-super-chat-platform.md`.
 - Created T22 and reconciled T15–T19.
 - Retired T17's premature Arxivite feature-toggle flip.
-- Next action: implement the fixture-host safety and persistence vertical slice.
+- Completed this session: Phase 1 safe approvals and Phase 2 neutral host
+  services. Commits `be9802e` and `44e1c1e` are on `origin/main`.
+- Next action: define and test the shared session save and restore rules before
+  migrating either product.
 
 ## Previous Session
 
