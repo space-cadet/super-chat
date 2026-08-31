@@ -110,6 +110,14 @@
   ESM/CJS/declaration build, and `git diff --check`.
 - Remaining: replay behavior, richer host conformance, and product migration.
 
+## Current Continuation — T16 Host Adapter Conformance
+
+- Added `HostAdapters.test.ts`, proving `HostRAGAdapter` forwards the neutral
+  retrieval result limit and active cancellation signal to the host capability.
+- Verification passed: TypeScript, 15 test files / 131 tests, pinned tsup
+  ESM/CJS/declaration build, and `git diff --check`.
+- Product-host conformance and replay behavior remain open.
+
 ## Previous Session
 
 *Session Started*: 2026-06-20 15:23 IST
