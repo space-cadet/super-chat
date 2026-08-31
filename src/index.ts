@@ -70,6 +70,46 @@ export { DemoToolAdapter } from './adapters/DemoToolAdapter';
 // Core classes
 export { ChatEngine } from './core/ChatEngine';
 export { estimateTokens } from './core/tokenEstimator';
+
+// Host contracts
+export type {
+	HostCapabilityKind,
+	HostOperationContext,
+	HostCapabilityBase,
+	HostIdentity,
+	IdentityCapability,
+	ChatPersistenceCapability,
+	CredentialReference,
+	CredentialCapability,
+	ToolRisk,
+	ToolApprovalPolicy,
+	HostToolDescriptor,
+	ToolCapability,
+	RetrievalRequest,
+	RetrievedSource,
+	RetrievalCapability,
+	HostDocument,
+	DocumentWrite,
+	DocumentCapability,
+	NavigationTarget,
+	NavigationCapability,
+	NotificationLevel,
+	HostNotification,
+	NotificationCapability,
+	LifecycleCapability,
+	SuperChatCapabilities,
+	SuperChatHost,
+	HostCapability,
+	HostContractIssue,
+	HostContractReport,
+} from './contracts';
+export {
+	getHostCapability,
+	hasHostCapability,
+	listHostCapabilities,
+	validateHostContract,
+	assertHostContract,
+} from './contracts';
 // export { ApprovalQueue } from './core/ApprovalQueue';
 // export { Orchestrator } from './core/Orchestrator';
 // export { MentionParser } from './core/MentionParser';

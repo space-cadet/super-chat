@@ -1,6 +1,6 @@
 # Session Cache — super-chat
 
-*Last Updated*: 2026-08-31 23:02:51 IST
+*Last Updated*: 2026-08-31 23:19:22 IST
 
 ## Global Program Tracker
 
@@ -12,7 +12,12 @@
   cancellation/disposal, observable snapshots, and React subscription.
 - Verification passed: TypeScript, 9 test files / 105 tests, and ESM/CJS/DTS
   production builds.
-- Next: Phase 2 capability-based host contracts.
+- Phase 2 was completed below.
+- Phase 2 is complete: added optional, neutral host services and checks in
+  `super-chat/contracts`, plus a plain-language guide.
+- Verification passed: TypeScript, 10 test files / 111 tests, and ESM/CJS/DTS
+  builds including the contracts export.
+- Next: Phase 3 shared session saving and restore rules.
 
 ## Current Session: T22 Platform Architecture
 

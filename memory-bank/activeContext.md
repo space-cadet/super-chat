@@ -1,6 +1,6 @@
 # Active Context
 
-*Last Updated: 2026-08-31 23:02:51 IST*
+*Last Updated: 2026-08-31 23:19:22 IST*
 
 ## Current Program: INFRA-1 Unified super-chat Application Platform
 
@@ -21,14 +21,14 @@ platform capabilities through neutral host contracts.
 Authoritative plan:
 `implementation-details/embeddable-super-chat-platform.md`.
 
-INFRA-1 Phase 1 is complete. Tool approval is fail-closed and engine-owned;
-React uses observable snapshots instead of polling. TypeScript, 105 tests, and
-ESM/CJS/declaration builds pass.
+INFRA-1 Phases 1 and 2 are complete. Tool approval is fail-closed and engine-
+owned; React uses observable snapshots instead of polling. `super-chat/contracts`
+now provides optional host services without importing product platform types.
+TypeScript, 111 tests, and ESM/CJS/declaration builds pass.
 
-Immediate next implementation slice is Phase 2: define capability-based
-`SuperChatHost` contracts and contract-test helpers without importing product
-platform types. Phase 3 persistence and Phase 4 fixture-host proof remain
-separate follow-ups.
+Immediate next implementation slice is Phase 3: define shared session IDs,
+save/restore rules, migration information, and exactly one owner for writes.
+Phase 4 will then prove those rules with a fixture host.
 
 T15 owns behavior-preserving extraction from `obsidian-ai`; T18 owns the
 Obsidian host migration; T19 makes Arxivite a `SuperChatApp` harness; T16 owns

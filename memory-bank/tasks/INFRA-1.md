@@ -1,7 +1,7 @@
 # INFRA-1: Unified super-chat Application Platform Program
 
 *Created: 2026-08-31 22:44:08 IST*
-*Last Updated: 2026-08-31 23:02:51 IST*
+*Last Updated: 2026-08-31 23:19:22 IST*
 
 **Status**: 🔄 **IN PROGRESS**
 **Priority**: CRITICAL
@@ -68,23 +68,34 @@ is absent or incomplete.
 ### Phase 2: Capability-based host contracts
 
 **Owner**: T22  
-**Status**: 🔄 Next
+**Status**: ✅ Complete (2026-08-31)
 
-- [ ] Define the root `SuperChatHost` contract.
-- [ ] Define identity, persistence, credentials, tools, retrieval, documents,
+- [x] Define the root `SuperChatHost` contract.
+- [x] Define identity, persistence, credentials, tools, retrieval, documents,
       navigation, notifications, and lifecycle capabilities.
-- [ ] Keep capabilities optional and explicitly discoverable.
-- [ ] Add contract-test helpers.
-- [ ] Ensure no Obsidian, Supabase, Electron, or Capacitor types leak into
+- [x] Keep services optional and easy to discover.
+- [x] Add reusable contract-check helpers.
+- [x] Ensure no Obsidian, Supabase, Electron, or Capacitor types leak into
       shared contracts.
 
 **Exit criterion**: a host can describe available platform services without
 passing raw product objects to `super-chat`.
 
-### Phase 3: Canonical session and persistence lifecycle
+**Evidence**:
+
+- Added the public `super-chat/contracts` entry point.
+- Added optional services for identity, saving chats, credentials, tools,
+  retrieval, documents, navigation, notifications, and lifecycle events.
+- Added simple host checks for empty IDs, duplicate IDs, and service/key
+  mismatches. The checks do not call product APIs or change data.
+- Added six focused contract tests and a plain-language host-service guide.
+- Verification: TypeScript passed; 10 test files / 111 tests passed; ESM, CJS,
+  contracts subpath, and declaration builds passed.
+
+### Phase 3: Shared session saving and restore rules
 
 **Owner**: T22  
-**Status**: ⬜ Pending
+**Status**: 🔄 Next
 
 - [ ] Define internal and typed external session identities.
 - [ ] Establish exactly one persistence write owner.

@@ -1,7 +1,7 @@
 # Embeddable super-chat Application Platform
 
 *Created: 2026-08-31 22:25:18 IST*
-*Last Updated: 2026-08-31 23:02:51 IST*
+*Last Updated: 2026-08-31 23:19:22 IST*
 *Program Owner: INFRA-1*
 *Shared-Core Workstream: T22*
 
@@ -110,6 +110,16 @@ contract tests. The following rules are mandatory:
 6. Host errors are normalized at the boundary while preserving diagnostic
    causes for logs.
 7. Cancellation and idempotency are part of mutation contracts where needed.
+
+### Implemented Phase 2 Surface
+
+The public `super-chat/contracts` entry point now contains optional host
+services and simple checks. A plain-language guide is available at
+`implementation-details/host-services.md`.
+
+This phase only defines the shapes and checks them. It does not yet make
+`ChatEngine` use a host. That requires the session saving and fixture-host work
+in later phases.
 
 ## 5. Tool Safety Contract
 
@@ -281,7 +291,10 @@ Do not begin the broad Obsidian migration until this slice is green.
   now fails closed, engine-owned decisions drive real execution, cancellation
   and disposal resolve pending requests, and React subscribes to snapshots.
 - Tool risk classification and per-capability policy remain Phase 2 host-
-  contract work; `autoApply` is still the only explicit bypass.
+  policy follow-up; `autoApply` is still the only explicit bypass.
+- Phase 2 host service shapes and checks are complete. Session identity, one
+  save owner, migration, reload, and host-to-engine wiring remain Phase 3 and
+  Phase 4 work.
 - `ragAdapter` and `contextAdapter` are declared but not consumed by the main
   send path.
 - Arxivite creates a second in-memory session, adds an untyped mapping, owns

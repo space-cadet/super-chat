@@ -1,8 +1,25 @@
 # Edit History
 *Created: 2026-05-19 11:15:00 IST*
-*Last Updated: 2026-08-31 23:02:51 IST*
+*Last Updated: 2026-08-31 23:19:22 IST*
 
 ## 2026-08-31
+
+#### 23:19:22 IST - INFRA-1: Complete Phase 2 host services
+- Created `src/contracts/host.ts` - Added product-neutral service types in
+  plain language.
+- Created `src/contracts/validation.ts` - Added read-only host checks and
+  service discovery helpers.
+- Created `src/contracts/index.ts` - Added the contracts public export.
+- Created `src/contracts/validation.test.ts` - Added focused host-check tests.
+- Modified `src/index.ts` - Exported host services from the main package.
+- Modified `tsup.config.ts` and `package.json` - Published the
+  `super-chat/contracts` package entry point.
+- Created `memory-bank/implementation-details/host-services.md` - Added a
+  plain-language guide for product host authors.
+- Updated `memory-bank/tasks/INFRA-1.md` and `memory-bank/tasks/T22.md` - Marked
+  Phase 2 complete with verification evidence and set Phase 3 as next.
+- Updated current context, session cache, session record, architecture guide,
+  and this history with the Phase 2 handoff.
 
 #### 23:02:51 IST - INFRA-1: Complete Phase 1 approval and state foundation
 - Modified `src/core/AgentLoop.ts` - Made approval explicit consent and missing
