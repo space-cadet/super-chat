@@ -15,6 +15,9 @@ function createMockEngine() {
     archiveSession: vi.fn(),
     sendMessage: vi.fn(),
     stopStreaming: vi.fn(),
+    subscribe: vi.fn(() => () => undefined),
+    approveTool: vi.fn(),
+    rejectTool: vi.fn(),
     isStreaming: false,
   } as unknown as ChatEngine & {
     getActiveSession: ReturnType<typeof vi.fn>;
@@ -26,6 +29,9 @@ function createMockEngine() {
     archiveSession: ReturnType<typeof vi.fn>;
     sendMessage: ReturnType<typeof vi.fn>;
     stopStreaming: ReturnType<typeof vi.fn>;
+    subscribe: ReturnType<typeof vi.fn>;
+    approveTool: ReturnType<typeof vi.fn>;
+    rejectTool: ReturnType<typeof vi.fn>;
   };
 }
 

@@ -1,5 +1,31 @@
 # Session Cache — super-chat
 
+*Last Updated*: 2026-08-31 23:02:51 IST
+
+## Global Program Tracker
+
+- Created INFRA-1 as the umbrella for the complete execution sequence.
+- T22 now owns the current shared-core/fixture-host workstream under INFRA-1.
+- INFRA-1 tracks phase status, dependencies, exit criteria, product migrations,
+  legacy removal, standalone desktop, and mobile follow-up.
+- INFRA-1 Phase 1 is complete: fail-closed approval, engine-owned decisions,
+  cancellation/disposal, observable snapshots, and React subscription.
+- Verification passed: TypeScript, 9 test files / 105 tests, and ESM/CJS/DTS
+  production builds.
+- Next: Phase 2 capability-based host contracts.
+
+## Current Session: T22 Platform Architecture
+
+- Recorded `super-chat` as the complete chat application and reusable runtime.
+- Defined products as capability hosts rather than owners of chat mechanics.
+- Added the authoritative plan at
+  `implementation-details/embeddable-super-chat-platform.md`.
+- Created T22 and reconciled T15–T19.
+- Retired T17's premature Arxivite feature-toggle flip.
+- Next action: implement the fixture-host safety and persistence vertical slice.
+
+## Previous Session
+
 *Session Started*: 2026-06-20 15:23 IST
 *Session Ended*: 2026-06-20 16:38 IST
 *Duration*: ~1h 15min

@@ -1,10 +1,19 @@
 # Architecture Design — super-chat
 
 *Created: 2026-05-19 11:15:00 IST*
+*Last Updated: 2026-08-31 22:25:18 IST*
+
+> **Current direction:** T22 extends this original library design into a
+> complete embeddable chat application with capability-based product hosts.
+> The authoritative migration and ownership plan is
+> `implementation-details/embeddable-super-chat-platform.md`.
 
 ## Overview
 
-super-chat is a standalone, reusable chat component library that provides LLM-native tool calling, multi-agent orchestration, and a robust approval flow. It extracts the battle-tested patterns from obsidian-ai into a framework-agnostic package.
+super-chat is a complete, embeddable chat application with a framework-neutral
+core. It provides LLM-native tool calling, multi-agent orchestration, approval,
+session and context mechanics, and a reusable React application. Product hosts
+provide data and platform capabilities without reimplementing chat workflow.
 
 ## Goals
 

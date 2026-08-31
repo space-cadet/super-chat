@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { AgentLoop } from "./AgentLoop";
 import { ToolExecutor } from "./ToolExecutor";
 import type {
@@ -479,7 +479,7 @@ describe("AgentLoop", () => {
 				llmAdapter: adapter,
 				toolExecutor: executor,
 				autoApply: false,
-				requestApproval: async () => ({ success: true, content: "approved" }),
+				requestApproval: async () => true,
 			});
 
 			const { events } = await collectEvents(
@@ -492,6 +492,11 @@ describe("AgentLoop", () => {
 				type: "pending-approval",
 				call: { id: "call-1", name: "calculate" },
 			});
+			const toolResults = events.filter((e) => e.type === "tool-result");
+			expect(toolResults[0]).toMatchObject({
+				result: { success: true },
+			});
+			expect(toolResults[0].result.content).toContain("4");
 		});
 
 		it("executes tool directly when autoApply is true", async () => {
@@ -530,7 +535,7 @@ describe("AgentLoop", () => {
 			expect(toolResults).toHaveLength(1);
 		});
 
-		it("uses rejection result when approval returns null", async () => {
+		it("uses rejection result when approval returns false", async () => {
 			const adapter = createMockAdapter([
 				[
 					{
@@ -553,7 +558,7 @@ describe("AgentLoop", () => {
 				llmAdapter: adapter,
 				toolExecutor: executor,
 				autoApply: false,
-				requestApproval: async () => null,
+				requestApproval: async () => false,
 			});
 
 			const { events } = await collectEvents(
@@ -563,6 +568,39 @@ describe("AgentLoop", () => {
 			const toolResults = events.filter((e) => e.type === "tool-result");
 			expect(toolResults[0]).toMatchObject({
 				result: { success: false, error: "User rejected the tool call" },
+			});
+		});
+
+		it("fails closed when approval infrastructure is unavailable", async () => {
+			const adapter = createMockAdapter([
+				[
+					{
+						type: "tool-call",
+						call: { id: "call-1", name: "calculate", args: {} },
+					},
+					{ type: "finish", reason: "tool-calls-detected" },
+				],
+				[{ type: "finish", reason: "text-complete" }],
+			]);
+			const execute = vi.fn(async () => ({ success: true, content: "4" }));
+			const executor = createMockToolExecutor({ calculate: execute });
+			const loop = new AgentLoop({
+				llmAdapter: adapter,
+				toolExecutor: executor,
+				autoApply: false,
+			});
+
+			const { events } = await collectEvents(
+				loop.run(createMockSession(), createMockMessages(), createMockTools()),
+			);
+
+			expect(execute).not.toHaveBeenCalled();
+			const toolResults = events.filter((e) => e.type === "tool-result");
+			expect(toolResults[0]).toMatchObject({
+				result: {
+					success: false,
+					error: "Tool approval is required but unavailable",
+				},
 			});
 		});
 	});

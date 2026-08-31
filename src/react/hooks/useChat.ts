@@ -18,12 +18,11 @@
  *   } = useChat(engine);
  */
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type {
   ChatMessage,
   ChatSession,
   ToolCall,
-  ToolResult,
 } from "../../core/types";
 import type { ChatEngine } from "../../core/ChatEngine";
 
@@ -43,7 +42,7 @@ export interface UseChatActions {
   deleteSession: (sessionId: string) => Promise<void>;
   archiveSession: (sessionId: string) => Promise<void>;
   stopStreaming: () => void;
-  approveTool: (callId: string, result: ToolResult) => void;
+  approveTool: (callId: string) => boolean;
   rejectTool: (callId: string, reason?: string) => void;
   loadSessions: () => Promise<void>;
 }
@@ -58,11 +57,6 @@ export function useChat(engine: ChatEngine, options?: { initialSessionId?: strin
   const [error, setError] = useState<string | null>(null);
   const [pendingTools, setPendingTools] = useState<ToolCall[]>([]);
 
-  // Track pending approvals
-  const approvalResolvers = useRef<Map<string, (result: ToolResult) => void>>(
-    new Map()
-  );
-
   // Sync with engine state
   useEffect(() => {
     const sync = () => {
@@ -73,9 +67,16 @@ export function useChat(engine: ChatEngine, options?: { initialSessionId?: strin
     };
 
     sync();
-    // Poll for engine state changes (engine doesn't have events yet)
-    const interval = setInterval(sync, 100);
-    return () => clearInterval(interval);
+    return engine.subscribe((snapshot) => {
+      const session = engine.getActiveSession();
+      setSessions(snapshot.sessions);
+      setCurrentSession(session);
+      setIsStreaming(snapshot.isStreaming);
+      setPendingTools(snapshot.pendingApprovals);
+      if (!snapshot.isStreaming) {
+        setMessages(session?.messages ?? []);
+      }
+    });
   }, [engine]);
 
   // Load sessions on mount + optionally switch to initial session
@@ -117,20 +118,16 @@ export function useChat(engine: ChatEngine, options?: { initialSessionId?: strin
                     { ...last, content: assistantText },
                   ];
                 }
-                return prev;
+                return [
+                  ...prev,
+                  {
+                    id: "streaming-assistant",
+                    role: "assistant",
+                    content: assistantText,
+                    timestamp: Date.now(),
+                  },
+                ];
               });
-              break;
-
-            case "tool-call":
-              // Tool call detected — add to pending
-              setPendingTools((prev) => [...prev, event.call]);
-              break;
-
-            case "tool-result":
-              // Remove from pending
-              setPendingTools((prev) =>
-                prev.filter((t) => t.id !== event.callId)
-              );
               break;
 
             case "error":
@@ -204,23 +201,15 @@ export function useChat(engine: ChatEngine, options?: { initialSessionId?: strin
     setIsStreaming(false);
   }, [engine]);
 
-  const approveTool = useCallback((callId: string, result: ToolResult) => {
-    const resolver = approvalResolvers.current.get(callId);
-    if (resolver) {
-      resolver(result);
-      approvalResolvers.current.delete(callId);
-    }
-    setPendingTools((prev) => prev.filter((t) => t.id !== callId));
-  }, []);
+  const approveTool = useCallback(
+    (callId: string) => engine.approveTool(callId),
+    [engine]
+  );
 
   const rejectTool = useCallback((callId: string, reason?: string) => {
-    const resolver = approvalResolvers.current.get(callId);
-    if (resolver) {
-      resolver({ success: false, error: reason ?? "User rejected" });
-      approvalResolvers.current.delete(callId);
-    }
-    setPendingTools((prev) => prev.filter((t) => t.id !== callId));
-  }, []);
+    void reason;
+    engine.rejectTool(callId);
+  }, [engine]);
 
   return {
     messages,

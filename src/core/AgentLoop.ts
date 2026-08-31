@@ -29,8 +29,8 @@ export interface AgentLoopOptions {
 	toolExecutor?: ToolExecutor;
 	maxSteps?: number;
 	autoApply?: boolean;
-	/** Called to request user approval. Return result to approve, null to reject. */
-	requestApproval?: (call: ToolCall) => Promise<ToolResult | null>;
+	/** Called to request approval. The tool executes only when this returns true. */
+	requestApproval?: (call: ToolCall, signal?: AbortSignal) => Promise<boolean>;
 }
 
 export interface AgentLoopResult {
@@ -216,7 +216,7 @@ export class AgentLoop {
 				};
 			}
 
-			// Execute tools (with approval if not autoApply)
+			// Execute tools only after explicit approval unless autoApply is enabled.
 			const results: { call: ToolCall; result: ToolResult }[] = [];
 			for (const call of pendingCalls) {
 				console.log(
@@ -224,23 +224,26 @@ export class AgentLoop {
 					call.args,
 				);
 
-				let result: ToolResult;
-				if (autoApply || !this.opts.requestApproval) {
-					result = toolExecutor
+				let approved = autoApply;
+				let rejectionReason = "Tool approval is required but unavailable";
+
+				if (!autoApply && this.opts.requestApproval) {
+					// Notify consumer that approval is needed
+					yield { type: "pending-approval", call };
+					approved = await this.opts.requestApproval(call, signal);
+					rejectionReason = signal?.aborted
+						? "Tool call cancelled"
+						: "User rejected the tool call";
+				}
+
+				const result: ToolResult = approved
+					? toolExecutor
 						? await toolExecutor.execute(call)
 						: {
 								success: false,
 								error: "No tool executor configured",
-							};
-				} else {
-					// Notify consumer that approval is needed
-					yield { type: "pending-approval", call };
-					result =
-						(await this.opts.requestApproval(call)) ?? {
-							success: false,
-							error: "User rejected the tool call",
-						};
-				}
+							}
+					: { success: false, error: rejectionReason };
 
 				console.log(
 					`[AgentLoop] step ${step} tool-result:`,

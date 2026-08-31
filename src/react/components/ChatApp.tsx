@@ -83,7 +83,7 @@ export function ChatApp({ engine, initialSessionId, onNewChat }: ChatAppProps) {
                 // Retry not yet implemented in useChat hook
                 console.log('Retry:', id);
               }}
-              onApproveTool={(callId) => approveTool(callId, { success: true, content: 'Approved' })}
+              onApproveTool={(callId) => approveTool(callId)}
               onRejectTool={(callId) => rejectTool(callId, 'User rejected')}
             />
           ))
@@ -96,7 +96,7 @@ export function ChatApp({ engine, initialSessionId, onNewChat }: ChatAppProps) {
               <PendingToolCard
                 key={tool.id}
                 toolCall={tool}
-                onApprove={(callId) => approveTool(callId, { success: true, content: 'Approved' })}
+                onApprove={(callId) => approveTool(callId)}
                 onReject={(callId) => rejectTool(callId, 'User rejected')}
               />
             ))}

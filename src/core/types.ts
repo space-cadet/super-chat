@@ -106,6 +106,15 @@ export type StreamEvent =
   | { type: 'usage'; promptTokens: number; completionTokens: number; totalTokens: number }
   | { type: 'metrics'; ttftMs: number; totalDurationMs: number };
 
+export interface ChatEngineSnapshot {
+  sessions: ChatSession[];
+  activeSessionId: string | null;
+  isStreaming: boolean;
+  pendingApprovals: ToolCall[];
+}
+
+export type ChatEngineListener = (snapshot: ChatEngineSnapshot) => void;
+
 // ============================================================================
 // Options Types
 // ============================================================================

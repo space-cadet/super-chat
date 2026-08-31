@@ -1,6 +1,45 @@
 # Active Context
 
-*Last Updated: 2026-06-20 16:38 IST*
+*Last Updated: 2026-08-31 23:02:51 IST*
+
+## Current Program: INFRA-1 Unified super-chat Application Platform
+
+INFRA-1 is the global progress owner for the shared core, Obsidian extraction,
+Obsidian host migration, Arxivite harness migration, package compatibility,
+standalone desktop, and later mobile work. T22 is its current shared-core and
+fixture-host workstream.
+
+Global tracker: `tasks/INFRA-1.md`.
+
+## Current Workstream: T22 Embeddable Application Platform
+
+`super-chat` is now defined as the complete, embeddable chat application, not
+only a low-level engine. It owns reusable chat mechanics and complete chat UI.
+`obsidian-ai`, `arxivite`, and future standalone shells provide data and
+platform capabilities through neutral host contracts.
+
+Authoritative plan:
+`implementation-details/embeddable-super-chat-platform.md`.
+
+INFRA-1 Phase 1 is complete. Tool approval is fail-closed and engine-owned;
+React uses observable snapshots instead of polling. TypeScript, 105 tests, and
+ESM/CJS/declaration builds pass.
+
+Immediate next implementation slice is Phase 2: define capability-based
+`SuperChatHost` contracts and contract-test helpers without importing product
+platform types. Phase 3 persistence and Phase 4 fixture-host proof remain
+separate follow-ups.
+
+T15 owns behavior-preserving extraction from `obsidian-ai`; T18 owns the
+Obsidian host migration; T19 makes Arxivite a `SuperChatApp` harness; T16 owns
+host-backed RAG; T21 owns release and compatibility discipline. T17's former
+"flip the Arxivite toggle" plan is retired because it would entrench
+Arxivite-owned chat mechanics.
+
+## Historical June 2026 Snapshot
+
+The remaining content below records the June implementation session. Its
+priority list is historical; T22 and the section above are current.
 
 ## Completed Tasks (This Session)
 - **T20**: Fix ChatEngine Real-Time Streaming — ✅ COMPLETED (2026-06-20 11:30)

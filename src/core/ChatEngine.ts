@@ -20,6 +20,8 @@ import { AgentLoop } from "./AgentLoop";
 import { ToolExecutor } from "./ToolExecutor";
 import type {
 	ChatEngineOptions,
+	ChatEngineListener,
+	ChatEngineSnapshot,
 	ChatMessage,
 	ChatSession,
 	ChatSettings,
@@ -43,6 +45,12 @@ interface InternalState {
 	settings: ChatSettings;
 	isStreaming: boolean;
 	abortController: AbortController | null;
+}
+
+interface PendingApproval {
+	call: ToolCall;
+	resolve: (approved: boolean) => void;
+	removeAbortListener?: () => void;
 }
 
 const defaultSettings: ChatSettings = {
@@ -71,6 +79,9 @@ export class ChatEngine {
 	private agentLoop: AgentLoop;
 	private toolExecutor: ToolExecutor;
 	private customTools: Map<string, ToolHandler> = new Map();
+	private listeners = new Set<ChatEngineListener>();
+	private pendingApprovals = new Map<string, PendingApproval>();
+	private disposed = false;
 
 	constructor(options: ChatEngineOptions) {
 		this.opts = options;
@@ -86,6 +97,8 @@ export class ChatEngine {
 			toolExecutor: this.toolExecutor,
 			maxSteps: options.agentLoopOptions?.maxSteps ?? 5,
 			autoApply: options.agentLoopOptions?.autoApply ?? false,
+			requestApproval: (call, signal) =>
+				this.requestToolApproval(call, signal),
 		});
 
 		this.state = {
@@ -105,6 +118,7 @@ export class ChatEngine {
 		if (this.opts.persistenceAdapter) {
 			this.state.sessions = await this.opts.persistenceAdapter.loadSessions();
 		}
+		this.emitState();
 		return [...this.state.sessions];
 	}
 
@@ -126,9 +140,11 @@ export class ChatEngine {
 		} else {
 			this.state.sessions.unshift(updated);
 		}
+		this.emitState();
 	}
 
 	createSession(title?: string): ChatSession {
+		if (this.state.isStreaming) this.stopStreaming();
 		const session: ChatSession = {
 			id: `sess-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
 			title: title ?? "Untitled Chat",
@@ -140,13 +156,17 @@ export class ChatEngine {
 
 		this.state.sessions.unshift(session);
 		this.state.activeSessionId = session.id;
+		this.emitState();
 		return session;
 	}
 
 	switchSession(sessionId: string): boolean {
 		const session = this.state.sessions.find((s) => s.id === sessionId);
 		if (!session) return false;
+		if (this.state.isStreaming) this.stopStreaming();
+		else this.cancelPendingApprovals();
 		this.state.activeSessionId = sessionId;
+		this.emitState();
 		return true;
 	}
 
@@ -169,6 +189,7 @@ export class ChatEngine {
 		if (this.opts.persistenceAdapter) {
 			await this.opts.persistenceAdapter.deleteSession(sessionId);
 		}
+		this.emitState();
 	}
 
 	async archiveSession(sessionId: string): Promise<void> {
@@ -180,6 +201,7 @@ export class ChatEngine {
 		if (this.opts.persistenceAdapter) {
 			await this.opts.persistenceAdapter.archiveSession(sessionId);
 		}
+		this.emitState();
 	}
 
 	getSessions(): ChatSession[] {
@@ -200,6 +222,14 @@ export class ChatEngine {
 		text: string,
 		options?: SendOptions,
 	): AsyncIterable<StreamEvent> {
+		if (this.disposed) {
+			yield { type: "error", message: "ChatEngine has been disposed" };
+			return;
+		}
+		if (this.state.isStreaming) {
+			yield { type: "error", message: "A response is already streaming" };
+			return;
+		}
 		const session = this.getActiveSession();
 		if (!session) {
 			yield { type: "error", message: "No active session" };
@@ -237,6 +267,7 @@ export class ChatEngine {
 		this.state.abortController = new AbortController();
 		const signal = this.state.abortController.signal;
 		this.state.isStreaming = true;
+		this.emitState();
 
 		// Get tools
 		const tools = this.getAvailableTools();
@@ -251,8 +282,10 @@ export class ChatEngine {
 				yield* this.runTextOnly(session, messages, signal, options);
 			}
 		} finally {
+			this.cancelPendingApprovals();
 			this.state.isStreaming = false;
 			this.state.abortController = null;
+			this.emitState();
 		}
 	}
 
@@ -264,7 +297,9 @@ export class ChatEngine {
 			this.state.abortController.abort();
 			this.state.abortController = null;
 		}
+		this.cancelPendingApprovals();
 		this.state.isStreaming = false;
+		this.emitState();
 	}
 
 	/**
@@ -272,6 +307,43 @@ export class ChatEngine {
 	 */
 	get isStreaming(): boolean {
 		return this.state.isStreaming;
+	}
+
+	getSnapshot(): ChatEngineSnapshot {
+		return {
+			sessions: [...this.state.sessions],
+			activeSessionId: this.state.activeSessionId,
+			isStreaming: this.state.isStreaming,
+			pendingApprovals: [...this.pendingApprovals.values()].map(
+				({ call }) => call,
+			),
+		};
+	}
+
+	subscribe(listener: ChatEngineListener): () => void {
+		if (this.disposed) return () => undefined;
+		this.listeners.add(listener);
+		listener(this.getSnapshot());
+		return () => this.listeners.delete(listener);
+	}
+
+	approveTool(callId: string): boolean {
+		return this.resolveApproval(callId, true);
+	}
+
+	rejectTool(callId: string): boolean {
+		return this.resolveApproval(callId, false);
+	}
+
+	cancelTool(callId: string): boolean {
+		return this.resolveApproval(callId, false);
+	}
+
+	dispose(): void {
+		if (this.disposed) return;
+		this.stopStreaming();
+		this.disposed = true;
+		this.listeners.clear();
 	}
 
 	// --------------------------------------------------------------------------
@@ -313,6 +385,7 @@ export class ChatEngine {
 
 	updateSettings(settings: Partial<ChatSettings>): void {
 		this.state.settings = { ...this.state.settings, ...settings };
+		this.emitState();
 	}
 
 	getSettings(): ChatSettings {
@@ -478,5 +551,47 @@ export class ChatEngine {
 				}),
 			);
 		}
+	}
+
+	private requestToolApproval(
+		call: ToolCall,
+		signal?: AbortSignal,
+	): Promise<boolean> {
+		if (this.disposed || signal?.aborted) return Promise.resolve(false);
+		if (this.pendingApprovals.has(call.id)) return Promise.resolve(false);
+
+		return new Promise<boolean>((resolve) => {
+			const pending: PendingApproval = { call, resolve };
+			if (signal) {
+				const onAbort = () => this.resolveApproval(call.id, false);
+				signal.addEventListener("abort", onAbort, { once: true });
+				pending.removeAbortListener = () =>
+					signal.removeEventListener("abort", onAbort);
+			}
+			this.pendingApprovals.set(call.id, pending);
+			this.emitState();
+		});
+	}
+
+	private resolveApproval(callId: string, approved: boolean): boolean {
+		const pending = this.pendingApprovals.get(callId);
+		if (!pending) return false;
+		this.pendingApprovals.delete(callId);
+		pending.removeAbortListener?.();
+		pending.resolve(approved);
+		this.emitState();
+		return true;
+	}
+
+	private cancelPendingApprovals(): void {
+		for (const callId of [...this.pendingApprovals.keys()]) {
+			this.resolveApproval(callId, false);
+		}
+	}
+
+	private emitState(): void {
+		if (this.disposed) return;
+		const snapshot = this.getSnapshot();
+		for (const listener of this.listeners) listener(snapshot);
 	}
 }

@@ -1,7 +1,13 @@
 # Consolidation Implementation Plan
 
+> **Superseded for forward work (2026-08-31):** This document is retained as
+> historical analysis. Its Arxivite feature-toggle sequence, adapter ownership,
+> task numbers, and implementation order must not be followed as the current
+> plan. Use T22 and
+> `implementation-details/embeddable-super-chat-platform.md` instead.
+
 *Created: 2026-06-20 00:22:00 IST*
-*Last Updated: 2026-06-20 01:00:00 IST*
+*Last Updated: 2026-08-31 22:25:18 IST*
 *Related Tasks: T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24*
 
 ---

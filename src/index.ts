@@ -17,6 +17,8 @@ export type {
 	SendOptions,
 	AgentLoopOptions,
 	ChatEngineOptions,
+	ChatEngineSnapshot,
+	ChatEngineListener,
 	ProviderType,
 	ProviderInfo,
 	ModelInfo,

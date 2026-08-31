@@ -160,6 +160,122 @@ describe("ChatEngine", () => {
 	});
 
 	describe("tool-enabled messaging", () => {
+		it("waits for engine approval and then executes the real tool", async () => {
+			const execute = vi.fn(async () => ({ success: true, content: "4" }));
+			const adapter = createMockLLMAdapter([
+				[
+					{
+						type: "tool-call",
+						call: { id: "call-1", name: "calculate", args: {} },
+					},
+					{ type: "finish", reason: "tool-calls-detected" },
+				],
+				[{ type: "finish", reason: "text-complete" }],
+			]);
+			const engine = new ChatEngine({
+				llmAdapter: adapter,
+				toolAdapter: createMockToolAdapter(
+					[{ name: "calculate", description: "Math", parameters: {} }],
+					execute,
+				),
+			});
+			engine.createSession("Test");
+
+			const stream = engine.sendMessage("Calculate")[Symbol.asyncIterator]();
+			expect((await stream.next()).value).toMatchObject({ type: "tool-call" });
+			expect((await stream.next()).value).toMatchObject({ type: "pending-approval" });
+
+			const resultPromise = stream.next();
+			await Promise.resolve();
+			expect(engine.getSnapshot().pendingApprovals).toHaveLength(1);
+			expect(execute).not.toHaveBeenCalled();
+			expect(engine.approveTool("call-1")).toBe(true);
+
+			const resultEvent = await resultPromise;
+			expect(resultEvent.value).toMatchObject({
+				type: "tool-result",
+				result: { success: true },
+			});
+			if (resultEvent.value?.type === "tool-result") {
+				expect(resultEvent.value.result.content).toContain("4");
+			}
+			expect(execute).toHaveBeenCalledOnce();
+			expect(engine.getSnapshot().pendingApprovals).toHaveLength(0);
+		});
+
+		it("rejects a pending tool without executing it", async () => {
+			const execute = vi.fn(async () => ({ success: true, content: "done" }));
+			const adapter = createMockLLMAdapter([
+				[
+					{
+						type: "tool-call",
+						call: { id: "call-1", name: "write", args: {} },
+					},
+					{ type: "finish", reason: "tool-calls-detected" },
+				],
+				[{ type: "finish", reason: "text-complete" }],
+			]);
+			const engine = new ChatEngine({
+				llmAdapter: adapter,
+				toolAdapter: createMockToolAdapter(
+					[{ name: "write", description: "Write", parameters: {} }],
+					execute,
+				),
+			});
+			engine.createSession("Test");
+
+			const stream = engine.sendMessage("Write")[Symbol.asyncIterator]();
+			await stream.next();
+			await stream.next();
+			const resultPromise = stream.next();
+			await Promise.resolve();
+			expect(engine.rejectTool("call-1")).toBe(true);
+			const resultEvent = await resultPromise;
+
+			expect(resultEvent.value).toMatchObject({
+				type: "tool-result",
+				result: { success: false, error: "User rejected the tool call" },
+			});
+			expect(execute).not.toHaveBeenCalled();
+			expect(engine.rejectTool("call-1")).toBe(false);
+		});
+
+		it("cancels pending approval when streaming stops", async () => {
+			const execute = vi.fn(async () => ({ success: true, content: "done" }));
+			const adapter = createMockLLMAdapter([
+				[
+					{
+						type: "tool-call",
+						call: { id: "call-1", name: "write", args: {} },
+					},
+					{ type: "finish", reason: "tool-calls-detected" },
+				],
+			]);
+			const engine = new ChatEngine({
+				llmAdapter: adapter,
+				toolAdapter: createMockToolAdapter(
+					[{ name: "write", description: "Write", parameters: {} }],
+					execute,
+				),
+			});
+			engine.createSession("Test");
+
+			const stream = engine.sendMessage("Write")[Symbol.asyncIterator]();
+			await stream.next();
+			await stream.next();
+			const resultPromise = stream.next();
+			await Promise.resolve();
+			engine.stopStreaming();
+			const resultEvent = await resultPromise;
+
+			expect(resultEvent.value).toMatchObject({
+				type: "tool-result",
+				result: { success: false, error: "Tool call cancelled" },
+			});
+			expect(engine.getSnapshot().pendingApprovals).toHaveLength(0);
+			expect(execute).not.toHaveBeenCalled();
+		});
+
 		it("forwards events from AgentLoop in real-time", async () => {
 			const toolDefs: ToolDefinition[] = [
 				{ name: "calculate", description: "Math", parameters: {} },
@@ -400,6 +516,41 @@ describe("ChatEngine", () => {
 			// Just verify it returns to false after
 			await promise;
 			expect(engine.isStreaming).toBe(false);
+		});
+
+		it("publishes observable snapshots and supports unsubscribe", () => {
+			const engine = new ChatEngine({ llmAdapter: createMockLLMAdapter() });
+			const listener = vi.fn();
+			const unsubscribe = engine.subscribe(listener);
+
+			expect(listener).toHaveBeenCalledWith(
+				expect.objectContaining({
+					activeSessionId: null,
+					isStreaming: false,
+					pendingApprovals: [],
+				}),
+			);
+
+			const session = engine.createSession("Observed");
+			expect(listener).toHaveBeenLastCalledWith(
+				expect.objectContaining({ activeSessionId: session.id }),
+			);
+
+			unsubscribe();
+			const callCount = listener.mock.calls.length;
+			engine.createSession("Not observed");
+			expect(listener).toHaveBeenCalledTimes(callCount);
+		});
+
+		it("rejects new work after disposal", async () => {
+			const engine = new ChatEngine({ llmAdapter: createMockLLMAdapter() });
+			engine.createSession("Test");
+			engine.dispose();
+
+			const events = await collectEvents(engine.sendMessage("Hi"));
+			expect(events).toEqual([
+				{ type: "error", message: "ChatEngine has been disposed" },
+			]);
 		});
 	});
 
