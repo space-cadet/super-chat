@@ -134,6 +134,17 @@
   ESM/CJS/declaration build, and `git diff --check`. The next planned work is
   richer host conformance.
 
+## Current Continuation — T16 Shared Host Conformance
+
+- Added reusable `validateRetrievalResponse` and
+  `runRetrievalConformance` utilities for plain arrays and rich retrieval
+  outcomes.
+- Fixture acceptance now runs the shared conformance runner; adapter tests
+  cover request limits, cancellation, and rich-result pass-through.
+- Verification passed: TypeScript, 16 Vitest files / 142 tests, pinned tsup
+  ESM/CJS/declaration build, and `git diff --check`.
+- Remaining: apply the shared suite to Arxivite and Obsidian product hosts.
+
 ## Previous Session
 
 *Session Started*: 2026-06-20 15:23 IST

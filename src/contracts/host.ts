@@ -1,6 +1,5 @@
 import type {
 	ChatSession,
-	RetrievalResult,
 	ToolCall,
 	ToolDefinition,
 	ToolResult,
@@ -128,9 +127,21 @@ export interface RetrievedSource {
 	};
 }
 
+/** Rich retrieval outcome accepted at the host boundary. */
+export interface RetrievalResult {
+	sources: RetrievedSource[];
+	status?: "complete" | "partial" | "unavailable" | "unauthorized" | "cancelled";
+	warnings?: string[];
+	error?: {
+		code: "cancelled" | "unauthorized" | "unavailable" | "invalid-response" | "failed";
+		message: string;
+		retryable?: boolean;
+	};
+}
+
 export interface RetrievalCapability extends HostCapabilityBase {
 	kind: "retrieval";
-	 retrieve(
+	retrieve(
 		request: RetrievalRequest,
 		context: HostOperationContext,
 	): Promise<RetrievedSource[] | RetrievalResult>;

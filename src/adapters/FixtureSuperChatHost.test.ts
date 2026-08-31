@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { FixtureSuperChatHost } from "./FixtureSuperChatHost";
 import { createChatEngineForHost } from "./HostAdapters";
 import { validateHostContract } from "../contracts/validation";
+import { runRetrievalConformance } from "../contracts/retrievalConformance";
 
 async function collectEvents<T>(stream: AsyncIterable<T>): Promise<T[]> {
   const events: T[] = [];
@@ -27,6 +28,16 @@ describe("FixtureSuperChatHost", () => {
 
     expect(report.valid).toBe(true);
     expect(report.capabilityKinds).toEqual(["identity", "persistence", "tools", "retrieval"]);
+
+    const retrievalReport = await runRetrievalConformance({
+      capability: host.capabilities.retrieval!,
+    });
+    expect(retrievalReport).toMatchObject({
+      valid: true,
+      responseKind: "array",
+      status: "complete",
+      sourceCount: 1,
+    });
 
     const engine = await createChatEngineForHost({
       host,

@@ -44,8 +44,9 @@ assembled context. Normalized retrieval outcomes, partial/warning handling,
 observable React retrieval state, and latest-turn replay behavior are also
 implemented. Replay reuses the persisted bounded retrieval record by default
 and supports explicit host refresh. The next Phase 5 slice is richer host
-conformance. Product migrations remain deferred until the fixture evidence is
-carried into their hosts.
+conformance utilities and fixture acceptance are also implemented. The next
+step is applying those checks to product hosts. Product migrations remain
+deferred until the fixture evidence is carried into their hosts.
 
 T16 now owns the verified Phase 5 host-backed RAG plan; T15 owns
 behavior-preserving extraction from `obsidian-ai`; T18 owns the

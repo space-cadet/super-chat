@@ -200,7 +200,8 @@ Normalized retrieval outcomes and observable React retrieval state are now
 verified: partial results continue provider work with warnings, while unsafe
 or unavailable outcomes stop the turn with typed errors. Replay policy and
 durable retrieval presence are now hardened; the remaining Phase 5 gap is
-richer host conformance.
+richer host conformance. A reusable retrieval response conformance runner now
+passes against the fixture host; product-host application remains open.
 
 ### Phase 6: Package and compatibility discipline
 

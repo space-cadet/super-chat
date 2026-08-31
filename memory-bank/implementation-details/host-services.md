@@ -44,6 +44,11 @@ host.capabilities.retrieval = {
 };
 ```
 
+Retrieval may return the legacy source array or a rich result with `status`,
+`warnings`, and a typed `error`. Use `runRetrievalConformance` while building
+an adapter and `validateRetrievalResponse` for response-focused tests. Both
+checks require stable source provenance tied to the retrieval capability.
+
 ## Available Services
 
 | Service | What the host provides | What super-chat keeps doing |
@@ -70,6 +75,8 @@ host.capabilities.retrieval = {
 - The `signal` in the operation context tells a host that a user stopped the
   request. Respect it where the product API allows cancellation.
 - The `requestId` lets logs connect related work without exposing private data.
+- A retrieval host should run the shared conformance checks against its
+  capability before it is mounted into `SuperChatApp`.
 
 ## Checking a Host
 
@@ -91,4 +98,3 @@ stored under the wrong name. It does not call product APIs or write data.
 This phase defines the public shapes and checks them. It does not yet make
 `ChatEngine` run through a host. That comes next, in INFRA-1 Phase 3 and Phase
 4, when we define session saving and prove a complete fixture host.
-

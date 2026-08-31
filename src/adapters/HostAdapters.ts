@@ -2,7 +2,6 @@ import type {
 	ChatEngineOptions,
 	PersistenceAdapter,
 	RAGAdapter,
-	RetrievalResult,
 	ToolAdapter,
 	ToolCall,
 	ToolDefinition,
@@ -14,6 +13,7 @@ import type {
 	HostOperationContext,
 	HostToolDescriptor,
 	RetrievalCapability,
+	RetrievalResult as HostRetrievalResult,
 	RetrievedSource,
 	SuperChatHost,
 	ToolCapability,
@@ -86,7 +86,7 @@ export class HostRAGAdapter implements RAGAdapter {
 		query: string,
 		signal?: AbortSignal,
 		options?: { maxResults?: number },
-	): Promise<RetrievedSource[] | RetrievalResult> {
+	): Promise<RetrievedSource[] | HostRetrievalResult> {
 		return this.capability.retrieve(
 			{ query, ...(options?.maxResults !== undefined ? { maxResults: options.maxResults } : {}) },
 			createOperationContext(signal),

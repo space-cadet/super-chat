@@ -203,7 +203,9 @@ validation, deduplication, deterministic ordering, result/context limits,
 untrusted-evidence formatting, durable assembled context, normalized outcomes,
 and shared React retrieval state. Latest-turn replay now reuses persisted
 bounded retrieval context by default and supports explicit host refresh.
-Richer progress and host conformance remain before product hosts depend on it.
+Richer progress and product-host conformance remain before product hosts
+depend on it. The generic response conformance runner and fixture acceptance
+are now implemented.
 
 ## 8. Capability Extraction from obsidian-ai
 
@@ -324,7 +326,7 @@ Do not begin the broad Obsidian migration until this slice is green.
   the turn. Partial results continue provider work with warnings; unavailable,
   unauthorized, malformed, and cancelled outcomes stop the turn with typed
   errors. The legacy paper-oriented RAG methods remain split from the neutral
-  host contract; richer progress, replay, and host conformance remain open.
+  host contract; richer progress and product-host conformance remain open.
   `contextAdapter` remains declared but unused.
 - Arxivite creates a second in-memory session, adds an untyped mapping, owns
   the stream loop, and writes messages separately.

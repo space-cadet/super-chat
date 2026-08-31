@@ -128,6 +128,7 @@ export type {
 	ToolCapability,
 	RetrievalRequest,
 	RetrievedSource,
+	RetrievalResult as HostRetrievalResult,
 	RetrievalCapability,
 	HostDocument,
 	DocumentWrite,
@@ -150,6 +151,14 @@ export {
 	listHostCapabilities,
 	validateHostContract,
 	assertHostContract,
+	validateRetrievalResponse,
+	runRetrievalConformance,
+} from './contracts';
+export type {
+	RetrievalResponseKind,
+	RetrievalConformanceIssue,
+	RetrievalConformanceReport,
+	RetrievalConformanceOptions,
 } from './contracts';
 // export { ApprovalQueue } from './core/ApprovalQueue';
 // export { Orchestrator } from './core/Orchestrator';

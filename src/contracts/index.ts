@@ -13,6 +13,7 @@ export type {
 	ToolCapability,
 	RetrievalRequest,
 	RetrievedSource,
+	RetrievalResult,
 	RetrievalCapability,
 	HostDocument,
 	DocumentWrite,
@@ -29,6 +30,16 @@ export type {
 } from "./host";
 
 export type { HostContractIssue, HostContractReport } from "./validation";
+export type {
+	RetrievalResponseKind,
+	RetrievalConformanceIssue,
+	RetrievalConformanceReport,
+	RetrievalConformanceOptions,
+} from "./retrievalConformance";
+export {
+	validateRetrievalResponse,
+	runRetrievalConformance,
+} from "./retrievalConformance";
 export {
 	getHostCapability,
 	hasHostCapability,
@@ -36,4 +47,3 @@ export {
 	validateHostContract,
 	assertHostContract,
 } from "./validation";
-
