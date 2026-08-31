@@ -24,7 +24,8 @@ The current record is schema version `1` and contains:
 - `modelHistory`, a provider-neutral role/content history used for the next
   request;
 - `turns`, with status, tool calls, tool results, errors, and the model
-  messages produced by that turn;
+  messages produced by that turn, plus bounded retrieval context, sources,
+  outcome status, warnings, and typed errors;
 - `persistence` metadata, including the schema version and migration ID.
 
 The visible transcript and model history are deliberately separate. Tool
@@ -78,3 +79,13 @@ for the next model request.
 
 The fixture-host slice will use these rules to prove browser reload, tool
 approval, and recovery before either product migration begins.
+
+## Replay
+
+`ChatEngine.replayTurn` and `replayMessage` replay only the latest turn. They
+append a new durable turn using the original user message, preserving the
+original turn and response rather than overwriting history. If the original
+turn has persisted retrieval context, replay uses that bounded context and
+does not call the host retrieval capability again. `refreshRetrieval: true`
+explicitly opts into a new host search. Older-turn replay is rejected until a
+separate branching model can define how later history should be handled.

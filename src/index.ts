@@ -27,6 +27,7 @@ export type {
 	ContextItem,
 	StreamEvent,
 	SendOptions,
+	ReplayOptions,
 	AgentLoopOptions,
 	ChatEngineOptions,
 	ChatEngineSnapshot,

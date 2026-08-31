@@ -41,9 +41,11 @@ status events, and durable retrieval failure/cancellation handling. The bounded
 retrieval/context slice is also implemented: source validation, deduplication,
 ordering, result/context limits, untrusted-evidence formatting, and durable
 assembled context. Normalized retrieval outcomes, partial/warning handling,
-and observable React retrieval state are also implemented. The next Phase 5
-slice is replay behavior and host conformance. Product migrations remain
-deferred until the fixture evidence is carried into their hosts.
+observable React retrieval state, and latest-turn replay behavior are also
+implemented. Replay reuses the persisted bounded retrieval record by default
+and supports explicit host refresh. The next Phase 5 slice is richer host
+conformance. Product migrations remain deferred until the fixture evidence is
+carried into their hosts.
 
 T16 now owns the verified Phase 5 host-backed RAG plan; T15 owns
 behavior-preserving extraction from `obsidian-ai`; T18 owns the

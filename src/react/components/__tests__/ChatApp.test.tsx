@@ -14,6 +14,7 @@ function createMockEngine() {
     deleteSession: vi.fn(),
     archiveSession: vi.fn(),
     sendMessage: vi.fn(),
+    replayMessage: vi.fn(async function* () {}),
     stopStreaming: vi.fn(),
     subscribe: vi.fn(() => () => undefined),
     approveTool: vi.fn(),
@@ -28,6 +29,7 @@ function createMockEngine() {
     deleteSession: ReturnType<typeof vi.fn>;
     archiveSession: ReturnType<typeof vi.fn>;
     sendMessage: ReturnType<typeof vi.fn>;
+    replayMessage: ReturnType<typeof vi.fn>;
     stopStreaming: ReturnType<typeof vi.fn>;
     subscribe: ReturnType<typeof vi.fn>;
     approveTool: ReturnType<typeof vi.fn>;
@@ -96,6 +98,25 @@ describe('ChatApp', () => {
 
     expect(screen.getByText('Hello')).toBeInTheDocument();
     expect(screen.getByText('Hi there!')).toBeInTheDocument();
+  });
+
+  it('replays a message through the engine retry action', async () => {
+    const session: ChatSession = {
+      id: 'sess-1',
+      title: 'Test',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      messages: [
+        { id: 'msg-1', role: 'user', content: 'Hello', timestamp: Date.now() },
+      ],
+    };
+    mockEngine.getActiveSession.mockReturnValue(session);
+    render(<ChatApp engine={mockEngine} />);
+
+    fireEvent.click(screen.getByTitle('Retry'));
+    await waitFor(() => {
+      expect(mockEngine.replayMessage).toHaveBeenCalledWith('msg-1');
+    });
   });
 
   it('opens sidebar when menu button clicked', async () => {

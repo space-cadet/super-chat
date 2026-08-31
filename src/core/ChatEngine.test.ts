@@ -287,6 +287,101 @@ describe("ChatEngine", () => {
 				sources: [{ id: "partial-1" }],
 			});
 		});
+
+		it("replays the latest persisted retrieval context without searching again", async () => {
+			const persistence = createMockPersistenceAdapter();
+			const source: ChatRetrievedSource = {
+				id: "saved-source",
+				title: "Saved source",
+				content: "Evidence saved with the original turn.",
+				provenance: {
+					capabilityId: "fixture.retrieval",
+					sourceId: "saved-source",
+					retrievedAt: 1,
+				},
+			};
+			const retrieveSources = vi.fn(async () => [source]);
+			const rag: RAGAdapter = {
+				analyzeQuery: async () => ({ intent: "test", keywords: [], requiresRetrieval: true }),
+				retrievePapers: async () => [],
+				buildContext: async () => "",
+				retrieveSources,
+			};
+			const prompts: Array<Array<{ role: string; content: string }>> = [];
+			const createAdapter = (response: string): import("./types").LLMAdapter => ({
+				...createMockLLMAdapter(),
+				streamChat: async function* (messages) {
+					prompts.push(messages);
+					yield response;
+				},
+			});
+
+			const first = new ChatEngine({
+				llmAdapter: createAdapter("Original answer"),
+				ragAdapter: rag,
+				persistenceAdapter: persistence,
+			});
+			first.createSession("Replay");
+			await collectEvents(first.sendMessage("Use the saved guide", { enableRAG: true }));
+			const originalTurnId = first.getActiveSession()?.turns?.[0]?.id;
+			expect(originalTurnId).toBeDefined();
+			expect(retrieveSources).toHaveBeenCalledOnce();
+
+			const second = new ChatEngine({
+				llmAdapter: createAdapter("Replayed answer"),
+				ragAdapter: rag,
+				persistenceAdapter: persistence,
+			});
+			await second.loadSessions();
+			const events = await collectEvents(second.replayTurn(originalTurnId!));
+
+			expect(events).toContainEqual({ type: "rag-status", status: "complete", progress: 1 });
+			expect(retrieveSources).toHaveBeenCalledOnce();
+			expect(prompts.at(-1)).toContainEqual({
+				role: "system",
+				content: expect.stringContaining("Evidence saved with the original turn."),
+			});
+			expect(second.getActiveSession()?.turns).toHaveLength(2);
+			expect(second.getActiveSession()?.turns?.at(-1)).toMatchObject({
+				retrievalStatus: "complete",
+				retrievedContext: expect.stringContaining("Evidence saved with the original turn."),
+			});
+		});
+
+		it("can explicitly refresh retrieval during replay and rejects older turns", async () => {
+			const source = (id: string): ChatRetrievedSource => ({
+				id,
+				title: id,
+				content: `Evidence ${id}`,
+				provenance: { capabilityId: "fixture.retrieval", sourceId: id, retrievedAt: 1 },
+			});
+			const retrieveSources = vi.fn(async (query: string) => [source(query)]);
+			const rag: RAGAdapter = {
+				analyzeQuery: async () => ({ intent: "test", keywords: [], requiresRetrieval: true }),
+				retrievePapers: async () => [],
+				buildContext: async () => "",
+				retrieveSources,
+			};
+			const engine = new ChatEngine({
+				llmAdapter: createMockLLMAdapter([], ["answer"]),
+				ragAdapter: rag,
+			});
+			engine.createSession("Replay controls");
+			await collectEvents(engine.sendMessage("first", { enableRAG: true }));
+			const firstTurnId = engine.getActiveSession()?.turns?.[0]?.id;
+			await collectEvents(engine.sendMessage("second", { enableRAG: false }));
+
+			const olderReplay = await collectEvents(engine.replayTurn(firstTurnId!));
+			expect(olderReplay).toContainEqual({
+				type: "error",
+				message: "Only the latest turn can be replayed",
+			});
+			expect(retrieveSources).toHaveBeenCalledOnce();
+
+			const latestTurnId = engine.getActiveSession()?.turns?.at(-1)?.id;
+			await collectEvents(engine.replayTurn(latestTurnId!, { refreshRetrieval: true, enableRAG: true }));
+			expect(retrieveSources).toHaveBeenCalledTimes(2);
+		});
 	});
 
 	describe("tool-enabled messaging", () => {

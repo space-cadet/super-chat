@@ -47,6 +47,7 @@ export interface UseChatActions {
   approveTool: (callId: string) => boolean;
   rejectTool: (callId: string, reason?: string) => void;
   loadSessions: () => Promise<void>;
+  replayMessage: (messageId: string) => Promise<void>;
 }
 
 export type UseChatReturn = UseChatState & UseChatActions;
@@ -173,6 +174,26 @@ export function useChat(engine: ChatEngine, options?: { initialSessionId?: strin
     [engine]
   );
 
+  const replayMessage = useCallback(
+    async (messageId: string) => {
+      setError(null);
+      setIsStreaming(true);
+      try {
+        for await (const event of engine.replayMessage(messageId)) {
+          if (event.type === "error") setError(event.message);
+        }
+        const session = engine.getActiveSession();
+        setCurrentSession(session);
+        setMessages(session?.messages ?? []);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      } finally {
+        setIsStreaming(false);
+      }
+    },
+    [engine],
+  );
+
   const switchSession = useCallback(
     (sessionId: string) => {
       const ok = engine.switchSession(sessionId);
@@ -237,5 +258,6 @@ export function useChat(engine: ChatEngine, options?: { initialSessionId?: strin
     approveTool,
     rejectTool,
     loadSessions,
+    replayMessage,
   };
 }

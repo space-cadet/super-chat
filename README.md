@@ -58,6 +58,16 @@ for await (const event of engine.sendMessage('What is 2+2?')) {
 }
 ```
 
+To retry the latest persisted turn, replay it by turn ID. Saved bounded
+retrieval context is reused by default; pass `refreshRetrieval: true` when a
+new host search is intended.
+
+```typescript
+for await (const event of engine.replayTurn(session.turns?.at(-1)?.id ?? '')) {
+  if (event.type === 'text-delta') process.stdout.write(event.text);
+}
+```
+
 ### With Tools
 
 ```typescript

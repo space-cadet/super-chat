@@ -159,6 +159,15 @@ function normalizeTurns(value: unknown): ChatTurn[] | null {
 		...(turn.retrievedContext !== undefined
 			? { retrievedContext: turn.retrievedContext }
 			: {}),
+		...(turn.retrievalStatus !== undefined
+			? { retrievalStatus: turn.retrievalStatus }
+			: {}),
+		...(turn.retrievalWarnings
+			? { retrievalWarnings: [...turn.retrievalWarnings] }
+			: {}),
+		...(turn.retrievalError
+			? { retrievalError: { ...turn.retrievalError } }
+			: {}),
 	}));
 }
 
@@ -208,6 +217,43 @@ function isChatTurn(value: unknown): value is ChatTurn {
 		Object.values(value.toolResults).every(isToolResult) &&
 		value.modelMessages.every(isModelMessage)
 		&& (value.retrievedContext === undefined || typeof value.retrievedContext === "string")
+		&& (value.retrievedSources === undefined ||
+			(Array.isArray(value.retrievedSources) && value.retrievedSources.every(isRetrievedSource)))
+		&& (value.retrievalStatus === undefined || isRetrievalStatus(value.retrievalStatus))
+		&& (value.retrievalWarnings === undefined ||
+			(Array.isArray(value.retrievalWarnings) && value.retrievalWarnings.every((warning) => typeof warning === "string")))
+		&& (value.retrievalError === undefined || isRetrievalError(value.retrievalError))
+	);
+}
+
+function isRetrievalStatus(value: unknown): boolean {
+	return value === "complete" || value === "partial" || value === "unavailable" ||
+		value === "unauthorized" || value === "cancelled";
+}
+
+function isRetrievedSource(value: unknown): value is ChatRetrievedSource {
+	return (
+		isRecord(value) &&
+		typeof value.id === "string" && value.id.length > 0 &&
+		typeof value.title === "string" && value.title.length > 0 &&
+		typeof value.content === "string" && value.content.length > 0 &&
+		isRecord(value.provenance) &&
+		typeof value.provenance.capabilityId === "string" &&
+		value.provenance.capabilityId.length > 0 &&
+		typeof value.provenance.sourceId === "string" &&
+		value.provenance.sourceId.length > 0 &&
+		typeof value.provenance.retrievedAt === "number"
+	);
+}
+
+function isRetrievalError(value: unknown): boolean {
+	return (
+		isRecord(value) &&
+		(value.code === "cancelled" || value.code === "unauthorized" ||
+			value.code === "unavailable" || value.code === "invalid-response" ||
+			value.code === "failed") &&
+		typeof value.message === "string" &&
+		(value.retryable === undefined || typeof value.retryable === "boolean")
 	);
 }
 

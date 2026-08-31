@@ -29,6 +29,7 @@ export function ChatApp({ engine, initialSessionId, onNewChat }: ChatAppProps) {
     approveTool,
     rejectTool,
     loadSessions,
+    replayMessage,
   } = useChat(engine, { initialSessionId });
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -81,8 +82,7 @@ export function ChatApp({ engine, initialSessionId, onNewChat }: ChatAppProps) {
               key={message.id}
               message={message}
               onRetry={async (id) => {
-                // Retry not yet implemented in useChat hook
-                console.log('Retry:', id);
+                await replayMessage(id);
               }}
               onApproveTool={(callId) => approveTool(callId)}
               onRejectTool={(callId) => rejectTool(callId, 'User rejected')}

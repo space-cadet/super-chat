@@ -108,7 +108,9 @@
   snapshots; `useChat` and `ChatApp` consume the observable state.
 - Verification passed: TypeScript, 14 test files / 130 tests, pinned tsup
   ESM/CJS/declaration build, and `git diff --check`.
-- Remaining: replay behavior, richer host conformance, and product migration.
+- Remaining: richer host conformance and product migration. Latest-turn replay
+  now reuses persisted bounded retrieval context by default and supports an
+  explicit host refresh.
 
 ## Current Continuation — T16 Host Adapter Conformance
 
@@ -116,7 +118,8 @@
   retrieval result limit and active cancellation signal to the host capability.
 - Verification passed: TypeScript, 15 test files / 131 tests, pinned tsup
   ESM/CJS/declaration build, and `git diff --check`.
-- Product-host conformance and replay behavior remain open.
+- Product-host conformance remains open. Shared latest-turn replay behavior is
+  implemented and wired to the React retry action.
 
 ## Previous Session
 

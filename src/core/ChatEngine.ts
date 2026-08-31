@@ -30,6 +30,7 @@ import type {
 	ExternalSessionIdentity,
 	RetrievalError,
 	RetrievalSnapshot,
+	ReplayOptions,
 	SendOptions,
 	SessionWriteContext,
 	StreamEvent,
@@ -67,6 +68,14 @@ interface PendingApproval {
 	call: ToolCall;
 	resolve: (approved: boolean) => void;
 	removeAbortListener?: () => void;
+}
+
+interface ReplayContext {
+	sources: NonNullable<ChatTurn["retrievedSources"]>;
+	context: string;
+	status: "complete" | "partial";
+	warnings: string[];
+	error?: RetrievalError;
 }
 
 const defaultSettings: ChatSettings = {
@@ -292,15 +301,82 @@ export class ChatEngine {
 	// Messaging
 	// --------------------------------------------------------------------------
 
+	/** Send a new user turn and receive streaming events. */
+	async *sendMessage(
+		text: string,
+		options?: SendOptions,
+	): AsyncIterable<StreamEvent> {
+		yield* this.runMessage(text, options);
+	}
+
+	/**
+	 * Replay the latest turn using its saved bounded retrieval context.
+	 * Replays append a new durable turn so the original response and evidence
+	 * remain auditable. Set refreshRetrieval to search the host again.
+	 */
+	async *replayTurn(
+		turnId: string,
+		options?: ReplayOptions,
+	): AsyncIterable<StreamEvent> {
+		const session = this.getActiveSession();
+		const turns = session?.turns ?? [];
+		const turn = turns.find((candidate) => candidate.id === turnId);
+		const latestTurn = turns.at(-1);
+		const userMessage = turn
+			? session?.messages.find((message) => message.id === turn.userMessageId)
+			: undefined;
+
+		if (!session || !turn || !userMessage) {
+			yield { type: "error", message: "Replay turn was not found" };
+			return;
+		}
+		if (latestTurn?.id !== turnId) {
+			yield { type: "error", message: "Only the latest turn can be replayed" };
+			return;
+		}
+
+		const replayContext: ReplayContext | undefined =
+			!options?.refreshRetrieval && turn.retrievedContext
+				? {
+						sources: structuredClone(turn.retrievedSources ?? []),
+						context: turn.retrievedContext,
+						status: turn.retrievalStatus === "partial" ? "partial" : "complete",
+						warnings: [...(turn.retrievalWarnings ?? [])],
+						...(turn.retrievalError ? { error: { ...turn.retrievalError } } : {}),
+					}
+				: undefined;
+		const replayOptions = replayContext
+			? { ...options, enableRAG: false }
+			: options;
+		yield* this.runMessage(userMessage.content, replayOptions, replayContext);
+	}
+
+	/** Replay a turn addressed by either its user or assistant message ID. */
+	async *replayMessage(
+		messageId: string,
+		options?: ReplayOptions,
+	): AsyncIterable<StreamEvent> {
+		const turn = this.getActiveSession()?.turns?.find(
+			(candidate) =>
+				candidate.userMessageId === messageId || candidate.assistantMessageId === messageId,
+		);
+		if (!turn) {
+			yield { type: "error", message: "Replay message was not found" };
+			return;
+		}
+		yield* this.replayTurn(turn.id, options);
+	}
+
 	/**
 	 * Send a message and receive streaming events.
 	 *
 	 * Yields text-deltas, tool-calls, tool-results, and finish events.
 	 * Callers should handle UI updates based on event types.
 	 */
-	async *sendMessage(
+	private async *runMessage(
 		text: string,
 		options?: SendOptions,
+		replayContext?: ReplayContext,
 	): AsyncIterable<StreamEvent> {
 		if (this.disposed) {
 			yield { type: "error", message: "ChatEngine has been disposed" };
@@ -343,12 +419,22 @@ export class ChatEngine {
 		};
 		const turn = createTurn(userMessage, [userModelMessage]);
 		turn.assistantMessageId = `assistant-${turn.id}`;
-		const enableRAG = options?.enableRAG ?? this.state.settings.enableRAG;
+		if (replayContext) {
+			turn.retrievedSources = replayContext.sources;
+			turn.retrievedContext = replayContext.context;
+			turn.retrievalStatus = replayContext.status;
+			turn.retrievalWarnings = [...replayContext.warnings];
+			if (replayContext.error) turn.retrievalError = { ...replayContext.error };
+		}
+		const enableRAG = replayContext
+			? false
+			: options?.enableRAG ?? this.state.settings.enableRAG;
 		this.setRetrievalState({
-			status: enableRAG ? "retrieving" : "idle",
-			progress: enableRAG ? 0 : 0,
-			sources: [],
-			warnings: [],
+			status: replayContext ? replayContext.status : enableRAG ? "retrieving" : "idle",
+			progress: replayContext ? 1 : 0,
+			sources: replayContext?.sources ?? [],
+			warnings: replayContext?.warnings ?? [],
+			...(replayContext?.error ? { error: { ...replayContext.error } } : {}),
 		});
 		session.turns = [...(session.turns ?? []), turn];
 		session.modelHistory = [...priorModelHistory, userModelMessage];
@@ -366,6 +452,22 @@ export class ChatEngine {
 			if (signal.aborted) {
 				await this.finishPreProviderTurn(session, turn, signal);
 				return;
+			}
+
+			if (replayContext) {
+				for (const warning of replayContext.warnings) {
+					yield { type: "rag-warning", message: warning };
+				}
+				await this.persistSession(session, {
+					owner: "chat-engine",
+					reason: "retrieval",
+					turnId: turn.id,
+				});
+				yield {
+					type: "rag-status",
+					status: replayContext.status,
+					progress: 1,
+				};
 			}
 
 			if (enableRAG && this.opts.ragAdapter?.retrieveSources) {
@@ -405,6 +507,9 @@ export class ChatEngine {
 					for (const warning of warnings) yield { type: "rag-warning", message: warning };
 
 					if (normalized.error && normalized.status !== "partial") {
+						turn.retrievalStatus = signal.aborted ? "cancelled" : normalized.status;
+						turn.retrievalWarnings = [...warnings];
+						turn.retrievalError = { ...normalized.error };
 						this.setRetrievalState({
 							status: signal.aborted ? "cancelled" : "failed",
 							progress: 1,
@@ -425,6 +530,9 @@ export class ChatEngine {
 
 					turn.retrievedSources = retrievalContext.sources;
 					turn.retrievedContext = retrievalContext.context;
+					turn.retrievalStatus = normalized.status;
+					turn.retrievalWarnings = [...warnings];
+					if (normalized.error) turn.retrievalError = { ...normalized.error };
 					completedRetrievalStatus = normalized.status === "partial" ? "partial" : "complete";
 					this.setRetrievalState({
 						status: normalized.status === "partial" ? "partial" : "complete",
@@ -440,6 +548,9 @@ export class ChatEngine {
 						message,
 						retryable: !signal.aborted,
 					};
+					turn.retrievalStatus = signal.aborted ? "cancelled" : "unavailable";
+					turn.retrievalWarnings = [];
+					turn.retrievalError = { ...retrievalError };
 					this.setRetrievalState({
 						status: signal.aborted ? "cancelled" : "failed",
 						progress: 1,

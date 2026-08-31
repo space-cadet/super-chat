@@ -201,8 +201,9 @@ the host adapter, emits retrieval status events, and durably records retrieval
 success, failure, or cancellation. Phase 5 now also has bounded source
 validation, deduplication, deterministic ordering, result/context limits,
 untrusted-evidence formatting, durable assembled context, normalized outcomes,
-and shared React retrieval state. It still needs richer progress, replay
-behavior, and host conformance before product hosts depend on it.
+and shared React retrieval state. Latest-turn replay now reuses persisted
+bounded retrieval context by default and supports explicit host refresh.
+Richer progress and host conformance remain before product hosts depend on it.
 
 ## 8. Capability Extraction from obsidian-ai
 

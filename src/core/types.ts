@@ -99,6 +99,9 @@ export interface ChatTurn {
   modelMessages: ChatModelMessage[];
   retrievedSources?: ChatRetrievedSource[];
   retrievedContext?: string;
+  retrievalStatus?: RetrievalStatus;
+  retrievalWarnings?: string[];
+  retrievalError?: RetrievalError;
   error?: string;
 }
 
@@ -235,6 +238,11 @@ export interface SendOptions {
   maxSteps?: number;
   maxRetrievalResults?: number;
   signal?: AbortSignal;
+}
+
+/** Controls whether a replay reuses its saved retrieval record or searches again. */
+export interface ReplayOptions extends SendOptions {
+  refreshRetrieval?: boolean;
 }
 
 export interface AgentLoopOptions {
