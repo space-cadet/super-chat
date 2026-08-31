@@ -1,6 +1,6 @@
 # Session Cache — super-chat
 
-*Last Updated*: 2026-09-01 01:50:00 IST
+*Last Updated*: 2026-09-01 02:13:21 IST
 
 ## Global Program Tracker
 
@@ -29,7 +29,7 @@
 - Verification passed: TypeScript, 13 test files / 122 tests, package ESM/CJS/
   declaration build, Vite demo build, and `git diff --check`.
 
-## Current Session: T22 Phase 4 Fixture Host
+## Current Session: T16 Phase 5 Plan Verification
 
 - Recorded `super-chat` as the complete chat application and reusable runtime.
 - Defined products as capability hosts rather than owners of chat mechanics.
@@ -48,6 +48,24 @@
 - Next action: T16 Phase 5 shared host-backed RAG hardening. Keep Obsidian and
   Arxivite migrations deferred until their host adapters pass equivalent
   acceptance.
+
+## Current Plan Review: T16 Phase 5 Shared Host-backed RAG
+
+- Sol-medium read-only review completed against clean commit `42c3b75`.
+- Direction confirmed, but Phase 5 is a hardening pass over the existing
+  Phase 4 path, not a new RAG system.
+- First implementation priority: move retrieval inside the engine lock and
+  user-turn persistence/cancellation/failure lifecycle.
+- Follow with one neutral retrieval contract, bounded context assembly,
+  normalized errors/partial results, replay-safe persistence, and React
+  retrieval status/error state.
+- Do not change `AgentLoop`, add a large RAG manager, or port Arxivite/PocketFlow
+  and Obsidian search logic into the shared core.
+- Review caveat: the subagent's parallel full-suite run saw 121/122 because
+  `SuperChatApp.test.tsx` timed out; the isolated test passed. Stabilize this
+  timing-sensitive test before using the all-green Phase 5 gate.
+- Next action: implement the lifecycle-first Phase 5 slice. Keep product
+  migrations deferred until their host adapters pass equivalent acceptance.
 
 ## Previous Session
 

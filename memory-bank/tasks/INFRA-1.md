@@ -156,15 +156,32 @@ without Obsidian or Arxivite.
 ### Phase 5: Shared host-backed RAG
 
 **Owner**: T16  
-**Status**: ⬜ Pending
+**Status**: 🔄 Plan verified (2026-09-01); implementation pending
 
-- [ ] Put retrieval decision and orchestration in `super-chat`.
-- [ ] Normalize host retrieval results, source IDs, and provenance.
+- [x] Put the first retrieval path through `super-chat`; hardening remains.
+- [x] Define the initial normalized host source shape and provenance.
+- [ ] Move retrieval into the protected turn lifecycle with cancellation and
+      durable failure handling.
 - [ ] Apply shared context budgeting, progress, citations, and replay.
 - [ ] Keep domain retrieval algorithms in their host repositories.
 
 **Exit criterion**: `enableRAG` affects the actual turn path, and provenance
 survives persistence and reload.
+
+**Plan verification**:
+
+- The Sol-medium read-only review found Phase 4 already proves a thin
+  host-backed retrieval path, so Phase 5 is a hardening pass rather than a new
+  RAG system.
+- First priority is moving retrieval inside the engine lock/persistence/
+  cancellation/failure lifecycle. The current call occurs too early.
+- Use a small pure retrieval/context module; do not add a large RAG manager or
+  change `AgentLoop`.
+- Preserve host ownership of PocketFlow, paper ranking, vault search, and other
+  domain retrieval algorithms.
+- Full-suite review evidence included a timing-sensitive `SuperChatApp` test:
+  121/122 passed under parallel load and the isolated test passed. Stabilize it
+  before the Phase 5 all-green gate.
 
 ### Phase 6: Package and compatibility discipline
 

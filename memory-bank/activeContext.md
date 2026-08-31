@@ -1,13 +1,13 @@
 # Active Context
 
-*Last Updated: 2026-09-01 01:50:00 IST*
+*Last Updated: 2026-09-01 02:13:21 IST*
 
 ## Current Program: INFRA-1 Unified super-chat Application Platform
 
 INFRA-1 is the global progress owner for the shared core, Obsidian extraction,
 Obsidian host migration, Arxivite harness migration, package compatibility,
 standalone desktop, and later mobile work. T22 is its current shared-core and
-fixture-host workstream.
+host-platform workstream.
 
 Global tracker: `tasks/INFRA-1.md`.
 
@@ -35,10 +35,15 @@ fixture host now mounts through `SuperChatApp`, bridges host persistence/tools/
 retrieval capabilities, proves read and approval-required write flows, and
 renders retrieved-source provenance. TypeScript, 122 tests, package ESM/CJS/
 declaration builds, and the Vite demo build pass. The next shared-core phase is
-host-backed RAG hardening; product migrations remain deferred until the
-fixture evidence is carried into their hosts.
+host-backed RAG hardening. The Sol-medium plan review found that the current
+retrieval path must first move inside the engine lock, persistence, cancellation,
+and failure lifecycle; then it needs bounded context assembly, normalized
+errors, replay-safe persistence, and React progress/error state. Product
+migrations remain deferred until the fixture evidence is carried into their
+hosts.
 
-T15 owns behavior-preserving extraction from `obsidian-ai`; T18 owns the
+T16 now owns the verified Phase 5 host-backed RAG plan; T15 owns
+behavior-preserving extraction from `obsidian-ai`; T18 owns the
 Obsidian host migration; T19 makes Arxivite a `SuperChatApp` harness; T16 owns
 host-backed RAG; T21 owns release and compatibility discipline. T17's former
 "flip the Arxivite toggle" plan is retired because it would entrench

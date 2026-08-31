@@ -35,7 +35,26 @@ architecture through a neutral fixture host before product migrations.
 
 ## State and next step
 
-Phase 3 is pushed as `a07a18e`. Phase 4 is ready for its own commit/push after
-this Memory Bank closeout. The next shared-core dependency is T16 Phase 5:
-shared host-backed RAG hardening. Obsidian and Arxivite migrations remain
-deferred until their hosts pass equivalent acceptance.
+Phase 3 is pushed as `a07a18e` and Phase 4 is pushed as `42c3b75`. The next
+shared-core dependency is T16 Phase 5: shared host-backed RAG hardening.
+Obsidian and Arxivite migrations remain deferred until their hosts pass
+equivalent acceptance.
+
+## Phase 5 Plan Verification Follow-up — 2026-09-01
+
+The Sol-medium read-only review confirmed the Phase 5 direction and refined its
+implementation order. The current Phase 4 retrieval path is useful but thin:
+retrieval must move inside the engine lock and user-turn persistence,
+cancellation, and failure lifecycle before budgeting and broader orchestration
+are added.
+
+The recorded plan now calls for one neutral retrieval contract, a small pure
+validation/budgeting/context module, normalized partial and authorization
+errors, replay-safe bounded persistence, and shared React progress/error state.
+It explicitly avoids `AgentLoop` changes, a large RAG manager, and moving
+Arxivite or Obsidian retrieval algorithms into `super-chat`.
+
+The review also found a timing-sensitive `SuperChatApp` test under parallel
+full-suite load: 121/122 passed in the review run while the isolated test
+passed. This is recorded as a verification caveat to stabilize before the
+Phase 5 all-green acceptance gate.
