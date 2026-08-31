@@ -200,9 +200,9 @@ before retrieval, persists the user turn first, passes cancellation through
 the host adapter, emits retrieval status events, and durably records retrieval
 success, failure, or cancellation. Phase 5 now also has bounded source
 validation, deduplication, deterministic ordering, result/context limits,
-untrusted-evidence formatting, and durable assembled context. It still needs
-normalized source/error handling, richer progress, replay behavior, and shared
-React retrieval state before product hosts depend on it.
+untrusted-evidence formatting, durable assembled context, normalized outcomes,
+and shared React retrieval state. It still needs richer progress, replay
+behavior, and host conformance before product hosts depend on it.
 
 ## 8. Capability Extraction from obsidian-ai
 
@@ -320,10 +320,11 @@ Do not begin the broad Obsidian migration until this slice is green.
   persistence, cancellation signal, status events, and durable failure
   handling. A pure retrieval/context module now validates, deduplicates, orders,
   bounds, and formats host sources, and its assembled context is persisted on
-  the turn. The legacy paper-oriented RAG methods remain split from the neutral
-  host contract; normalized source/error handling, richer progress, replay, and
-  React retrieval state remain open. `contextAdapter` remains declared but
-  unused.
+  the turn. Partial results continue provider work with warnings; unavailable,
+  unauthorized, malformed, and cancelled outcomes stop the turn with typed
+  errors. The legacy paper-oriented RAG methods remain split from the neutral
+  host contract; richer progress, replay, and host conformance remain open.
+  `contextAdapter` remains declared but unused.
 - Arxivite creates a second in-memory session, adds an untyped mapping, owns
   the stream loop, and writes messages separately.
 - Arxivite's persistence and RAG adapters exist but are not wired into its

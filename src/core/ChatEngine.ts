@@ -28,6 +28,8 @@ import type {
 	ChatSettings,
 	ChatTurn,
 	ExternalSessionIdentity,
+	RetrievalError,
+	RetrievalSnapshot,
 	SendOptions,
 	SessionWriteContext,
 	StreamEvent,
@@ -46,7 +48,7 @@ import {
 	normalizePersistedSession,
 } from "./sessionPersistence";
 import type { SessionLoadReport } from "./sessionPersistence";
-import { assembleRetrievedContext } from "./retrieval";
+import { assembleRetrievedContext, normalizeRetrievalResult } from "./retrieval";
 
 // ============================================================================
 // Internal State
@@ -58,6 +60,7 @@ interface InternalState {
 	settings: ChatSettings;
 	isStreaming: boolean;
 	abortController: AbortController | null;
+	retrieval: RetrievalSnapshot;
 }
 
 interface PendingApproval {
@@ -126,6 +129,12 @@ export class ChatEngine {
 			settings: { ...defaultSettings },
 			isStreaming: false,
 			abortController: null,
+			retrieval: {
+				status: "idle",
+				progress: 0,
+				sources: [],
+				warnings: [],
+			},
 		};
 	}
 
@@ -335,6 +344,12 @@ export class ChatEngine {
 		const turn = createTurn(userMessage, [userModelMessage]);
 		turn.assistantMessageId = `assistant-${turn.id}`;
 		const enableRAG = options?.enableRAG ?? this.state.settings.enableRAG;
+		this.setRetrievalState({
+			status: enableRAG ? "retrieving" : "idle",
+			progress: enableRAG ? 0 : 0,
+			sources: [],
+			warnings: [],
+		});
 		session.turns = [...(session.turns ?? []), turn];
 		session.modelHistory = [...priorModelHistory, userModelMessage];
 
@@ -355,6 +370,7 @@ export class ChatEngine {
 
 			if (enableRAG && this.opts.ragAdapter?.retrieveSources) {
 				yield { type: "rag-status", status: "retrieving", progress: 0 };
+				let completedRetrievalStatus: "complete" | "partial" = "complete";
 				try {
 					const retrievalPromise = Promise.resolve().then(() =>
 						this.opts.ragAdapter!.retrieveSources!(
@@ -365,15 +381,72 @@ export class ChatEngine {
 								: undefined,
 						),
 					);
-					const retrievedSources = await this.awaitWithAbort(retrievalPromise, signal);
-					const retrievalContext = assembleRetrievedContext(retrievedSources, {
+					const retrievalResponse = await this.awaitWithAbort(retrievalPromise, signal);
+					const normalized = normalizeRetrievalResult(retrievalResponse);
+					if (normalized.status === "cancelled" && !signal.aborted) {
+						abortController.abort();
+					}
+					const retrievalContext = assembleRetrievedContext(normalized.sources, {
 						maxContextTokens: this.state.settings.maxContextTokens,
 						maxResults: options?.maxRetrievalResults,
 					});
+					const warnings = [
+						...normalized.warnings,
+						...(retrievalContext.invalidSourceIds.length > 0
+							? [`Ignored invalid retrieval sources: ${retrievalContext.invalidSourceIds.join(", ")}`]
+							: []),
+						...(retrievalContext.duplicateSourceIds.length > 0
+							? [`Ignored duplicate retrieval sources: ${retrievalContext.duplicateSourceIds.join(", ")}`]
+							: []),
+						...(retrievalContext.droppedSourceIds.length > 0
+							? [`Context budget excluded sources: ${retrievalContext.droppedSourceIds.join(", ")}`]
+							: []),
+					];
+					for (const warning of warnings) yield { type: "rag-warning", message: warning };
+
+					if (normalized.error && normalized.status !== "partial") {
+						this.setRetrievalState({
+							status: signal.aborted ? "cancelled" : "failed",
+							progress: 1,
+							sources: retrievalContext.sources,
+							warnings,
+							error: normalized.error,
+						});
+						yield { type: "rag-status", status: signal.aborted ? "cancelled" : "failed" };
+						await this.finishPreProviderTurn(
+							session,
+							turn,
+							signal,
+							normalized.error.message,
+						);
+						if (!signal.aborted) yield { type: "error", message: normalized.error.message };
+						return;
+					}
+
 					turn.retrievedSources = retrievalContext.sources;
 					turn.retrievedContext = retrievalContext.context;
+					completedRetrievalStatus = normalized.status === "partial" ? "partial" : "complete";
+					this.setRetrievalState({
+						status: normalized.status === "partial" ? "partial" : "complete",
+						progress: 1,
+						sources: retrievalContext.sources,
+						warnings,
+						...(normalized.error ? { error: normalized.error } : {}),
+					});
 				} catch (error) {
 					const message = error instanceof Error ? error.message : String(error);
+					const retrievalError: RetrievalError = {
+						code: signal.aborted ? "cancelled" : "unavailable",
+						message,
+						retryable: !signal.aborted,
+					};
+					this.setRetrievalState({
+						status: signal.aborted ? "cancelled" : "failed",
+						progress: 1,
+						sources: [],
+						warnings: [],
+						error: retrievalError,
+					});
 					yield { type: "rag-status", status: signal.aborted ? "cancelled" : "failed" };
 					await this.finishPreProviderTurn(session, turn, signal, message);
 					if (!signal.aborted) yield { type: "error", message };
@@ -381,6 +454,12 @@ export class ChatEngine {
 				}
 
 				if (signal.aborted) {
+					this.setRetrievalState({
+						status: "cancelled",
+						progress: 1,
+						sources: [],
+						warnings: [],
+					});
 					yield { type: "rag-status", status: "cancelled" };
 					await this.finishPreProviderTurn(session, turn, signal);
 					return;
@@ -393,7 +472,7 @@ export class ChatEngine {
 				});
 				yield {
 					type: "rag-status",
-					status: "complete",
+					status: completedRetrievalStatus,
 					progress: 1,
 				};
 			}
@@ -489,6 +568,18 @@ export class ChatEngine {
 			pendingApprovals: [...this.pendingApprovals.values()].map(
 				({ call }) => call,
 			),
+			retrieval: {
+				...this.state.retrieval,
+				sources: this.state.retrieval.sources.map((source) => ({
+					...source,
+					metadata: source.metadata ? { ...source.metadata } : undefined,
+					provenance: { ...source.provenance },
+				})),
+				warnings: [...this.state.retrieval.warnings],
+				error: this.state.retrieval.error
+					? { ...this.state.retrieval.error }
+					: undefined,
+			},
 		};
 	}
 
@@ -884,6 +975,20 @@ export class ChatEngine {
 
 	private formatRetrievedSources(sources: NonNullable<ChatTurn["retrievedSources"]>): string {
 		return assembleRetrievedContext(sources).context;
+	}
+
+	private setRetrievalState(retrieval: RetrievalSnapshot): void {
+		this.state.retrieval = {
+			...retrieval,
+			sources: retrieval.sources.map((source) => ({
+				...source,
+				metadata: source.metadata ? { ...source.metadata } : undefined,
+				provenance: { ...source.provenance },
+			})),
+			warnings: [...retrieval.warnings],
+			error: retrieval.error ? { ...retrieval.error } : undefined,
+		};
+		this.emitState();
 	}
 
 	private async finishPreProviderTurn(

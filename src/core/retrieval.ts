@@ -1,4 +1,9 @@
-import type { ChatRetrievedSource } from "./types";
+import type {
+	ChatRetrievedSource,
+	RetrievalError,
+	RetrievalErrorCode,
+	RetrievalStatus,
+} from "./types";
 
 export const DEFAULT_RETRIEVAL_CONTEXT_TOKENS = 128_000;
 
@@ -21,6 +26,46 @@ export interface RetrievedContext {
 	invalidSourceIds: string[];
 	duplicateSourceIds: string[];
 	droppedSourceIds: string[];
+}
+
+export interface NormalizedRetrievalResult {
+	sources: unknown[];
+	status: RetrievalStatus;
+	warnings: string[];
+	error?: RetrievalError;
+}
+
+/** Accept the current source-array form and normalize richer host outcomes. */
+export function normalizeRetrievalResult(value: unknown): NormalizedRetrievalResult {
+	if (Array.isArray(value)) {
+		return { sources: value, status: "complete", warnings: [] };
+	}
+
+	if (!isRecord(value)) return invalidRetrievalResult();
+	if (!Array.isArray(value.sources)) return invalidRetrievalResult();
+
+	const error = normalizeRetrievalError(value.error);
+	const warnings = Array.isArray(value.warnings)
+		? value.warnings.filter((warning): warning is string => typeof warning === "string").slice(0, 20)
+		: [];
+	const requestedStatus = normalizeRetrievalStatus(value.status);
+	const status = requestedStatus ?? (error
+		? value.sources.length > 0 ? "partial" : "unavailable"
+		: "complete");
+	const normalizedError = error ?? (status === "unauthorized" || status === "unavailable" || status === "cancelled"
+		? {
+				code: status,
+				message: `Retrieval is ${status}.`,
+				retryable: status === "unavailable",
+			}
+		: undefined);
+
+	return {
+		sources: value.sources,
+		status,
+		warnings,
+		...(normalizedError ? { error: normalizedError } : {}),
+	};
 }
 
 /** Validate host data, remove duplicate source identities, and order by score. */
@@ -135,6 +180,50 @@ function formatRetrievedSource(source: ChatRetrievedSource, index: number): stri
 		source.content,
 		"--- end evidence ---",
 	].join("\n");
+}
+
+function invalidRetrievalResult(): NormalizedRetrievalResult {
+	return {
+		sources: [],
+		status: "unavailable",
+		warnings: [],
+		error: {
+			code: "invalid-response",
+			message: "Retrieval returned an invalid result.",
+			retryable: false,
+		},
+	};
+}
+
+function normalizeRetrievalStatus(value: unknown): RetrievalStatus | undefined {
+	return value === "complete" ||
+		value === "partial" ||
+		value === "unavailable" ||
+		value === "unauthorized" ||
+		value === "cancelled"
+		? value
+		: undefined;
+}
+
+function normalizeRetrievalError(value: unknown): RetrievalError | undefined {
+	if (!isRecord(value) || typeof value.message !== "string" || !value.message) return undefined;
+	const code = normalizeRetrievalErrorCode(value.code);
+	if (!code) return undefined;
+	return {
+		code,
+		message: value.message,
+		...(typeof value.retryable === "boolean" ? { retryable: value.retryable } : {}),
+	};
+}
+
+function normalizeRetrievalErrorCode(value: unknown): RetrievalErrorCode | undefined {
+	return value === "cancelled" ||
+		value === "unauthorized" ||
+		value === "unavailable" ||
+		value === "invalid-response" ||
+		value === "failed"
+		? value
+		: undefined;
 }
 
 export function estimateContextTokens(context: string): number {

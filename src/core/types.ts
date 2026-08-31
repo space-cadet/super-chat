@@ -50,6 +50,42 @@ export interface ChatRetrievedSource {
   };
 }
 
+export type RetrievalStatus =
+  | 'complete'
+  | 'partial'
+  | 'unavailable'
+  | 'unauthorized'
+  | 'cancelled';
+
+export type RetrievalErrorCode =
+  | 'cancelled'
+  | 'unauthorized'
+  | 'unavailable'
+  | 'invalid-response'
+  | 'failed';
+
+export interface RetrievalError {
+  code: RetrievalErrorCode;
+  message: string;
+  retryable?: boolean;
+}
+
+/** Neutral result shape; a plain source array remains accepted for compatibility. */
+export interface RetrievalResult {
+  sources: ChatRetrievedSource[];
+  status?: RetrievalStatus;
+  warnings?: string[];
+  error?: RetrievalError;
+}
+
+export interface RetrievalSnapshot {
+  status: 'idle' | 'retrieving' | 'failed' | RetrievalStatus;
+  progress: number;
+  sources: ChatRetrievedSource[];
+  warnings: string[];
+  error?: RetrievalError;
+}
+
 /** The durable lifecycle record for one user turn. */
 export interface ChatTurn {
   id: string;
@@ -170,6 +206,7 @@ export type StreamEvent =
   | { type: 'pending-approval'; call: ToolCall }
   | { type: 'citation'; papers: RetrievedPaper[] }
   | { type: 'rag-status'; status: string; progress?: number }
+  | { type: 'rag-warning'; message: string }
   | { type: 'step-finish'; step: number }
   | { type: 'finish'; reason: string }
   | { type: 'error'; message: string }
@@ -181,6 +218,7 @@ export interface ChatEngineSnapshot {
   activeSessionId: string | null;
   isStreaming: boolean;
   pendingApprovals: ToolCall[];
+  retrieval: RetrievalSnapshot;
 }
 
 export type ChatEngineListener = (snapshot: ChatEngineSnapshot) => void;
@@ -336,7 +374,7 @@ export interface RAGAdapter {
     query: string,
     signal?: AbortSignal,
     options?: { maxResults?: number },
-  ): Promise<ChatRetrievedSource[]>;
+  ): Promise<ChatRetrievedSource[] | RetrievalResult>;
 }
 
 export interface ContextAdapter {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
 	assembleRetrievedContext,
+	normalizeRetrievalResult,
 	normalizeRetrievedSources,
 	DEFAULT_RETRIEVAL_CONTEXT_TOKENS,
 } from "./retrieval";
@@ -25,6 +26,38 @@ function source(
 }
 
 describe("retrieval context", () => {
+	it("normalizes plain arrays and partial outcomes", () => {
+		expect(normalizeRetrievalResult([source("one", "evidence")])).toMatchObject({
+			status: "complete",
+			sources: [expect.objectContaining({ id: "one" })],
+		});
+
+		const partial = normalizeRetrievalResult({
+			sources: [source("one", "evidence")],
+			status: "partial",
+			warnings: ["One source timed out"],
+			error: { code: "unavailable", message: "Some sources were unavailable" },
+		});
+		expect(partial).toMatchObject({
+			status: "partial",
+			warnings: ["One source timed out"],
+			error: { code: "unavailable" },
+		});
+	});
+
+	it("turns malformed host responses into a safe unavailable error", () => {
+		expect(normalizeRetrievalResult({ sources: "not-an-array" })).toEqual({
+			sources: [],
+			status: "unavailable",
+			warnings: [],
+			error: {
+				code: "invalid-response",
+				message: "Retrieval returned an invalid result.",
+				retryable: false,
+			},
+		});
+	});
+
 	it("drops invalid records, deduplicates source identities, and orders by score", () => {
 		const result = normalizeRetrievedSources([
 			source("low", "low", 0.2),

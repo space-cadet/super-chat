@@ -8,6 +8,11 @@ export type {
 	ChatMessage,
 	ChatModelMessage,
 	ChatRetrievedSource,
+	RetrievalStatus,
+	RetrievalErrorCode,
+	RetrievalError,
+	RetrievalResult,
+	RetrievalSnapshot,
 	ChatSession,
 	ChatTurn,
 	ChatTurnStatus,
@@ -84,6 +89,7 @@ export { estimateTokens } from './core/tokenEstimator';
 export {
   DEFAULT_RETRIEVAL_CONTEXT_TOKENS,
   normalizeRetrievedSources,
+  normalizeRetrievalResult,
   assembleRetrievedContext,
   estimateContextTokens,
 } from './core/retrieval';

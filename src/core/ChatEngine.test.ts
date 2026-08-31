@@ -249,6 +249,44 @@ describe("ChatEngine", () => {
 				error: "retrieval unavailable",
 			});
 		});
+
+		it("continues with partial retrieval and exposes warnings in the snapshot", async () => {
+			const rag: RAGAdapter = {
+				analyzeQuery: async () => ({ intent: "test", keywords: [], requiresRetrieval: true }),
+				retrievePapers: async () => [],
+				buildContext: async () => "",
+				retrieveSources: async () => ({
+					sources: [{
+						id: "partial-1",
+						title: "Partial source",
+						content: "Available evidence",
+						provenance: {
+							capabilityId: "fixture.retrieval",
+							sourceId: "partial-1",
+							retrievedAt: 1,
+						},
+					}],
+					status: "partial",
+					warnings: ["One source timed out"],
+					error: { code: "unavailable", message: "Some sources were unavailable" },
+				}),
+			};
+			const engine = new ChatEngine({
+				llmAdapter: createMockLLMAdapter([], ["Answer"]),
+				ragAdapter: rag,
+			});
+			engine.createSession("Partial retrieval");
+
+			const events = await collectEvents(engine.sendMessage("partial query", { enableRAG: true }));
+			expect(events).toContainEqual({ type: "rag-warning", message: "One source timed out" });
+			expect(events).toContainEqual({ type: "rag-status", status: "partial", progress: 1 });
+			expect(events.some((event) => event.type === "text-delta" && event.text === "Answer")).toBe(true);
+			expect(engine.getSnapshot().retrieval).toMatchObject({
+				status: "partial",
+				warnings: ["One source timed out"],
+				sources: [{ id: "partial-1" }],
+			});
+		});
 	});
 
 	describe("tool-enabled messaging", () => {

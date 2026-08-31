@@ -1,6 +1,6 @@
 # Active Context
 
-*Last Updated: 2026-09-01 02:47:00 IST*
+*Last Updated: 2026-09-01 02:55:00 IST*
 
 ## Current Program: INFRA-1 Unified super-chat Application Platform
 
@@ -40,10 +40,10 @@ initial user-turn persistence, cancellation, host abort signaling, retrieval
 status events, and durable retrieval failure/cancellation handling. The bounded
 retrieval/context slice is also implemented: source validation, deduplication,
 ordering, result/context limits, untrusted-evidence formatting, and durable
-assembled context. The next Phase 5 slices are normalized errors,
-partial/warning results, replay behavior, and React progress/error state.
-Product migrations remain deferred until the fixture evidence is carried into
-their hosts.
+assembled context. Normalized retrieval outcomes, partial/warning handling,
+and observable React retrieval state are also implemented. The next Phase 5
+slice is replay behavior and host conformance. Product migrations remain
+deferred until the fixture evidence is carried into their hosts.
 
 T16 now owns the verified Phase 5 host-backed RAG plan; T15 owns
 behavior-preserving extraction from `obsidian-ai`; T18 owns the

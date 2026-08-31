@@ -22,6 +22,7 @@ import { useState, useCallback, useEffect } from "react";
 import type {
   ChatMessage,
   ChatSession,
+  RetrievalSnapshot,
   ToolCall,
 } from "../../core/types";
 import type { ChatEngine } from "../../core/ChatEngine";
@@ -33,6 +34,7 @@ export interface UseChatState {
   isStreaming: boolean;
   error: string | null;
   pendingTools: ToolCall[];
+  retrieval: RetrievalSnapshot;
 }
 
 export interface UseChatActions {
@@ -56,6 +58,12 @@ export function useChat(engine: ChatEngine, options?: { initialSessionId?: strin
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pendingTools, setPendingTools] = useState<ToolCall[]>([]);
+  const [retrieval, setRetrieval] = useState<RetrievalSnapshot>({
+    status: "idle",
+    progress: 0,
+    sources: [],
+    warnings: [],
+  });
 
   // Sync with engine state
   useEffect(() => {
@@ -73,6 +81,7 @@ export function useChat(engine: ChatEngine, options?: { initialSessionId?: strin
       setCurrentSession(session);
       setIsStreaming(snapshot.isStreaming);
       setPendingTools(snapshot.pendingApprovals);
+      if (snapshot.retrieval) setRetrieval(snapshot.retrieval);
       if (!snapshot.isStreaming) {
         setMessages(session?.messages ?? []);
       }
@@ -218,6 +227,7 @@ export function useChat(engine: ChatEngine, options?: { initialSessionId?: strin
     isStreaming,
     error,
     pendingTools,
+    retrieval,
     sendMessage,
     createSession,
     switchSession,

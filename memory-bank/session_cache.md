@@ -98,6 +98,18 @@
 - Remaining: normalized result/error contracts, partial/warning handling,
   replay behavior, and shared React retrieval state.
 
+## Current Continuation — T16 Phase 5 Outcome and React State Slice
+
+- Added normalized retrieval results with compatibility for plain source
+  arrays; partial results continue provider work with warnings.
+- Unavailable, unauthorized, malformed, and cancelled outcomes stop provider
+  execution and expose typed retrieval errors.
+- Added retrieval status, progress, sources, warnings, and errors to engine
+  snapshots; `useChat` and `ChatApp` consume the observable state.
+- Verification passed: TypeScript, 14 test files / 130 tests, pinned tsup
+  ESM/CJS/declaration build, and `git diff --check`.
+- Remaining: replay behavior, richer host conformance, and product migration.
+
 ## Previous Session
 
 *Session Started*: 2026-06-20 15:23 IST

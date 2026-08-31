@@ -20,6 +20,7 @@ export function ChatApp({ engine, initialSessionId, onNewChat }: ChatAppProps) {
     currentSession,
     isStreaming,
     pendingTools,
+    retrieval,
     sendMessage,
     createSession,
     switchSession,
@@ -103,6 +104,19 @@ export function ChatApp({ engine, initialSessionId, onNewChat }: ChatAppProps) {
           </div>
         )}
       </div>
+
+      {retrieval.status !== 'idle' && (
+        <div className="px-4 pb-2 text-xs text-gray-600" role="status">
+          {retrieval.status === 'retrieving' && 'Searching connected sources…'}
+          {retrieval.status === 'complete' && retrieval.sources.length > 0 &&
+            `Used ${retrieval.sources.length} retrieved source${retrieval.sources.length === 1 ? '' : 's'}.`}
+          {retrieval.status === 'partial' &&
+            `Retrieved ${retrieval.sources.length} source${retrieval.sources.length === 1 ? '' : 's'} with warnings.`}
+          {(retrieval.status === 'failed' || retrieval.status === 'unavailable' || retrieval.status === 'unauthorized') &&
+            (retrieval.error?.message || 'Source retrieval failed.')}
+          {retrieval.status === 'cancelled' && 'Source retrieval cancelled.'}
+        </div>
+      )}
 
       {/* Input */}
       <ChatInput
