@@ -104,7 +104,5 @@
     "type": "git",
     "url": "https://github.com/space-cadet/super-chat.git"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": ["esbuild"]
-  }
+  "packageManager": "pnpm@10.27.0"
 }
