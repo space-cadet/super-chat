@@ -58,3 +58,21 @@ The review also found a timing-sensitive `SuperChatApp` test under parallel
 full-suite load: 121/122 passed in the review run while the isolated test
 passed. This is recorded as a verification caveat to stabilize before the
 Phase 5 all-green acceptance gate.
+
+## T16 Phase 5 Shared Host Conformance Closeout — 2026-09-01
+
+- Completed the lifecycle, bounded-context, normalized-outcome, React-state,
+  replay, and shared retrieval-response conformance slices in `super-chat`.
+- Added reusable conformance checks for legacy arrays and rich outcomes,
+  including source shape, provenance ownership, duplicate identities, optional
+  metadata, status/error consistency, and host exceptions.
+- Added fixture-host acceptance through the shared conformance runner.
+- Verified TypeScript, 16 Vitest files / 142 tests, pinned tsup ESM/CJS/
+  declaration builds, and `git diff --check`.
+- Pushed checkpoint `4015d8b` to `main`; `origin/main` matches and the working
+  tree is clean.
+
+Next: apply the shared retrieval conformance suite to the Arxivite and Obsidian
+product hosts. Keep their ranking, vault search, storage, and platform behavior
+host-owned; do not begin a default switch or legacy-mechanics removal until
+product acceptance is recorded.

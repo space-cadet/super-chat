@@ -1,7 +1,7 @@
 # Embeddable super-chat Application Platform
 
 *Created: 2026-08-31 22:25:18 IST*
-*Last Updated: 2026-08-31 23:19:22 IST*
+*Last Updated: 2026-09-01 06:54:04 IST*
 *Program Owner: INFRA-1*
 *Shared-Core Workstream: T22*
 
@@ -203,9 +203,9 @@ validation, deduplication, deterministic ordering, result/context limits,
 untrusted-evidence formatting, durable assembled context, normalized outcomes,
 and shared React retrieval state. Latest-turn replay now reuses persisted
 bounded retrieval context by default and supports explicit host refresh.
-Richer progress and product-host conformance remain before product hosts
-depend on it. The generic response conformance runner and fixture acceptance
-are now implemented.
+Richer product-host conformance remains before product hosts depend on it. The
+generic response conformance runner and fixture acceptance are implemented and
+pushed as `4015d8b`.
 
 ## 8. Capability Extraction from obsidian-ai
 

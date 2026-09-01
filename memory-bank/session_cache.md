@@ -1,6 +1,6 @@
 # Session Cache — super-chat
 
-*Last Updated*: 2026-09-01 02:13:21 IST
+*Last Updated*: 2026-09-01 06:54:04 IST
 
 ## Global Program Tracker
 
@@ -143,6 +143,8 @@
   cover request limits, cancellation, and rich-result pass-through.
 - Verification passed: TypeScript, 16 Vitest files / 142 tests, pinned tsup
   ESM/CJS/declaration build, and `git diff --check`.
+- Pushed as `4015d8b` on `main`, with `origin/main` at the same commit and a
+  clean working tree.
 - Remaining: apply the shared suite to Arxivite and Obsidian product hosts.
 
 ## Previous Session

@@ -1,7 +1,7 @@
 # Memory Bank — super-chat
 
 *Created: 2026-05-19 11:15:00 IST*
-*Last Updated: 2026-09-01 02:13:21 IST*
+*Last Updated: 2026-09-01 06:54:04 IST*
 
 ## Overview
 
@@ -58,7 +58,7 @@ not yet form the complete host-driven application.
 
 **Current Program**: INFRA-1 Unified super-chat Application Platform.
 
-**Current Workstream**: T16 Phase 5 shared host-backed RAG planning is verified
-and ready for implementation. First harden retrieval inside the engine turn
-lifecycle, then extract mature behavior from `obsidian-ai`, migrate the
-Obsidian host, and make Arxivite a data/platform harness for `SuperChatApp`.
+**Current Workstream**: T16 Phase 5 shared-core retrieval hardening is
+implemented and pushed through reusable fixture conformance. The next smallest
+slice is to apply the same suite to Arxivite and Obsidian hosts, then continue
+with their behavior-preserving host migrations.

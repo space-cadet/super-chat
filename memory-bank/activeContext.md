@@ -1,6 +1,6 @@
 # Active Context
 
-*Last Updated: 2026-09-01 02:55:00 IST*
+*Last Updated: 2026-09-01 06:54:04 IST*
 
 ## Current Program: INFRA-1 Unified super-chat Application Platform
 
@@ -35,7 +35,7 @@ fixture host now mounts through `SuperChatApp`, bridges host persistence/tools/
 retrieval capabilities, proves read and approval-required write flows, and
 renders retrieved-source provenance. TypeScript, 122 tests, package ESM/CJS/
 declaration builds, and the Vite demo build pass. The first Phase 5 lifecycle
-slice is now implemented locally: retrieval is inside the engine turn lock,
+slice is now implemented and pushed in `4015d8b`: retrieval is inside the engine turn lock,
 initial user-turn persistence, cancellation, host abort signaling, retrieval
 status events, and durable retrieval failure/cancellation handling. The bounded
 retrieval/context slice is also implemented: source validation, deduplication,
@@ -43,8 +43,8 @@ ordering, result/context limits, untrusted-evidence formatting, and durable
 assembled context. Normalized retrieval outcomes, partial/warning handling,
 observable React retrieval state, and latest-turn replay behavior are also
 implemented. Replay reuses the persisted bounded retrieval record by default
-and supports explicit host refresh. The next Phase 5 slice is richer host
-conformance utilities and fixture acceptance are also implemented. The next
+and supports explicit host refresh. The richer host conformance utilities and
+fixture acceptance are also implemented and included in `4015d8b`. The next
 step is applying those checks to product hosts. Product migrations remain
 deferred until the fixture evidence is carried into their hosts.
 

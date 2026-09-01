@@ -1,7 +1,7 @@
 # INFRA-1: Unified super-chat Application Platform Program
 
 *Created: 2026-08-31 22:44:08 IST*
-*Last Updated: 2026-09-01 02:55:00 IST*
+*Last Updated: 2026-09-01 06:54:04 IST*
 
 **Status**: 🔄 **IN PROGRESS**
 **Priority**: CRITICAL
@@ -156,13 +156,14 @@ without Obsidian or Arxivite.
 ### Phase 5: Shared host-backed RAG
 
 **Owner**: T16  
-**Status**: 🔄 Lifecycle slice implemented (2026-09-01); hardening in progress
+**Status**: 🔄 Shared-core hardening implemented (2026-09-01); product-host
+conformance remains
 
 - [x] Put the first retrieval path through `super-chat`; hardening remains.
 - [x] Define the initial normalized host source shape and provenance.
 - [x] Move retrieval into the protected turn lifecycle with cancellation and
       durable failure handling.
-- [ ] Apply shared progress, citations, and replay; context budgeting,
+- [x] Apply shared progress, citations, and replay; context budgeting,
       normalized outcomes, and React retrieval state are now implemented.
 - [ ] Keep domain retrieval algorithms in their host repositories.
 
@@ -199,9 +200,9 @@ conformance remains open.
 Normalized retrieval outcomes and observable React retrieval state are now
 verified: partial results continue provider work with warnings, while unsafe
 or unavailable outcomes stop the turn with typed errors. Replay policy and
-durable retrieval presence are now hardened; the remaining Phase 5 gap is
-richer host conformance. A reusable retrieval response conformance runner now
-passes against the fixture host; product-host application remains open.
+durable retrieval presence are now hardened. The reusable retrieval response
+conformance runner passes against the fixture host and was pushed as `4015d8b`
+on `main`; product-host application remains open.
 
 ### Phase 6: Package and compatibility discipline
 
