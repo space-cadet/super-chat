@@ -76,3 +76,35 @@ Next: apply the shared retrieval conformance suite to the Arxivite and Obsidian
 product hosts. Keep their ranking, vault search, storage, and platform behavior
 host-owned; do not begin a default switch or legacy-mechanics removal until
 product acceptance is recorded.
+
+## T19 External Arxivite Integration Readiness — 2026-09-01
+
+### Delivered
+
+- Pulled Arxivite to `2822a6b5` before testing; its working tree remained clean.
+- Created `super-chat/integrations/arxivite/` without changing Arxivite or
+  `obsidian-ai`.
+- Added a test-only external adapter that translates Arxivite's existing tool
+  registry shape into the current `super-chat` host service shape.
+- Loaded Arxivite's real `ToolRegistry` and chatbot tool registrations.
+- Ran a real registered Arxivite bookmarks tool through the current
+  `ChatEngine`.
+- Verified retrieval provenance and session reload using deterministic test
+  storage.
+- Recorded the package facts: Arxivite pins `super-chat` at `7ccf5609`, the
+  current checkout is `919e2db`, and Arxivite's root app uses AI SDK `5.0.52`
+  while the shared package uses AI SDK 6.
+
+### Verification
+
+- Integration-folder TypeScript check: passed.
+- Integration-folder Vitest: 2 files, 6 tests passed.
+- Arxivite remained clean at `2822a6b5`.
+- No product-repository source, submodule pointer, commit, or push was made.
+
+### Remaining work
+
+The test uses deterministic replacements for database-backed calls. It does
+not yet prove live Supabase persistence, provider calls, Arxivite's real
+PocketFlow/PDF retrieval, or UI behavior. Those remain T19/T21 work after the
+package-consumption plan is approved.

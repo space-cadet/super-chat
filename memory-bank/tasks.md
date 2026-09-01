@@ -1,7 +1,7 @@
 # Memory Bank — super-chat
 
 *Created: 2026-05-19 11:15:00 IST*
-*Last Updated: 2026-09-01 06:54:04 IST*
+*Last Updated: 2026-09-01 11:11:59 IST*
 
 ## Overview
 
@@ -59,6 +59,8 @@ not yet form the complete host-driven application.
 **Current Program**: INFRA-1 Unified super-chat Application Platform.
 
 **Current Workstream**: T16 Phase 5 shared-core retrieval hardening is
-implemented and pushed through reusable fixture conformance. The next smallest
-slice is to apply the same suite to Arxivite and Obsidian hosts, then continue
-with their behavior-preserving host migrations.
+implemented and pushed through reusable fixture conformance. An external
+Arxivite test area now exercises the real chatbot tool registry through the
+current engine and passes 6 focused tests. Live product-host conformance and
+the Arxivite host migration remain open; package compatibility must be settled
+before product code is updated.

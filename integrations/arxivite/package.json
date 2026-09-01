@@ -1,0 +1,8 @@
+{
+  "name": "super-chat-arxivite-integration-check",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node ../../node_modules/vitest/vitest.mjs run --config vitest.config.ts"
+  }
+}

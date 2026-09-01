@@ -1,8 +1,25 @@
 # Edit History
 *Created: 2026-05-19 11:15:00 IST*
-*Last Updated: 2026-09-01 06:54:04 IST*
+*Last Updated: 2026-09-01 11:11:59 IST*
 
 ## 2026-09-01
+
+#### 11:11:59 IST - T19, T21, T16, T22, INFRA-1: Record Arxivite external integration readiness
+- Updated `memory-bank/tasks/T19.md` - Recorded the external Arxivite test
+  adapter, six passing tests, exact repository revisions, and remaining live
+  product work.
+- Updated `memory-bank/tasks/T21.md` and `memory-bank/tasks/INFRA-1.md` -
+  Recorded the pinned submodule, AI SDK compatibility finding, and the fact
+  that clean-install compatibility remains open.
+- Updated `memory-bank/tasks/T16.md` and `memory-bank/tasks/T22.md` -
+  Distinguished deterministic external retrieval checks from real Arxivite
+  retrieval conformance and recorded the product-host status.
+- Updated `memory-bank/tasks.md`, `memory-bank/activeContext.md`, and
+  `memory-bank/session_cache.md` - Refreshed the current workstream and next
+  action.
+- Updated `memory-bank/implementation-details/embeddable-super-chat-platform.md`
+  and `memory-bank/sessions/2026-09-01-phase4-night.md` - Recorded the
+  compatibility evidence, test result, limitations, and handoff.
 
 #### 06:54:04 IST - T16, T22, INFRA-1: Close shared host conformance session
 - Updated `memory-bank/activeContext.md`, `memory-bank/session_cache.md`, and

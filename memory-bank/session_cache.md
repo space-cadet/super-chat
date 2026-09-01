@@ -1,6 +1,6 @@
 # Session Cache — super-chat
 
-*Last Updated*: 2026-09-01 06:54:04 IST
+*Last Updated*: 2026-09-01 11:11:59 IST
 
 ## Global Program Tracker
 
@@ -147,7 +147,30 @@
   clean working tree.
 - Remaining: apply the shared suite to Arxivite and Obsidian product hosts.
 
+## Current Continuation — Arxivite External Integration Readiness
+
+- Pulled Arxivite to `2822a6b5`; its working tree remains clean. The Arxivite
+  `packages/super-chat` submodule remains at `7ccf5609`.
+- Created `integrations/arxivite/` in `super-chat` without changing Arxivite or
+  `obsidian-ai`.
+- Added a test-only external adapter that loads Arxivite's real chatbot
+  `ToolRegistry` and registrations, maps them to the current host service
+  shape, and sends a registered tool through `ChatEngine`.
+- Verified retrieval provenance and session reload with deterministic test
+  storage. The focused TypeScript check and 6 Vitest tests passed.
+- This does not yet test Arxivite's live Supabase persistence, provider,
+  PocketFlow/PDF retrieval, or UI path. The product host migration remains
+  under T19, and package compatibility remains under T21.
+- Next action: record this evidence in the owning task and current session
+  records, then decide whether to update Arxivite's package reference after
+  the compatibility plan is approved.
+
 ## Previous Session
+
+The older open-item list below belongs to the June 2026 session and is
+superseded by the current continuation above. In particular, T17's proposal
+to make the old Arxivite path the default is retired; T19 owns the real host
+migration.
 
 *Session Started*: 2026-06-20 15:23 IST
 *Session Ended*: 2026-06-20 16:38 IST

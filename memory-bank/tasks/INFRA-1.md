@@ -1,7 +1,7 @@
 # INFRA-1: Unified super-chat Application Platform Program
 
 *Created: 2026-08-31 22:44:08 IST*
-*Last Updated: 2026-09-01 06:54:04 IST*
+*Last Updated: 2026-09-01 11:11:59 IST*
 
 **Status**: 🔄 **IN PROGRESS**
 **Priority**: CRITICAL
@@ -207,7 +207,7 @@ on `main`; product-host application remains open.
 ### Phase 6: Package and compatibility discipline
 
 **Owner**: T21  
-**Status**: 🔄 In progress; may overlap Phases 2–5
+**Status**: 🔄 In progress; Arxivite compatibility evidence started
 
 - [ ] Correct pnpm 11 configuration.
 - [ ] Choose one supported package-consumption model.
@@ -215,6 +215,14 @@ on `main`; product-host application remains open.
 - [ ] Record React, AI SDK, and host compatibility ranges.
 - [ ] Add clean-install/build checks for all three repositories.
 - [ ] Remove stale source-versus-`dist` ambiguity.
+
+**2026-09-01 evidence**: The external test area under
+`super-chat/integrations/arxivite/` passes 6 focused tests and exercises
+Arxivite's real chatbot tool registry through the current engine. Arxivite
+still pins `super-chat` at `7ccf5609`, while the current checkout is
+`919e2db`. Arxivite's root application uses AI SDK `5.0.52`; the shared
+package uses AI SDK 6. This does not replace the clean-install and supported
+package-model checks above.
 
 **Exit criterion**: each host consumes a traceable artifact and passes a clean
 install/build compatibility check.
@@ -254,7 +262,8 @@ vault, editor, workspace, plugin, sync, and updater behavior remain host-owned.
 ### Phase 9: Arxivite host harness
 
 **Owner**: T19  
-**Status**: ⬜ Pending; blocked by Phases 4–6
+**Status**: ⬜ Pending; external test preparation complete; product host work
+remains
 
 - [ ] Implement `ArxiviteSuperChatHost`.
 - [ ] Supply identity, Supabase persistence, papers, library data, retrieval,
@@ -262,6 +271,11 @@ vault, editor, workspace, plugin, sync, and updater behavior remain host-owned.
 - [ ] Remove the untyped parallel-session mapping.
 - [ ] Make `super-chat` the sole message/session workflow owner.
 - [ ] Mount `SuperChatApp` behind the existing feature toggle.
+
+The test-only preparation is recorded in T19. It does not change Arxivite and
+does not satisfy the Phase 9 exit criterion because the live Arxivite UI,
+Supabase persistence, provider integration, and product retrieval path remain
+unmigrated.
 
 **Exit criterion**: Arxivite's new path contains no product-owned stream loop,
 assistant accumulation, tool workflow, or duplicate message persistence.
@@ -340,8 +354,8 @@ must wait for traceable package compatibility.
 - Hosts supply capabilities; they do not coordinate the chat workflow.
 - Missing approval must never cause tool execution.
 - Exactly one component owns message/session persistence per active path.
-- Extract from `obsidian-ai` through characterized vertical slices, not bulk
-  copying.
+- Extract from `obsidian-ai` through characterized, behavior-preserving steps,
+  not bulk copying.
 - Keep product-specific adapters in their product repositories.
 - Keep old paths until the replacement passes recorded acceptance.
 - Separate unit, contract, product, clean-build, platform, and manual evidence.

@@ -1,6 +1,6 @@
 # Active Context
 
-*Last Updated: 2026-09-01 06:54:04 IST*
+*Last Updated: 2026-09-01 11:11:59 IST*
 
 ## Current Program: INFRA-1 Unified super-chat Application Platform
 
@@ -35,18 +35,23 @@ fixture host now mounts through `SuperChatApp`, bridges host persistence/tools/
 retrieval capabilities, proves read and approval-required write flows, and
 renders retrieved-source provenance. TypeScript, 122 tests, package ESM/CJS/
 declaration builds, and the Vite demo build pass. The first Phase 5 lifecycle
-slice is now implemented and pushed in `4015d8b`: retrieval is inside the engine turn lock,
+work is now implemented and pushed in `4015d8b`: retrieval is inside the engine turn lock,
 initial user-turn persistence, cancellation, host abort signaling, retrieval
 status events, and durable retrieval failure/cancellation handling. The bounded
-retrieval/context slice is also implemented: source validation, deduplication,
+retrieval/context work is also implemented: source validation, deduplication,
 ordering, result/context limits, untrusted-evidence formatting, and durable
 assembled context. Normalized retrieval outcomes, partial/warning handling,
 observable React retrieval state, and latest-turn replay behavior are also
 implemented. Replay reuses the persisted bounded retrieval record by default
 and supports explicit host refresh. The richer host conformance utilities and
-fixture acceptance are also implemented and included in `4015d8b`. The next
-step is applying those checks to product hosts. Product migrations remain
-deferred until the fixture evidence is carried into their hosts.
+fixture acceptance are also implemented and included in `4015d8b`.
+
+An external Arxivite test area now loads Arxivite's real chatbot tool registry,
+maps it into the current host service shape, runs a registered tool through
+`ChatEngine`, and verifies retrieval provenance plus session reload with
+deterministic test storage. TypeScript and 6 focused Vitest tests pass. This
+does not yet test Arxivite's live Supabase/RAG/provider path or UI. Product
+migrations remain deferred until their real host adapters pass acceptance.
 
 T16 now owns the verified Phase 5 host-backed RAG plan; T15 owns
 behavior-preserving extraction from `obsidian-ai`; T18 owns the

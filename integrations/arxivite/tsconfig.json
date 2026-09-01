@@ -1,0 +1,15 @@
+{
+	"compilerOptions": {
+		"target": "ES2022",
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"strict": true,
+		"skipLibCheck": true,
+		"types": ["node", "vite/client"],
+		"baseUrl": ".",
+		"paths": {
+			"@/*": ["../../../arxivite/src/*"]
+		}
+	},
+	"include": ["arxiviteExternalAdapter.ts", "arxivite-engine.integration.test.ts"]
+}

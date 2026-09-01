@@ -1,7 +1,7 @@
 # Embeddable super-chat Application Platform
 
 *Created: 2026-08-31 22:25:18 IST*
-*Last Updated: 2026-09-01 06:54:04 IST*
+*Last Updated: 2026-09-01 11:11:59 IST*
 *Program Owner: INFRA-1*
 *Shared-Core Workstream: T22*
 
@@ -295,7 +295,7 @@ Arxivite adapter belongs in Arxivite; the Obsidian adapter belongs in
 7. Arxivite browser, Electron, Android, and iOS acceptance as applicable.
 8. Standalone signing, updating, credential, storage, and recovery tests.
 
-## 12. First Implementation Slice
+## 12. First Implementation Steps
 
 - Fixture host and `SuperChatApp` mounting contract.
 - One persisted session that survives reload.
@@ -306,7 +306,7 @@ Arxivite adapter belongs in Arxivite; the Obsidian adapter belongs in
 - One retrieval result with provenance and citation rendering.
 - No polling for engine state.
 
-Do not begin the broad Obsidian migration until this slice is green.
+Do not begin the broad Obsidian migration until these steps are green.
 
 ## 13. Known Current Gaps
 
@@ -332,8 +332,17 @@ Do not begin the broad Obsidian migration until this slice is green.
   the stream loop, and writes messages separately.
 - Arxivite's persistence and RAG adapters exist but are not wired into its
   active `ChatEngine` construction.
-- Arxivite pins an older `super-chat` submodule and relies on prebuilt output.
-- Arxivite and `super-chat` use different AI SDK major versions.
+- Arxivite pins an older `super-chat` submodule at `7ccf5609` and relies on
+  prebuilt output; the current `super-chat` checkout is `919e2db`.
+- Arxivite's root application declares AI SDK `5.0.52`, while the shared
+  package declares AI SDK 6. The pinned SuperChat submodule itself also
+  declares AI SDK 6, so the application and shared package do not yet have one
+  verified dependency environment.
+- `super-chat/integrations/arxivite/` now contains a test-only external adapter
+  and six passing focused tests. They load Arxivite's real chatbot registry and
+  run a registered tool through the current engine, while using deterministic
+  replacements for database-backed retrieval. Live product-host conformance,
+  Supabase persistence, provider calls, and UI acceptance remain open.
 - Package publication and cross-host compatibility checks are unfinished.
 
 ## 14. Completion Definition
