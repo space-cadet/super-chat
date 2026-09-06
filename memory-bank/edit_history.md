@@ -1,6 +1,27 @@
 # Edit History
 *Created: 2026-05-19 11:15:00 IST*
-*Last Updated: 2026-09-01 11:11:59 IST*
+*Last Updated: 2026-09-06 13:13:22 IST*
+
+#### 13:13:22 IST - T15/T16/T19/T25-T30: Record agentic runtime architecture
+- Updated `memory-bank/tasks/T15.md` - Reframed extraction around obsidian-ai's shared agentic runtime.
+- Updated `memory-bank/tasks/T16.md` - Replaced host-owned RAG/PocketFlow plan with shared agentic RAG and evidence.
+- Updated `memory-bank/tasks/T18.md` - Added Obsidian tool-provider subtasks.
+- Updated `memory-bank/tasks/T19.md` - Reframed Arxivite as a pluggable tool/data provider.
+- Created `memory-bank/tasks/T25.md` through `memory-bank/tasks/T30.md` - Added approved priority capability tasks.
+- Updated `memory-bank/tasks/T2.md`, `memory-bank/tasks/T5.md`, and `memory-bank/tasks/T13.md` - Reconciled core types, provider contracts, and superseded formatter work.
+- Updated `memory-bank/tasks/T21.md`, `memory-bank/tasks/T22.md`, `memory-bank/tasks/INFRA-1.md`, and `memory-bank/tasks.md` - Reconciled dependencies, status, and registry.
+- Updated `memory-bank/implementation-details/` architecture documents - Recorded shared agentic runtime and ASCII diagrams.
+- Created `memory-bank/implementation-details/agentic-tool-runtime.md` - Documented shared tool runtime and provider composition.
+- Created `memory-bank/implementation-details/agentic-rag-evidence.md` - Documented agentic RAG and evidence lifecycle.
+- Created `memory-bank/implementation-details/host-tool-provider-contract.md` - Documented provider contracts.
+- Created `memory-bank/implementation-details/obsidian-ai-capability-matrix.md` - Documented extraction ownership.
+- Created `memory-bank/implementation-details/memory-and-pruning.md` - Documented memory tiers and pruning.
+- Created `memory-bank/implementation-details/attachments-and-context.md` - Documented attachment resolution.
+- Created `memory-bank/implementation-details/provider-profiles-and-switching.md` - Documented provider switching.
+- Created `memory-bank/implementation-details/diagnostics.md` - Documented diagnostic flow.
+- Created `memory-bank/implementation-details/session-export-import.md` - Documented session exchange.
+- Updated `memory-bank/activeContext.md` and `memory-bank/session_cache.md` - Recorded the approved architecture.
+- Created `memory-bank/sessions/2026-09-06-agentic-runtime-plan.md` - Recorded the decision and forward plan.
 
 ## 2026-09-01
 

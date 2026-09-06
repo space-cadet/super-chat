@@ -1,0 +1,42 @@
+# Host Tool Provider Contract
+
+## Provider Composition
+
+```text
+                         +------------------+
+                         | ToolRegistry     |
+                         | shared resolver  |
+                         +--------+---------+
+                                  |
+             +--------------------+--------------------+
+             |                    |                    |
+      +------v------+      +------v------+      +------v------+
+      | built-ins   |      | Arxivite    |      | Obsidian    |
+      | memory/etc. |      | papers/PDFs |      | vault/files |
+      +-------------+      +-------------+      +-------------+
+```
+
+## Request Flow
+
+```text
+model tool call
+  -> resolve descriptor
+  -> check availability and risk
+  -> request approval when required
+  -> execute provider handler with signal/requestId
+  -> normalize result
+  -> record evidence and diagnostics
+  -> return paired tool result to model
+```
+
+## Dependency Rules
+
+```text
+shared core  --> neutral descriptor/result contracts
+host provider --> product APIs and data
+UI            --> shared snapshots and events
+host shell    --> navigation, notifications, credentials, lifecycle
+```
+
+Hosts must not pass raw Obsidian, Supabase, Electron, or Capacitor objects into
+shared public contracts.

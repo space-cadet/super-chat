@@ -1,11 +1,18 @@
 # Implementation Details: AgentLoop
 
 *Created: 2026-05-19 12:10:00 IST*
-*Last Updated: 2026-05-19 12:10:00 IST*
+*Last Updated: 2026-09-06 13:13:22 IST*
 
 ## Overview
 
-The `AgentLoop` is the core orchestration engine for multi-step LLM tool calling. It implements a manual loop around the Vercel AI SDK's `streamText` with `stopWhen: stepCountIs(1)`, giving full control over the approval flow.
+The `AgentLoop` is the core orchestration engine for multi-step LLM tool
+calling. It implements the behavior extracted from `obsidian-ai`, including
+streaming continuation, approval, cancellation, bounded tool results, and
+evidence-producing retrieval tools. Hosts provide handlers; the loop remains
+host-agnostic.
+
+The overall agentic tool/RAG architecture is documented in
+`agentic-tool-runtime.md` and `agentic-rag-evidence.md`.
 
 ## Architecture Diagram
 

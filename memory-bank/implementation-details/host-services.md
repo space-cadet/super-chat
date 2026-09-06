@@ -1,14 +1,14 @@
 # Host Services for super-chat
 
 *Created: 2026-08-31 23:19:22 IST*
-*Last Updated: 2026-08-31 23:19:22 IST*
+*Last Updated: 2026-09-06 13:13:22 IST*
 *Program: INFRA-1 Phase 2*
 
 ## What This Is
 
 A host is the product that runs `super-chat`. For example, Arxivite is a host
-because it knows about papers, Supabase, and its signed-in user. Obsidian AI is
-a host because it knows about the vault, notes, and the editor.
+because it knows about papers, PDFs, Supabase, and its signed-in user. Obsidian
+AI is a host because it knows about the vault, notes, and the editor.
 
 The host gives `super-chat` only the small services it needs. `super-chat`
 still owns the chat screen, streaming, sessions, tools, approvals, and other
@@ -33,16 +33,22 @@ Then add only the services that product can genuinely provide. Do not add a
 placeholder service that throws an error. If the product cannot do something,
 leave that service out.
 
-```ts
-host.capabilities.retrieval = {
-  id: "arxivite.retrieval",
-  kind: "retrieval",
-  retrieve: async (request, context) => {
-    // Ask Arxivite's existing paper search for results.
-    return [];
-  },
-};
+```text
+super-chat AgentLoop
+       |
+       v
+Arxivite tool provider
+       |
+       +--> search_papers
+       +--> get_paper_details
+       +--> fetch_pdf_text
+       |
+       v
+structured tool result + evidence/provenance
 ```
+
+The host supplies search/fetch handlers and data access. It does not classify
+the whole conversation or return a completed RAG answer.
 
 Retrieval may return the legacy source array or a rich result with `status`,
 `warnings`, and a typed `error`. Use `runRetrievalConformance` while building
@@ -57,7 +63,7 @@ checks require stable source provenance tied to the retrieval capability.
 | persistence | Read and write saved chats | Decides when chats are saved and restored |
 | credentials | Securely read provider credentials | Uses credentials to configure a provider |
 | tools | Product actions, such as reading a note | Shows tools, asks for approval, and records results |
-| retrieval | Search results, such as papers or notes | Decides when to search and displays citations |
+| retrieval/tools | Search and fetch tools, such as papers or notes | Selects tools, records evidence, and displays citations |
 | documents | Read or write a document | Builds the chat action and approval flow |
 | navigation | Open a paper, note, session, or settings page | Chooses when a chat action should navigate |
 | notifications | Show a product message | Chooses when to report chat state |

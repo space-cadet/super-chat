@@ -1,6 +1,6 @@
 # Session Cache — super-chat
 
-*Last Updated*: 2026-09-01 11:11:59 IST
+*Last Updated*: 2026-09-06 13:13:22 IST
 
 ## Global Program Tracker
 
@@ -45,27 +45,27 @@
   demo build, and diff checks. The `pnpm build` wrapper was not usable in this
   non-interactive environment because pnpm attempted to remove `node_modules`;
   the pinned local tsup build completed successfully.
-- Next action: T16 Phase 5 shared host-backed RAG hardening. Keep Obsidian and
-  Arxivite migrations deferred until their host adapters pass equivalent
-  acceptance.
+- Superseded next action: the thin host-backed RAG path is not the final
+  architecture. Forward work is T15/T25 agentic-runtime extraction followed
+  by T16 shared agentic RAG/evidence.
 
-## Current Plan Review: T16 Phase 5 Shared Host-backed RAG
+## Superseded Plan Review: T16 Thin Host-backed RAG
 
 - Sol-medium read-only review completed against clean commit `42c3b75`.
-- Direction confirmed, but Phase 5 is a hardening pass over the existing
-  Phase 4 path, not a new RAG system.
+- This review is retained as historical evidence for the thin Phase 4 path,
+  but is superseded by the approved agentic-runtime architecture.
 - First implementation priority: move retrieval inside the engine lock and
   user-turn persistence/cancellation/failure lifecycle.
 - Follow with one neutral retrieval contract, bounded context assembly,
   normalized errors/partial results, replay-safe persistence, and React
   retrieval status/error state.
-- Do not change `AgentLoop`, add a large RAG manager, or port Arxivite/PocketFlow
-  and Obsidian search logic into the shared core.
+- The current forward plan does change the shared agent runtime: extract the
+  mature obsidian-ai agentic tool-calling behavior and evidence handling.
 - Review caveat: the subagent's parallel full-suite run saw 121/122 because
   `SuperChatApp.test.tsx` timed out; the isolated test passed. Stabilize this
   timing-sensitive test before using the all-green Phase 5 gate.
-- Next action: implement the lifecycle-first Phase 5 slice. Keep product
-  migrations deferred until their host adapters pass equivalent acceptance.
+- Next action: implement T25 and T16; keep product migrations deferred until
+  their provider adapters pass equivalent acceptance.
 
 ## Current Continuation — T16 Phase 5 Lifecycle Slice
 
@@ -150,7 +150,7 @@
 ## Current Continuation — Arxivite External Integration Readiness
 
 - Pulled Arxivite to `2822a6b5`; its working tree remains clean. The Arxivite
-  `packages/super-chat` submodule remains at `7ccf5609`.
+  `packages/super-chat` submodule is reconciled to `5e0430b`.
 - Created `integrations/arxivite/` in `super-chat` without changing Arxivite or
   `obsidian-ai`.
 - Added a test-only external adapter that loads Arxivite's real chatbot
@@ -159,11 +159,27 @@
 - Verified retrieval provenance and session reload with deterministic test
   storage. The focused TypeScript check and 6 Vitest tests passed.
 - This does not yet test Arxivite's live Supabase persistence, provider,
-  PocketFlow/PDF retrieval, or UI path. The product host migration remains
-  under T19, and package compatibility remains under T21.
+  agentic paper/PDF tool provider, or UI path. The product host migration
+  remains under T19, and package compatibility remains under T21.
 - Next action: record this evidence in the owning task and current session
   records, then decide whether to update Arxivite's package reference after
   the compatibility plan is approved.
+
+## Current Session: Agentic Runtime and Provider Plan
+
+- Confirmed that PocketFlow and the host-owned Arxivite RAG pipeline are
+  obsolete for forward work.
+- Recorded the approved architecture: `super-chat` owns the reusable
+  obsidian-ai agentic tool-calling and RAG/evidence runtime; Arxivite and
+  Obsidian expose pluggable tool/data providers.
+- Added T25-T30 for the shared agentic tool runtime, memory/pruning,
+  attachments, provider switching, diagnostics, and export/import.
+- Updated T15, T16, T18, T19, T21, T22, INFRA-1, and the task registry.
+- Added implementation-detail documents with ASCII logic-flow, component,
+  dependency, evidence, memory, attachment, provider, diagnostics, and
+  import/export diagrams.
+- Preserved historical session and edit records that describe the former
+  PocketFlow direction.
 
 ## Previous Session
 

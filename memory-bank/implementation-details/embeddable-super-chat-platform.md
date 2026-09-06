@@ -1,9 +1,14 @@
 # Embeddable super-chat Application Platform
 
 *Created: 2026-08-31 22:25:18 IST*
-*Last Updated: 2026-09-01 11:11:59 IST*
+*Last Updated: 2026-09-06 13:13:22 IST*
 *Program Owner: INFRA-1*
 *Shared-Core Workstream: T22*
+
+Forward implementation detail:
+[`agentic-tool-runtime.md`](agentic-tool-runtime.md),
+[`agentic-rag-evidence.md`](agentic-rag-evidence.md), and
+[`host-tool-provider-contract.md`](host-tool-provider-contract.md).
 
 ## 1. Decision
 
@@ -28,12 +33,12 @@ super-chat
   agent and multi-agent orchestration
   tools, risk descriptors, approval, and results
   context assembly, budgeting, compaction, and memory
-  RAG coordination, citations, and progress
+  agentic retrieval, evidence, citations, and progress
   persistence workflow and migration contracts
   diagnostics, usage, and reusable settings UI
         |
         +-- Obsidian host: vault, editor, workspace, plugin services
-        +-- Arxivite host: papers, Supabase, research retrieval, navigation
+        +-- Arxivite host: papers, PDFs, tool provider, Supabase, navigation
         +-- Standalone host: files, database, keychain, operating-system shell
 ```
 
@@ -59,8 +64,9 @@ function ProductChat() {
 - Context construction, replay policy, budgeting, compaction, and memory.
 - Tool discovery, descriptors, risk policy framework, execution workflow, and
   result formatting.
-- RAG orchestration: deciding when retrieval runs, incorporating returned
-  context, emitting progress/citations, and recording provenance.
+- Agentic RAG: choosing retrieval tools, coordinating multi-step search/fetch,
+  tracking evidence, assembling grounded context, emitting progress/citations,
+  and recording provenance for replay.
 - When sessions and messages are loaded, saved, archived, or deleted.
 - Reusable settings and diagnostics that do not depend on a product shell.
 
@@ -69,7 +75,7 @@ function ProductChat() {
 - Authenticated identity and product authorization facts.
 - Physical persistence operations for its environment.
 - Product data sources and mutations.
-- Retrieval implementations and domain-specific ranking.
+- Search/fetch tool handlers, indexes, and domain metadata.
 - Product-specific tool implementations and risk metadata.
 - Navigation into product screens/documents.
 - Secure credential storage and platform lifecycle primitives.
@@ -175,24 +181,26 @@ Required design points:
 - Host adapters may batch or transact writes, but engine behavior cannot
   depend on a specific database.
 
-## 7. RAG and Context Contract
+## 7. Agentic RAG and Context Contract
 
-`super-chat` owns orchestration; the host owns retrieval data and algorithms.
+`super-chat` owns the agentic retrieval workflow. The host supplies retrieval
+tools, indexes, document access, and domain data. A host does not return a
+completed RAG answer to the shared engine.
 
 ```text
 user turn
-  -> shared retrieval decision/policy
-  -> host retrieval capability
-  -> normalized results with stable source IDs and provenance
-  -> shared context budgeting and prompt assembly
+  -> shared AgentLoop chooses a retrieval tool
+  -> host search/fetch tool executes
+  -> structured result enters shared evidence ledger
+  -> shared budgeting, grounding, and prompt assembly
   -> shared citation and progress events
-  -> persisted retrieval record needed for replay
+  -> persisted evidence record needed for replay
 ```
 
-Arxivite may retain its intent classifier, PocketFlow pipeline, Supabase data,
-and paper ranking inside its retrieval capability. Obsidian may retrieve vault
-notes. The standalone host may retrieve local files. UI and conversation
-mechanics remain shared.
+Arxivite supplies paper/PDF search and fetch tools. Obsidian supplies vault and
+document tools. The standalone host may supply local-file tools. UI,
+conversation mechanics, agentic retrieval, evidence handling, and citations
+remain shared.
 
 Phase 4 proved a thin `enableRAG` path through the fixture host. The first
 Phase 5 lifecycle slice now establishes the engine turn lock and abort signal
@@ -248,8 +256,8 @@ For every vertical slice:
 ## 9. Arxivite End State
 
 Arxivite supplies identity, authorization, papers, bookmarks, collections,
-notes, reading history, Supabase storage, research retrieval, tools, risk
-metadata, navigation, and product-specific provider policy.
+notes, reading history, Supabase storage, paper/PDF tool providers, evidence
+sources, risk metadata, navigation, and product-specific provider policy.
 
 Arxivite must not own in the final path:
 
@@ -265,11 +273,12 @@ Migration sequence:
 1. Pin a known compatible `super-chat` version.
 2. Implement `ArxiviteSuperChatHost` capabilities.
 3. Validate session identity and one persistence owner.
-4. Mount `SuperChatApp` behind the existing feature toggle.
-5. Test real streaming, reload, tools, approval, RAG, citations, cancellation,
+4. Connect Arxivite tools to the shared agentic RAG/evidence runtime.
+5. Mount `SuperChatApp` behind the existing feature toggle.
+6. Test real streaming, reload, tools, approval, RAG, citations, cancellation,
    errors, auth changes, and mobile/desktop layouts.
-6. Make the host path the default only after acceptance.
-7. Remove legacy mechanics in a separate reversible change.
+7. Make the host path the default only after acceptance.
+8. Remove legacy mechanics in a separate reversible change.
 
 ## 10. Package Boundaries
 
@@ -325,15 +334,15 @@ Do not begin the broad Obsidian migration until these steps are green.
   bounds, and formats host sources, and its assembled context is persisted on
   the turn. Partial results continue provider work with warnings; unavailable,
   unauthorized, malformed, and cancelled outcomes stop the turn with typed
-  errors. The legacy paper-oriented RAG methods remain split from the neutral
-  host contract; richer progress and product-host conformance remain open.
+  errors. The legacy paper-oriented RAG methods are superseded by the neutral
+  agentic tool/evidence contract; richer product-host conformance remains open.
   `contextAdapter` remains declared but unused.
 - Arxivite creates a second in-memory session, adds an untyped mapping, owns
   the stream loop, and writes messages separately.
 - Arxivite's persistence and RAG adapters exist but are not wired into its
   active `ChatEngine` construction.
-- Arxivite pins an older `super-chat` submodule at `7ccf5609` and relies on
-  prebuilt output; the current `super-chat` checkout is `919e2db`.
+- Arxivite's current submodule is reconciled to super-chat `5e0430b`; the
+  package-consumption and clean-install checks remain open.
 - Arxivite's root application declares AI SDK `5.0.52`, while the shared
   package declares AI SDK 6. The pinned SuperChat submodule itself also
   declares AI SDK 6, so the application and shared package do not yet have one

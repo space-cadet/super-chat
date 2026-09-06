@@ -1,6 +1,6 @@
 # Active Context
 
-*Last Updated: 2026-09-01 11:11:59 IST*
+*Last Updated: 2026-09-06 13:13:22 IST*
 
 ## Current Program: INFRA-1 Unified super-chat Application Platform
 
@@ -53,12 +53,25 @@ deterministic test storage. TypeScript and 6 focused Vitest tests pass. This
 does not yet test Arxivite's live Supabase/RAG/provider path or UI. Product
 migrations remain deferred until their real host adapters pass acceptance.
 
-T16 now owns the verified Phase 5 host-backed RAG plan; T15 owns
-behavior-preserving extraction from `obsidian-ai`; T18 owns the
-Obsidian host migration; T19 makes Arxivite a `SuperChatApp` harness; T16 owns
-host-backed RAG; T21 owns release and compatibility discipline. T17's former
+T15 owns behavior-preserving extraction from `obsidian-ai`; T16 owns shared
+agentic RAG and evidence; T18 owns the Obsidian host migration; T19 makes
+Arxivite a `SuperChatApp` tool-provider harness; T21 owns release and
+compatibility discipline. T17's former
 "flip the Arxivite toggle" plan is retired because it would entrench
 Arxivite-owned chat mechanics.
+
+## 2026-09-06 Architecture Decision
+
+The former PocketFlow and host-owned RAG direction is superseded. The
+agentic tool-calling behavior in `obsidian-ai` is the behavioral source for
+shared `super-chat`. `super-chat` owns the agent loop, composed tool providers,
+agent-mediated retrieval, evidence, citations, context, memory, and replay.
+Arxivite and Obsidian provide pluggable tool/data providers and platform
+capabilities; neither owns a completed RAG answer or a parallel chat loop.
+
+T25-T30 were created for the approved priority capabilities: shared agentic
+tools, memory/pruning, attachments, provider switching, diagnostics, and
+export/import. T15, T16, T18, T19, T21, T22, and INFRA-1 were updated to match.
 
 ## Historical June 2026 Snapshot
 

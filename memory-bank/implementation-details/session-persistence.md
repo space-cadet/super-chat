@@ -1,5 +1,7 @@
 # Shared session persistence
 
+*Last Updated: 2026-09-06 13:13:22 IST*
+
 Phase 3 makes the `ChatEngine` the owner of session and turn state. A product
 or host supplies storage operations through `PersistenceAdapter`; it does not
 append messages or maintain a second copy of the conversation.
@@ -23,9 +25,9 @@ The current record is schema version `1` and contains:
   streaming;
 - `modelHistory`, a provider-neutral role/content history used for the next
   request;
-- `turns`, with status, tool calls, tool results, errors, and the model
-  messages produced by that turn, plus bounded retrieval context, sources,
-  outcome status, warnings, and typed errors;
+- `turns`, with status, tool calls, tool results, structured evidence, errors,
+  and the model messages produced by that turn, plus bounded retrieval
+  context, sources, outcome status, warnings, and typed errors;
 - `persistence` metadata, including the schema version and migration ID.
 
 The visible transcript and model history are deliberately separate. Tool
