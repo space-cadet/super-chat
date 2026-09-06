@@ -52,7 +52,10 @@ export interface UseChatActions {
 
 export type UseChatReturn = UseChatState & UseChatActions;
 
-export function useChat(engine: ChatEngine, options?: { initialSessionId?: string }): UseChatReturn {
+export function useChat(
+	engine: ChatEngine,
+	options?: { initialSessionId?: string; loadSessionsOnMount?: boolean },
+): UseChatReturn {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [currentSession, setCurrentSession] = useState<ChatSession | null>(null);
@@ -89,22 +92,28 @@ export function useChat(engine: ChatEngine, options?: { initialSessionId?: strin
     });
   }, [engine]);
 
-  // Load sessions on mount + optionally switch to initial session
-  useEffect(() => {
-    loadSessions().then(() => {
-      if (options?.initialSessionId) {
-        engine.switchSession(options.initialSessionId);
-        const session = engine.getActiveSession();
-        setCurrentSession(session);
-        setMessages(session?.messages ?? []);
-      }
-    });
-  }, []);
-
   const loadSessions = useCallback(async () => {
     const loaded = await engine.loadSessions();
     setSessions(loaded);
   }, [engine]);
+
+  // Load sessions on mount + optionally switch to initial session
+	useEffect(() => {
+		if (options?.loadSessionsOnMount === false) return;
+
+		void loadSessions().then(() => {
+			if (options?.initialSessionId) {
+				engine.switchSession(options.initialSessionId);
+				const session = engine.getActiveSession();
+				setCurrentSession(session);
+				setMessages(session?.messages ?? []);
+			}
+		}).catch((err) => {
+			const message = err instanceof Error ? err.message : String(err);
+			setError(message);
+			console.error("[super-chat] session load failed:", message);
+		});
+	}, [engine, loadSessions, options?.initialSessionId, options?.loadSessionsOnMount]);
 
   const sendMessage = useCallback(
     async (text: string) => {

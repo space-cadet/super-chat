@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ChatEngine } from "../../core/ChatEngine";
 import type { LLMAdapter } from "../../core/types";
 import { createExternalSessionIdentity } from "../../core/sessionPersistence";
@@ -16,6 +16,13 @@ export interface SuperChatAppProps {
 
 type HostWithLLMAdapter = SuperChatHost & { llmAdapter?: LLMAdapter };
 
+interface Initialization {
+	host: SuperChatHost;
+	initialSessionId?: string;
+	llmAdapter: LLMAdapter;
+	promise: Promise<ChatEngine>;
+}
+
 /**
  * Host-facing entry point. Products provide neutral capabilities and an LLM;
  * the shared UI owns the engine lifecycle and session initialization.
@@ -26,8 +33,9 @@ export function SuperChatApp({
   initialSessionId,
   onNewChat,
 }: SuperChatAppProps) {
-  const [engine, setEngine] = useState<ChatEngine | null>(null);
-  const [error, setError] = useState<string | null>(null);
+	const [engine, setEngine] = useState<ChatEngine | null>(null);
+	const [error, setError] = useState<string | null>(null);
+	const initializationRef = useRef<Initialization | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -38,47 +46,72 @@ export function SuperChatApp({
       return () => undefined;
     }
 
-    setEngine(null);
-    setError(null);
+	setEngine(null);
+	setError(null);
 
-    void (async () => {
-      try {
-        const nextEngine = await createChatEngineForHost({
-          host,
-          llmAdapter: resolvedAdapter,
-        });
-        await nextEngine.loadSessions();
+	const cached = initializationRef.current;
+	const initialization =
+		cached &&
+		cached.host === host &&
+		cached.initialSessionId === initialSessionId &&
+		cached.llmAdapter === resolvedAdapter
+			? cached
+			: (() => {
+				const promise = (async () => {
+					console.info("[super-chat] initializing");
+					const nextEngine = await createChatEngineForHost({
+						host,
+						llmAdapter: resolvedAdapter,
+					});
+					const sessions = await nextEngine.loadSessions();
+					console.info("[super-chat] sessions loaded", { count: sessions.length });
 
-        if (initialSessionId) {
-          nextEngine.switchSession(initialSessionId);
-        }
+					if (initialSessionId) {
+						nextEngine.switchSession(initialSessionId);
+					}
 
-        if (!nextEngine.getActiveSession()) {
-          const identity = host.capabilities.identity
-            ? await host.capabilities.identity.getIdentity({
-                requestId: `super-chat-${Date.now()}`,
-              })
-            : null;
-          nextEngine.createSession(
-            identity?.displayName ? `${identity.displayName}'s Chat` : "New Chat",
-            identity
-              ? createExternalSessionIdentity(host.id, identity.id, host.version)
-              : undefined,
-          );
-          await nextEngine.saveSession();
-        }
+					if (!nextEngine.getActiveSession()) {
+						const identity = host.capabilities.identity
+							? await host.capabilities.identity.getIdentity({
+									requestId: `super-chat-${Date.now()}`,
+								})
+							: null;
+						nextEngine.createSession(
+							identity?.displayName ? `${identity.displayName}'s Chat` : "New Chat",
+							identity
+								? createExternalSessionIdentity(host.id, identity.id, host.version)
+								: undefined,
+						);
+						await nextEngine.saveSession();
+					}
 
-        if (cancelled) {
-          nextEngine.dispose();
-          return;
-        }
-        setEngine(nextEngine);
-      } catch (cause) {
-        if (!cancelled) {
-          setError(cause instanceof Error ? cause.message : String(cause));
-        }
-      }
-    })();
+					return nextEngine;
+				})();
+				const nextInitialization = {
+					host,
+					initialSessionId,
+					llmAdapter: resolvedAdapter,
+					promise,
+				};
+				initializationRef.current = nextInitialization;
+				return nextInitialization;
+			})();
+
+	void initialization.promise
+		.then((nextEngine) => {
+			if (!cancelled) {
+				setEngine(nextEngine);
+			} else if (initializationRef.current?.promise !== initialization.promise) {
+				nextEngine.dispose();
+			}
+		})
+		.catch((cause) => {
+			if (!cancelled) {
+				const message = cause instanceof Error ? cause.message : String(cause);
+				console.error("[super-chat] initialization failed:", message);
+				setError(message);
+			}
+		});
 
     return () => {
       cancelled = true;
@@ -99,5 +132,12 @@ export function SuperChatApp({
     return <div className="p-4 text-sm text-gray-500">Loading {host.name}…</div>;
   }
 
-  return <ChatApp engine={engine} initialSessionId={initialSessionId} onNewChat={onNewChat} />;
+	return (
+		<ChatApp
+			engine={engine}
+			initialSessionId={initialSessionId}
+			onNewChat={onNewChat}
+			loadSessionsOnMount={false}
+		/>
+	);
 }

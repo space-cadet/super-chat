@@ -8,12 +8,18 @@ import { SessionSidebar } from './SessionSidebar';
 import { PendingToolCard } from './PendingToolCard';
 
 interface ChatAppProps {
-  engine: ChatEngine;
-  initialSessionId?: string;
-  onNewChat?: () => void;
+	engine: ChatEngine;
+	initialSessionId?: string;
+	onNewChat?: () => void;
+	loadSessionsOnMount?: boolean;
 }
 
-export function ChatApp({ engine, initialSessionId, onNewChat }: ChatAppProps) {
+export function ChatApp({
+	engine,
+	initialSessionId,
+	onNewChat,
+	loadSessionsOnMount = true,
+}: ChatAppProps) {
   const {
     messages,
     sessions,
@@ -30,19 +36,19 @@ export function ChatApp({ engine, initialSessionId, onNewChat }: ChatAppProps) {
     rejectTool,
     loadSessions,
     replayMessage,
-  } = useChat(engine, { initialSessionId });
+	} = useChat(engine, { initialSessionId, loadSessionsOnMount });
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const handleNewChat = useCallback(() => {
-    createSession();
-    onNewChat?.();
-  }, [createSession, onNewChat]);
+	const handleNewChat = useCallback(() => {
+		createSession("New Chat");
+		onNewChat?.();
+	}, [createSession, onNewChat]);
 
   const currentSessionId = currentSession?.id ?? '';
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+		<div className="flex flex-col h-full min-h-0 overflow-hidden bg-gray-50">
       {/* Header */}
       <header className="bg-white border-b px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
