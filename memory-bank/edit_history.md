@@ -1,6 +1,31 @@
 # Edit History
 *Created: 2026-05-19 11:15:00 IST*
-*Last Updated: 2026-09-06 13:13:22 IST*
+*Last Updated: 2026-09-06 20:27:32 IST*
+
+#### 20:27:32 IST - INFRA-1/T22/T25: Complete super-chat Memory Bank update
+- Updated `memory-bank/activeContext.md`, `memory-bank/session_cache.md`, and `memory-bank/tasks.md` - Refreshed the current workstream timestamps.
+- Updated `memory-bank/tasks/INFRA-1.md`, `memory-bank/tasks/T22.md`, and `memory-bank/tasks/T25.md` - Preserved the minimal provider seam status and open follow-ups.
+- Created `memory-bank/edits/2026-09-06/202732-INFRA-1-T22-T25-provider-seam.md` - Recorded source branch, source commit, and file-level provenance.
+- Updated `memory-bank/sessions/2026-09-06-agentic-provider-seam.md` - Recorded the Memory Bank closeout and next slice.
+
+#### 14:17:00 IST - T22, T25: Survey obsidian-ai and add minimal provider seam
+- Surveyed `/Users/deepak/code/obsidian-ai` read-only before implementation,
+  including its canonical tool registry, executor, turn coordinator,
+  model-history, context-budget, and focused tests.
+- Modified `src/contracts/host.ts` and `src/contracts/validation.ts` to allow
+  composed host tool capabilities while flattening validation safely.
+- Modified `src/adapters/HostAdapters.ts` to route each tool to its owning host
+  capability, reject duplicate names, and forward cancellation.
+- Modified `src/core/types.ts`, `src/core/ToolExecutor.ts`,
+  `src/core/AgentLoop.ts`, and `src/core/ChatEngine.ts` to preserve abort
+  signals through adapter-backed execution.
+- Added focused composition, routing, duplicate-name, and capability-discovery
+  tests. Updated the Arxivite test harness for the widened host type.
+- Verification passed: TypeScript, 16 Vitest files / 145 tests, package build,
+  Arxivite harness typecheck, Arxivite engine integration (3 tests), and diff
+  checks. Arxivite readiness remains blocked by its existing dirty checkout.
+- Created `memory-bank/sessions/2026-09-06-agentic-provider-seam.md` and
+  updated T22, T25, INFRA-1, active context, and session cache.
 
 #### 13:13:22 IST - T15/T16/T19/T25-T30: Record agentic runtime architecture
 - Updated `memory-bank/tasks/T15.md` - Reframed extraction around obsidian-ai's shared agentic runtime.

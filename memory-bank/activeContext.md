@@ -1,6 +1,6 @@
 # Active Context
 
-*Last Updated: 2026-09-06 13:13:22 IST*
+*Last Updated: 2026-09-06 20:27:32 IST*
 
 ## Current Program: INFRA-1 Unified super-chat Application Platform
 
@@ -72,6 +72,22 @@ capabilities; neither owns a completed RAG answer or a parallel chat loop.
 T25-T30 were created for the approved priority capabilities: shared agentic
 tools, memory/pruning, attachments, provider switching, diagnostics, and
 export/import. T15, T16, T18, T19, T21, T22, and INFRA-1 were updated to match.
+
+## 2026-09-06 Provider Seam Implementation
+
+Completed the first small implementation slice after a read-only survey of
+`obsidian-ai`'s canonical tool registry, executor, turn coordinator, and
+model-history behavior. `super-chat` now supports composed host tool
+capabilities with one route per tool name, duplicate-name rejection, and
+abort-signal propagation through the shared agent loop. Existing single-host
+adapters remain compatible.
+
+Verification passed: TypeScript, 16 Vitest files / 145 tests, package
+ESM/CJS/declaration build, Arxivite engine harness (3 tests), and
+`git diff --check`. The full 31-tool extraction, structured evidence, and live
+Obsidian/Arxivite host acceptance remain open. The Arxivite readiness check was
+not green because its external checkout currently contains unrelated dirty
+work; those files were preserved.
 
 ## Historical June 2026 Snapshot
 

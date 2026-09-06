@@ -262,7 +262,7 @@ export class AgentLoop {
 
 				const result: ToolResult = approved
 					? toolExecutor
-						? await toolExecutor.execute(call)
+						? await toolExecutor.execute(call, signal)
 						: {
 								success: false,
 								error: "No tool executor configured",

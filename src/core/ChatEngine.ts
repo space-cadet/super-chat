@@ -1225,12 +1225,12 @@ export class ChatEngine {
 	private registerAdapterTools(adapter: ToolAdapter): void {
 		const tools = adapter.getAvailableTools();
 		for (const tool of tools) {
-			this.toolExecutor.register(tool.name, (args: unknown) =>
+			this.toolExecutor.register(tool.name, (args: unknown, signal?: AbortSignal) =>
 				adapter.executeTool({
 					id: `tool-${Date.now()}`,
 					name: tool.name,
 					args: args as Record<string, unknown>,
-				}),
+				}, signal),
 			);
 		}
 	}

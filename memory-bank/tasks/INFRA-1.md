@@ -1,7 +1,7 @@
 # INFRA-1: Unified super-chat Application Platform Program
 
 *Created: 2026-08-31 22:44:08 IST*
-*Last Updated: 2026-09-06 13:13:22 IST*
+*Last Updated: 2026-09-06 20:27:32 IST*
 
 **Status**: 🔄 **IN PROGRESS**
 **Priority**: CRITICAL
@@ -165,6 +165,8 @@ without Obsidian or Arxivite.
       durable failure handling.
 - [x] Apply shared progress, citations, and replay; context budgeting,
       normalized outcomes, and React retrieval state are now implemented.
+- [x] Add the minimal composed host-tool capability seam with cancellation
+      propagation and duplicate-name rejection.
 - [ ] Extract the obsidian-ai agentic retrieval/tool behavior into
       `super-chat`.
 - [ ] Keep host-specific indexes, document access, data, and handlers in the
@@ -196,6 +198,13 @@ deterministic ordering, result/context limits, untrusted-evidence formatting,
 and durable assembled context are implemented. Latest-turn replay now reuses
 saved retrieval outcomes safely, with explicit refresh behavior; richer host
 conformance remains open.
+
+The first survey-driven provider slice is now implemented. The neutral host
+contract accepts one or several tool capabilities, and the host adapter routes
+each resolved tool to its owning provider while preserving the active abort
+signal. TypeScript, 16 Vitest files / 145 tests, the package build, the
+Arxivite engine harness (3 tests), and diff checks passed. This does not yet
+extract the 31 built-in tools or satisfy cross-host product acceptance.
 
 Normalized retrieval outcomes and observable React retrieval state are now
 verified: partial results continue provider work with warnings, while unsafe

@@ -1,6 +1,6 @@
 # Session Cache — super-chat
 
-*Last Updated*: 2026-09-06 13:13:22 IST
+*Last Updated*: 2026-09-06 20:27:32 IST
 
 ## Global Program Tracker
 
@@ -180,6 +180,27 @@
   import/export diagrams.
 - Preserved historical session and edit records that describe the former
   PocketFlow direction.
+
+## Current Continuation — Survey and Minimal Provider Seam
+
+- Surveyed `obsidian-ai` read-only before implementation. Its canonical
+  registry feeds both model exposure and execution, validates schemas, filters
+  availability, maps provider metadata, and its executor preserves approval,
+  cancellation, write locking, audit, and result behavior around
+  Obsidian-specific handlers.
+- Added the smallest shared provider seam in `super-chat`: one or several host
+  tool capabilities, deterministic routing by tool name, duplicate-name
+  rejection, and abort-signal propagation through `ToolExecutor`, `AgentLoop`,
+  `ChatEngine`, and `HostToolAdapter`.
+- Verification passed: TypeScript, 16 Vitest files / 145 tests, package
+  ESM/CJS/declaration build, Arxivite harness typecheck, Arxivite engine
+  harness (3 tests), and `git diff --check`.
+- The complete 31-tool catalog and structured evidence runtime remain open.
+  The full Arxivite readiness suite reported the external checkout's existing
+  unrelated dirty files; no product files were changed.
+- Next smallest slice: turn the survey into characterization coverage and
+  extract one read-only plus one approval-required Obsidian capability through
+  an external harness before defining the full built-in catalog.
 
 ## Previous Session
 

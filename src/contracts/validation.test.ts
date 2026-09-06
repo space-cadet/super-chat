@@ -83,6 +83,31 @@ describe("SuperChatHost contract helpers", () => {
 		});
 	});
 
+	it("discovers and validates composed tool capabilities", () => {
+		const host = createHost();
+		host.capabilities.tools = [
+			{
+				id: "fixture.tools.one",
+				kind: "tools",
+				getTools: async () => [],
+				executeTool: async () => ({ success: true }),
+			},
+			{
+				id: "fixture.tools.two",
+				kind: "tools",
+				getTools: async () => [],
+				executeTool: async () => ({ success: true }),
+			},
+		];
+
+		expect(validateHostContract(host)).toMatchObject({
+			valid: true,
+			capabilityKinds: ["identity", "persistence", "tools", "tools"],
+		});
+		expect(listHostCapabilities(host).filter(({ kind }) => kind === "tools"))
+			.toHaveLength(2);
+	});
+
 	it("throws an actionable error for an invalid host", () => {
 		const host = createHost();
 		host.name = "";
@@ -91,4 +116,3 @@ describe("SuperChatHost contract helpers", () => {
 		);
 	});
 });
-

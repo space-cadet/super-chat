@@ -393,7 +393,7 @@ export interface ContextAdapter {
 }
 
 export interface ToolAdapter {
-  executeTool(call: ToolCall): Promise<ToolResult>;
+  executeTool(call: ToolCall, signal?: AbortSignal): Promise<ToolResult>;
   getAvailableTools(): ToolDefinition[];
 }
 
@@ -442,7 +442,10 @@ export interface MentionParseResult {
 // Tool Executor Types
 // ============================================================================
 
-export type ToolHandler<T = unknown> = (args: T) => Promise<ToolResult>;
+export type ToolHandler<T = unknown> = (
+  args: T,
+  signal?: AbortSignal,
+) => Promise<ToolResult>;
 
 export interface ToolExecutor {
   register<T>(name: string, handler: ToolHandler<T>): void;
