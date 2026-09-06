@@ -26,7 +26,7 @@ model tool call
   -> execute provider handler with signal/requestId
   -> normalize result
   -> record evidence and diagnostics
-  -> return paired tool result to model
+  -> return a tool result with the same call ID
 ```
 
 ## Dependency Rules
@@ -40,3 +40,6 @@ host shell    --> navigation, notifications, credentials, lifecycle
 
 Hosts must not pass raw Obsidian, Supabase, Electron, or Capacitor objects into
 shared public contracts.
+
+The call ID check is only a small history-validity check. It does not create a
+second tool workflow or coordination system.

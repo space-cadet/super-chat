@@ -1,6 +1,6 @@
 # Active Context
 
-*Last Updated: 2026-09-06 20:27:32 IST*
+*Last Updated: 2026-09-07 01:45:10 IST*
 
 ## Current Program: INFRA-1 Unified super-chat Application Platform
 
@@ -37,12 +37,12 @@ renders retrieved-source provenance. TypeScript, 122 tests, package ESM/CJS/
 declaration builds, and the Vite demo build pass. The first Phase 5 lifecycle
 work is now implemented and pushed in `4015d8b`: retrieval is inside the engine turn lock,
 initial user-turn persistence, cancellation, host abort signaling, retrieval
-status events, and durable retrieval failure/cancellation handling. The bounded
+status events, and durable retrieval failure/cancellation handling. The size-limited
 retrieval/context work is also implemented: source validation, deduplication,
 ordering, result/context limits, untrusted-evidence formatting, and durable
 assembled context. Normalized retrieval outcomes, partial/warning handling,
 observable React retrieval state, and latest-turn replay behavior are also
-implemented. Replay reuses the persisted bounded retrieval record by default
+implemented. Replay reuses the persisted size-limited retrieval record by default
 and supports explicit host refresh. The richer host conformance utilities and
 fixture acceptance are also implemented and included in `4015d8b`.
 
@@ -73,7 +73,7 @@ T25-T30 were created for the approved priority capabilities: shared agentic
 tools, memory/pruning, attachments, provider switching, diagnostics, and
 export/import. T15, T16, T18, T19, T21, T22, and INFRA-1 were updated to match.
 
-## 2026-09-06 Provider Seam Implementation
+## 2026-09-06 Provider Integration Implementation
 
 Completed the first small implementation slice after a read-only survey of
 `obsidian-ai`'s canonical tool registry, executor, turn coordinator, and
@@ -88,6 +88,20 @@ ESM/CJS/declaration build, Arxivite engine harness (3 tests), and
 Obsidian/Arxivite host acceptance remain open. The Arxivite readiness check was
 not green because its external checkout currently contains unrelated dirty
 work; those files were preserved.
+
+## 2026-09-07 Message Context Plan
+
+The next `obsidian-ai` extraction follows
+`implementation-details/model-history-and-context.md`. The first step keeps
+every tool call and result, checks their call IDs, follows the provider
+conversion already used by `obsidian-ai`, and reuses its token estimate.
+Complete results remain available for storage and display; the copy sent in a
+provider request may be shortened when necessary.
+
+The first context policy is chronological history. More elaborate context
+selection, exact tokenizers, and compaction are deferred until a real problem
+justifies them. The single-tool-call retention defect is a required fix in
+`obsidian-ai`, not behavior for super-chat to copy.
 
 ## Historical June 2026 Snapshot
 

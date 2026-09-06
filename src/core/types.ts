@@ -118,7 +118,13 @@ export interface ChatMessage {
   toolResults?: ToolResult[];
   tokenCount?: number;
   metadata?: Record<string, unknown>;
+  /** Provider-neutral text/tool presentation parts for the completed turn. */
+  contentParts?: ChatContentPart[];
 }
+
+export type ChatContentPart =
+  | { type: 'text'; content: string }
+  | { type: 'tool_call'; call: ToolCall; result?: ToolResult };
 
 export interface ChatSession {
   /** Stable super-chat-owned session ID. */

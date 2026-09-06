@@ -24,6 +24,8 @@ import type {
 } from "./types";
 import { ToolExecutor } from "./ToolExecutor";
 import { estimateTokens } from "./tokenEstimator";
+import { ChatTurnOutput } from "./ChatTurnOutput";
+import type { ChatTurnOutputSnapshot } from "./ChatTurnOutput";
 
 export interface AgentLoopOptions {
 	llmAdapter: LLMAdapter;
@@ -40,6 +42,8 @@ export interface AgentLoopResult {
 	stepsTaken: number;
 	/** Complete provider-neutral history after the turn, including tool steps. */
 	modelMessages?: ChatModelMessage[];
+	/** Structured output collected when the turn used tools. */
+	output?: ChatTurnOutputSnapshot;
 }
 
 /**
@@ -161,6 +165,7 @@ export class AgentLoop {
 		let fullText = "";
 		let currentMessages = [...messages];
 		let hasToolHistory = false;
+		const turnOutput = new ChatTurnOutput();
 
 		for (let step = 0; step < maxSteps; step++) {
 			let stepText = "";
@@ -180,10 +185,13 @@ export class AgentLoop {
 					case "text-delta":
 						stepText += event.text;
 						fullText += event.text;
+						turnOutput.appendText(event.text);
 						yield event;
 						break;
 					case "tool-call":
 						pendingCalls.push(event.call);
+						hasToolHistory = true;
+						turnOutput.recordToolCall(event.call);
 						yield event;
 						break;
 					case "tool-error":
@@ -202,6 +210,7 @@ export class AgentLoop {
 
 			if (signal?.aborted) {
 				console.log(`[AgentLoop] aborted during step ${step}`);
+				turnOutput.finishText();
 				return {
 					text: fullText,
 					tokenEstimate: estimateTokens(fullText),
@@ -209,10 +218,12 @@ export class AgentLoop {
 					...(currentMessages.length > messages.length
 						? { modelMessages: toAdapterMessages(currentMessages) }
 						: {}),
+					...(hasToolHistory ? { output: turnOutput.snapshot() } : {}),
 				};
 			}
 
 			if (pendingCalls.length === 0) {
+				turnOutput.finishText();
 				if (stepText) {
 					currentMessages = [
 						...currentMessages,
@@ -234,6 +245,7 @@ export class AgentLoop {
 					...(hasToolHistory
 						? { modelMessages: toAdapterMessages(currentMessages) }
 						: {}),
+					...(hasToolHistory ? { output: turnOutput.snapshot() } : {}),
 				};
 			}
 
@@ -273,6 +285,7 @@ export class AgentLoop {
 					`[AgentLoop] step ${step} tool-result:`,
 					result.error ?? "success",
 				);
+				turnOutput.recordToolResult(call.id, result);
 				yield { type: "tool-result", callId: call.id, result };
 				results.push({ call, result });
 			}
@@ -329,6 +342,7 @@ export class AgentLoop {
 			yield { type: "step-finish", step: step + 1 };
 		}
 
+		turnOutput.finishText();
 		return {
 			text: fullText,
 			tokenEstimate: estimateTokens(fullText),
@@ -336,6 +350,7 @@ export class AgentLoop {
 			...(hasToolHistory
 				? { modelMessages: toAdapterMessages(currentMessages) }
 				: {}),
+			...(hasToolHistory ? { output: turnOutput.snapshot() } : {}),
 		};
 	}
 }

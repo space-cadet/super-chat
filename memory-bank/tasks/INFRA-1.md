@@ -1,7 +1,7 @@
 # INFRA-1: Unified super-chat Application Platform Program
 
 *Created: 2026-08-31 22:44:08 IST*
-*Last Updated: 2026-09-06 20:27:32 IST*
+*Last Updated: 2026-09-07 01:29:34 IST*
 
 **Status**: 🔄 **IN PROGRESS**
 **Priority**: CRITICAL
@@ -165,12 +165,18 @@ without Obsidian or Arxivite.
       durable failure handling.
 - [x] Apply shared progress, citations, and replay; context budgeting,
       normalized outcomes, and React retrieval state are now implemented.
-- [x] Add the minimal composed host-tool capability seam with cancellation
+- [x] Add the minimal composed host-tool capability integration with cancellation
       propagation and duplicate-name rejection.
 - [ ] Extract the obsidian-ai agentic retrieval/tool behavior into
       `super-chat`.
 - [ ] Keep host-specific indexes, document access, data, and handlers in the
       host providers.
+- [ ] Preserve every tool call and result in valid message context, following
+      the provider conversion already used by `obsidian-ai`.
+- [ ] Keep complete tool results for storage and display while shortening the
+      copy sent in the next provider request when necessary.
+- [ ] Keep context selection simple at first; add advanced selection or
+      compaction only when a real problem justifies it.
 
 **Exit criterion**: agentic retrieval tools affect the actual shared turn
 path, and evidence/provenance survives persistence and reload.
@@ -209,7 +215,7 @@ extract the 31 built-in tools or satisfy cross-host product acceptance.
 Normalized retrieval outcomes and observable React retrieval state are now
 verified: partial results continue provider work with warnings, while unsafe
 or unavailable outcomes stop the turn with typed errors. Replay policy and
-durable retrieval presence are now hardened. The reusable retrieval response
+durable retrieval presence are now improved. The reusable retrieval response
 conformance runner passes against the fixture host and was pushed as `4015d8b`
 on `main`; product-host application remains open.
 
@@ -262,7 +268,8 @@ fixture and Obsidian hosts.
 - [ ] Migrate provider/model behavior.
 - [ ] Migrate sessions, tabs, drafts, search, and replay.
 - [ ] Migrate tool, approval, audit, and result behavior.
-- [ ] Migrate model history, pairing, budgets, and compaction.
+- [ ] Migrate message context, call/result ID checks, and context limits;
+      add compaction only if acceptance evidence requires it.
 - [ ] Migrate retry, cancellation, agents, mentions, usage, memory, rendering,
       and reusable settings in dependency order.
 - [ ] Perform automated and manual Obsidian acceptance for every slice.

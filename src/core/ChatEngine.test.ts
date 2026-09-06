@@ -656,6 +656,26 @@ describe("ChatEngine", () => {
 			const assistantMessages = session!.messages.filter((m) => m.role === "assistant");
 			expect(assistantMessages).toHaveLength(1);
 			expect(assistantMessages[0].content).toBe("The answer is 4.");
+			expect(assistantMessages[0].contentParts).toEqual([
+				{
+					type: "tool_call",
+					call: { id: "call-1", name: "calculate", args: {} },
+					result: {
+						success: true,
+						content: expect.stringContaining("4"),
+					},
+				},
+				{ type: "text", content: "The answer is 4." },
+			]);
+			expect(assistantMessages[0].toolCalls).toEqual([
+				{ id: "call-1", name: "calculate", args: {} },
+			]);
+			expect(assistantMessages[0].toolResults).toEqual([
+				expect.objectContaining({
+					success: true,
+					content: expect.stringContaining("4"),
+				}),
+			]);
 		});
 
 		it("handles errors from AgentLoop gracefully", async () => {

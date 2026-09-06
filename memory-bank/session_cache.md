@@ -1,6 +1,6 @@
 # Session Cache — super-chat
 
-*Last Updated*: 2026-09-06 20:27:32 IST
+*Last Updated*: 2026-09-07 01:45:10 IST
 
 ## Global Program Tracker
 
@@ -56,7 +56,7 @@
   but is superseded by the approved agentic-runtime architecture.
 - First implementation priority: move retrieval inside the engine lock and
   user-turn persistence/cancellation/failure lifecycle.
-- Follow with one neutral retrieval contract, bounded context assembly,
+- Follow with one neutral retrieval contract, size-limited context assembly,
   normalized errors/partial results, replay-safe persistence, and React
   retrieval status/error state.
 - The current forward plan does change the shared agent runtime: extract the
@@ -69,7 +69,7 @@
 
 ## Current Continuation — T16 Phase 5 Lifecycle Slice
 
-- Implemented the first Phase 5 hardening slice in `ChatEngine`: the active
+- Implemented the first Phase 5 improvement slice in `ChatEngine`: the active
   turn lock and abort controller are established before any host retrieval.
 - Persisted the user message and streaming turn before retrieval begins.
 - Passed the active abort signal through `HostRAGAdapter` into the neutral host
@@ -80,7 +80,7 @@
   failed retrieval does not call the provider.
 - Verification passed: TypeScript, 13 test files / 124 tests, pinned tsup
   ESM/CJS/declaration build, and `git diff --check`.
-- Remaining: bounded source validation/deduplication, context budgeting and
+- Remaining: source validation/deduplication, context budgeting and
   evidence formatting, normalized partial/error results, replay shaping, and
   shared React retrieval state. Product migrations remain deferred.
 
@@ -109,7 +109,7 @@
 - Verification passed: TypeScript, 14 test files / 130 tests, pinned tsup
   ESM/CJS/declaration build, and `git diff --check`.
 - Remaining: richer host conformance and product migration. Latest-turn replay
-  now reuses persisted bounded retrieval context by default and supports an
+  now reuses persisted size-limited retrieval context by default and supports an
   explicit host refresh.
 
 ## Current Continuation — T16 Host Adapter Conformance
@@ -181,14 +181,14 @@
 - Preserved historical session and edit records that describe the former
   PocketFlow direction.
 
-## Current Continuation — Survey and Minimal Provider Seam
+## Current Continuation — Survey and Minimal Provider Integration
 
 - Surveyed `obsidian-ai` read-only before implementation. Its canonical
   registry feeds both model exposure and execution, validates schemas, filters
   availability, maps provider metadata, and its executor preserves approval,
   cancellation, write locking, audit, and result behavior around
   Obsidian-specific handlers.
-- Added the smallest shared provider seam in `super-chat`: one or several host
+- Added the smallest shared provider integration in `super-chat`: one or several host
   tool capabilities, deterministic routing by tool name, duplicate-name
   rejection, and abort-signal propagation through `ToolExecutor`, `AgentLoop`,
   `ChatEngine`, and `HostToolAdapter`.
@@ -201,6 +201,26 @@
 - Next smallest slice: turn the survey into characterization coverage and
   extract one read-only plus one approval-required Obsidian capability through
   an external harness before defining the full built-in catalog.
+
+## Current Continuation — Message Context Plan — 2026-09-07
+
+- Recorded the KISS plan for the next extraction in
+  `implementation-details/model-history-and-context.md`.
+- The first step preserves every tool call and result, checks call IDs,
+  follows `obsidian-ai`'s provider conversion, and reuses its token estimate.
+- Complete results remain available for storage and display; the copy sent in
+  the next provider request may be shortened when necessary.
+- Chronological context is the starting point. Advanced selection, exact
+  tokenizers, and compaction are deferred until a real problem justifies them.
+- The single-tool-call retention defect is recorded as an `obsidian-ai` fix,
+  not a behavior for super-chat to copy.
+
+## Session Closeout — 2026-09-07 01:45:10 IST
+
+- The message-context plan is recorded in the task and implementation files.
+- `git diff --check` passed.
+- No commit was created; source and Memory Bank changes remain uncommitted for
+  deliberate staging later.
 
 ## Previous Session
 

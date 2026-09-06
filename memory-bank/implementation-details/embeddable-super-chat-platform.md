@@ -1,7 +1,7 @@
 # Embeddable super-chat Application Platform
 
 *Created: 2026-08-31 22:25:18 IST*
-*Last Updated: 2026-09-06 13:13:22 IST*
+*Last Updated: 2026-09-07 01:29:34 IST*
 *Program Owner: INFRA-1*
 *Shared-Core Workstream: T22*
 
@@ -9,6 +9,9 @@ Forward implementation detail:
 [`agentic-tool-runtime.md`](agentic-tool-runtime.md),
 [`agentic-rag-evidence.md`](agentic-rag-evidence.md), and
 [`host-tool-provider-contract.md`](host-tool-provider-contract.md).
+
+The first message-context decisions are recorded in
+[`model-history-and-context.md`](model-history-and-context.md).
 
 ## 1. Decision
 
@@ -58,7 +61,8 @@ function ProductChat() {
 - The canonical session, message, turn, tool-call, and approval state models.
 - The complete chat UI and its loading, error, retry, cancellation, tool,
   citation, usage, and approval states.
-- Provider/model interaction and SDK insulation.
+- Provider message conversion and SDK insulation. Hosts may keep provider and
+  model selection when that is already their responsibility.
 - Streaming and multi-step agent loops.
 - Agent and multi-agent routing/orchestration.
 - Context construction, replay policy, budgeting, compaction, and memory.
@@ -117,7 +121,7 @@ contract tests. The following rules are mandatory:
    causes for logs.
 7. Cancellation and idempotency are part of mutation contracts where needed.
 
-### Implemented Phase 2 Surface
+### Implemented Phase 2 Work
 
 The public `super-chat/contracts` entry point now contains optional host
 services and simple checks. A plain-language guide is available at
@@ -127,7 +131,7 @@ This phase only defines the shapes and checks them. It does not yet make
 `ChatEngine` use a host. That requires the session saving and fixture-host work
 in later phases.
 
-### Implemented Phase 3 Surface
+### Implemented Phase 3 Work
 
 The engine now owns the shared session persistence workflow. Sessions have a
 stable internal ID, an optional typed external identity, schema metadata, a
@@ -176,7 +180,7 @@ Required design points:
 - One write owner per integration path.
 - Save semantics for user messages, partial assistant output, completed turns,
   tool calls/results, cancellation, and failure.
-- Reload reproduces the visible transcript and valid model-facing history.
+- Reload reproduces the visible transcript and valid message context.
 - Migration/version metadata is explicit.
 - Host adapters may batch or transact writes, but engine behavior cannot
   depend on a specific database.
@@ -206,11 +210,11 @@ Phase 4 proved a thin `enableRAG` path through the fixture host. The first
 Phase 5 lifecycle slice now establishes the engine turn lock and abort signal
 before retrieval, persists the user turn first, passes cancellation through
 the host adapter, emits retrieval status events, and durably records retrieval
-success, failure, or cancellation. Phase 5 now also has bounded source
+success, failure, or cancellation. Phase 5 now also has size-limited source
 validation, deduplication, deterministic ordering, result/context limits,
 untrusted-evidence formatting, durable assembled context, normalized outcomes,
 and shared React retrieval state. Latest-turn replay now reuses persisted
-bounded retrieval context by default and supports explicit host refresh.
+size-limited retrieval context by default and supports explicit host refresh.
 Richer product-host conformance remains before product hosts depend on it. The
 generic response conformance runner and fixture acceptance are implemented and
 pushed as `4015d8b`.
@@ -225,7 +229,7 @@ pushed as `4015d8b`.
 - Session tabs, drafts, saved-session search, and replay.
 - Agent and multi-agent behavior, mentions, participant identity, and routing.
 - Tool registry/descriptors, approval, audit, and result presentation.
-- Model-ready history construction, tool pairing, compaction, and token budget.
+- Message-context construction, call/result IDs, context limits, and replay.
 - Provider usage, local estimates, and diagnostics.
 - Persistent memory and explicit past-session retrieval.
 - Markdown, LaTeX, citations, message actions, and context presentation.

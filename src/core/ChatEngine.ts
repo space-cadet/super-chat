@@ -41,6 +41,7 @@ import type {
 	ToolResult,
 } from "./types";
 import type { AgentLoopResult } from "./AgentLoop";
+import type { ChatTurnOutputSnapshot } from "./ChatTurnOutput";
 import {
 	cloneSession,
 	createSessionId,
@@ -917,6 +918,16 @@ export class ChatEngine {
 			turn.status = "completed";
 			turn.updatedAt = Date.now();
 			this.updateAssistantMessage(session, turn, assistantMessageId, assistantText, "completed");
+			if (result.output) {
+				this.updateAssistantMessage(
+					session,
+					turn,
+					assistantMessageId,
+					assistantText,
+					"completed",
+					result.output,
+				);
+			}
 			// Yield metrics
 			yield {
 				type: "usage",
@@ -1110,6 +1121,7 @@ export class ChatEngine {
 		messageId: string,
 		content: string,
 		status: ChatMessage["status"],
+		output?: ChatTurnOutputSnapshot,
 	): void {
 		const existing = session.messages.find((message) => message.id === messageId);
 		if (existing) {
@@ -1117,6 +1129,15 @@ export class ChatEngine {
 			existing.status = status;
 			existing.turnId = turn.id;
 			existing.sources = turn.retrievedSources;
+			if (output) {
+				existing.contentParts = output.contentParts;
+				existing.toolCalls = output.toolCalls.map(({ call }) => call);
+				if (output.toolCalls.every(({ result }) => result)) {
+					existing.toolResults = output.toolCalls.map(
+						({ result }) => result as ToolResult,
+					);
+				}
+			}
 			return;
 		}
 		session.messages.push({
@@ -1127,6 +1148,19 @@ export class ChatEngine {
 			status,
 			turnId: turn.id,
 			sources: turn.retrievedSources,
+			...(output
+				? {
+						contentParts: output.contentParts,
+						toolCalls: output.toolCalls.map(({ call }) => call),
+						...(output.toolCalls.every(({ result }) => result)
+							? {
+									toolResults: output.toolCalls.map(
+										({ result }) => result as ToolResult,
+									),
+								  }
+							: {}),
+					  }
+				: {}),
 		});
 	}
 

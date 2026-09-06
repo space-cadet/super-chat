@@ -1,6 +1,22 @@
 # Edit History
 *Created: 2026-05-19 11:15:00 IST*
-*Last Updated: 2026-09-06 20:27:32 IST*
+*Last Updated: 2026-09-07 01:49:43 IST*
+
+#### 01:49:43 IST - T15/T16/T22/T25: Correct the session title
+- Updated `memory-bank/sessions/2026-09-07-message-context-plan.md` - Changed the title to include both the `ChatTurnOutput` implementation and the message-context planning work completed in this session.
+
+#### 01:45:10 IST - T15/T16/T22/T25: Close the message context planning session
+- Updated `memory-bank/sessions/2026-09-07-message-context-plan.md` - Applied the task-based session title and recorded the closeout, verification, and proposed commit title.
+- Confirmed `git diff --check` passed and left all source and Memory Bank changes uncommitted for deliberate staging.
+
+#### 01:29:34 IST - T15/T16/T18/T19/T22/T25/T28/INFRA-1: Record the simple message context plan
+- Created `memory-bank/implementation-details/model-history-and-context.md` - Recorded the rules for message order, tool-call/result IDs, provider conversion, token estimates, large results, and simple context selection.
+- Created `memory-bank/sessions/2026-09-07-message-context-plan.md` - Recorded the approved plan and its scope.
+- Updated `memory-bank/tasks/T15.md`, `memory-bank/tasks/T16.md`, `memory-bank/tasks/T18.md`, `memory-bank/tasks/T19.md`, `memory-bank/tasks/T22.md`, `memory-bank/tasks/T25.md`, and `memory-bank/tasks/T28.md` - Recorded extraction scope, acceptance checks, and provider ownership.
+- Updated `memory-bank/tasks/INFRA-1.md` - Added message-context rules to the shared execution plan.
+- Updated `memory-bank/implementation-details/AgentLoop.md`, `memory-bank/implementation-details/host-tool-provider-contract.md`, `memory-bank/implementation-details/session-persistence.md`, `memory-bank/implementation-details/attachments-and-context.md`, `memory-bank/implementation-details/agentic-rag-evidence.md`, and `memory-bank/implementation-details/embeddable-super-chat-platform.md` - Aligned the implementation notes with the simple message-context plan.
+- Updated `memory-bank/activeContext.md` and `memory-bank/session_cache.md` - Recorded the current plan and replaced unclear provider-integration wording.
+- Updated `memory-bank/tasks.md` and `memory-bank/edit_history.md` - Refreshed the Memory Bank timestamps and recorded this update.
 
 #### 20:27:32 IST - INFRA-1/T22/T25: Complete super-chat Memory Bank update
 - Updated `memory-bank/activeContext.md`, `memory-bank/session_cache.md`, and `memory-bank/tasks.md` - Refreshed the current workstream timestamps.

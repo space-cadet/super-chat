@@ -64,7 +64,7 @@ tool call
   -> attach capability and provider provenance
   -> deduplicate and rank
   -> apply context budget
-  -> persist bounded evidence
+  -> persist size-limited evidence
   -> expose citations to UI and model
   -> replay saved evidence or explicitly refresh
 ```
@@ -78,3 +78,9 @@ host owns:           search index, document store, domain metadata, handlers
 
 Arxivite supplies paper/PDF tools. Obsidian supplies note/document tools. The
 same shared agent can combine both providers when a host makes them available.
+
+The first message-context policy is simple chronological history with the
+existing context limit. Complete search and fetch results remain available in
+the saved turn; the copy sent in the next provider request may be shortened
+when necessary. More advanced selection or compaction is deferred until a
+real conversation shows that it is needed.
