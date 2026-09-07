@@ -79,6 +79,7 @@ async function collectAgentResponse(
 		role: "assistant",
 		content: fullText,
 		timestamp: Date.now(),
+		sender: { id: entry.id, name: entry.name, kind: "agent", color: entry.color },
 	};
 
 	return {
@@ -97,6 +98,7 @@ function makeErrorResponse(
 		role: "assistant",
 		content: `[ERROR] ${err instanceof Error ? err.message : String(err)}`,
 		timestamp: Date.now(),
+		sender: { id: entry.id, name: entry.name, kind: "agent", color: entry.color },
 	};
 	return {
 		agentId: entry.id,

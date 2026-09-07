@@ -1,11 +1,17 @@
 # Implementation Details: ToolExecutor
 
 *Created: 2026-05-19 12:10:00 IST*
-*Last Updated: 2026-05-19 12:10:00 IST*
+*Last Updated: 2026-09-06 13:13:22 IST*
 
 ## Overview
 
-The `ToolExecutor` is a generic tool execution wrapper that bridges between the `ToolAdapter` interface and the `AgentLoop`. It supports both static tools (from an adapter) and dynamically registered handlers.
+The `ToolExecutor` is a generic tool execution wrapper that bridges provider
+tool definitions and the `AgentLoop`. It supports composed static providers
+and dynamically registered handlers, with shared approval, cancellation,
+structured result, and evidence behavior.
+
+Provider composition and structured evidence are specified in
+`host-tool-provider-contract.md` and `agentic-rag-evidence.md`.
 
 ## Architecture Diagram
 

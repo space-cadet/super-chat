@@ -1,6 +1,46 @@
 # Active Context
 
-*Last Updated: 2026-09-01 11:11:59 IST*
+*Last Updated: 2026-09-07 17:32:30 IST*
+
+## Reconciliation and implementation closeout — 2026-09-07
+
+The live checkout was verified before implementation: branch
+`fix/arxivite-package-build`, with `origin/fix/arxivite-package-build` three
+commits behind, all pre-existing tracked edits staged, and the tab/UI and
+public-interface records untracked. The preserved shared work is now split
+into package commits `b46731a` (agent/context/session behavior) and `f9822cc`
+(session tabs, sender UI, and tests).
+
+TypeScript, focused tests (56 tests), the full Vitest suite (154 tests), the
+package ESM/CJS/declaration build, and diff checks pass. Documentation is
+committed as `6054c69` and the feature branch has been pushed. These are
+package-level results only; no Arxivite source, submodule pointer, browser
+acceptance, or device acceptance was changed or claimed.
+
+## Prior synchronization checkpoint — 2026-09-07
+
+The remote synchronization work is complete. `fix/arxivite-package-build`
+contains local merge commit `1ce53d5`, with `origin/main` at `98fbfa2` as an
+ancestor. TypeScript, 18 Vitest files / 152 tests, the package build, and diff
+checks passed after the merge.
+
+Arxivite `main` is clean at `c3af4ad`, and its `packages/super-chat` submodule
+is clean and pinned to `98fbfa2`. The standalone tabbed-session,
+participant/message, and public-interface changes were preserved for the
+reconciliation session recorded above.
+
+## Public Interface and Arxivite Adoption Boundary (2026-09-07)
+
+T22 now owns the canonical public interface-component catalog, including
+React entry points, host capabilities, lifecycle ownership, stability labels,
+and cross-repository delivery rules. T19 tracks the shared package's Arxivite
+compatibility and conformance view.
+
+Arxivite T101 is the product-side adoption owner. A shared change is not
+accepted in Arxivite until its exact commit is pinned through the submodule and
+verified in the product. Package, integration, browser, and device evidence
+remain separate. The package commits above are not claimed as Arxivite
+adoption.
 
 ## Current Program: INFRA-1 Unified super-chat Application Platform
 
@@ -10,6 +50,23 @@ standalone desktop, and later mobile work. T22 is its current shared-core and
 host-platform workstream.
 
 Global tracker: `tasks/INFRA-1.md`.
+
+## 2026-09-07 Harness-Neutral Inter-user Messaging Plan
+
+The first product harness is Arxivite. Its Memory Bank shows that T95 already
+owns the merged `SuperChatApp`/`ArxiviteSuperChatHost` integration, while T78
+provides participant and collaborative-session storage but explicitly leaves
+direct messaging out of scope. The shared package therefore needs only an
+optional messaging capability and generic inbound-message lifecycle; Arxivite
+must own membership, authorization, routing, transport, and Supabase storage.
+
+This work is documented under T22/T19 in super-chat and T101/T32/T78/T95 in
+Arxivite. The public interface catalog and Arxivite consumer mapping now make
+the package boundary and paired delivery workflow explicit. The first
+acceptance target is two authenticated Arxivite instances exchanging messages
+with stable IDs, sender attribution, reconnect replay, duplicate suppression,
+and membership rejection. Tabs, presence, typing indicators, read receipts,
+and multi-agent routing remain separate follow-ups.
 
 ## Current Workstream: T22 Embeddable Application Platform
 
@@ -37,12 +94,12 @@ renders retrieved-source provenance. TypeScript, 122 tests, package ESM/CJS/
 declaration builds, and the Vite demo build pass. The first Phase 5 lifecycle
 work is now implemented and pushed in `4015d8b`: retrieval is inside the engine turn lock,
 initial user-turn persistence, cancellation, host abort signaling, retrieval
-status events, and durable retrieval failure/cancellation handling. The bounded
+status events, and durable retrieval failure/cancellation handling. The size-limited
 retrieval/context work is also implemented: source validation, deduplication,
 ordering, result/context limits, untrusted-evidence formatting, and durable
 assembled context. Normalized retrieval outcomes, partial/warning handling,
 observable React retrieval state, and latest-turn replay behavior are also
-implemented. Replay reuses the persisted bounded retrieval record by default
+implemented. Replay reuses the persisted size-limited retrieval record by default
 and supports explicit host refresh. The richer host conformance utilities and
 fixture acceptance are also implemented and included in `4015d8b`.
 
@@ -53,12 +110,55 @@ deterministic test storage. TypeScript and 6 focused Vitest tests pass. This
 does not yet test Arxivite's live Supabase/RAG/provider path or UI. Product
 migrations remain deferred until their real host adapters pass acceptance.
 
-T16 now owns the verified Phase 5 host-backed RAG plan; T15 owns
-behavior-preserving extraction from `obsidian-ai`; T18 owns the
-Obsidian host migration; T19 makes Arxivite a `SuperChatApp` harness; T16 owns
-host-backed RAG; T21 owns release and compatibility discipline. T17's former
+T15 owns behavior-preserving extraction from `obsidian-ai`; T16 owns shared
+agentic RAG and evidence; T18 owns the Obsidian host migration; T19 makes
+Arxivite a `SuperChatApp` tool-provider harness; T21 owns release and
+compatibility discipline. T17's former
 "flip the Arxivite toggle" plan is retired because it would entrench
 Arxivite-owned chat mechanics.
+
+## 2026-09-06 Architecture Decision
+
+The former PocketFlow and host-owned RAG direction is superseded. The
+agentic tool-calling behavior in `obsidian-ai` is the behavioral source for
+shared `super-chat`. `super-chat` owns the agent loop, composed tool providers,
+agent-mediated retrieval, evidence, citations, context, memory, and replay.
+Arxivite and Obsidian provide pluggable tool/data providers and platform
+capabilities; neither owns a completed RAG answer or a parallel chat loop.
+
+T25-T30 were created for the approved priority capabilities: shared agentic
+tools, memory/pruning, attachments, provider switching, diagnostics, and
+export/import. T15, T16, T18, T19, T21, T22, and INFRA-1 were updated to match.
+
+## 2026-09-06 Provider Integration Implementation
+
+Completed the first small implementation slice after a read-only survey of
+`obsidian-ai`'s canonical tool registry, executor, turn coordinator, and
+model-history behavior. `super-chat` now supports composed host tool
+capabilities with one route per tool name, duplicate-name rejection, and
+abort-signal propagation through the shared agent loop. Existing single-host
+adapters remain compatible.
+
+Verification passed: TypeScript, 16 Vitest files / 145 tests, package
+ESM/CJS/declaration build, Arxivite engine harness (3 tests), and
+`git diff --check`. The full 31-tool extraction, structured evidence, and live
+Obsidian/Arxivite host acceptance remain open. The Arxivite readiness check was
+not green because its external checkout currently contains unrelated dirty
+work; those files were preserved.
+
+## 2026-09-07 Message Context Plan
+
+The next `obsidian-ai` extraction follows
+`implementation-details/model-history-and-context.md`. The first step keeps
+every tool call and result, checks their call IDs, follows the provider
+conversion already used by `obsidian-ai`, and reuses its token estimate.
+Complete results remain available for storage and display; the copy sent in a
+provider request may be shortened when necessary.
+
+The first context policy is chronological history. More elaborate context
+selection, exact tokenizers, and compaction are deferred until a real problem
+justifies them. The single-tool-call retention defect is a required fix in
+`obsidian-ai`, not behavior for super-chat to copy.
 
 ## Historical June 2026 Snapshot
 

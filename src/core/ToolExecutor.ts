@@ -41,12 +41,12 @@ export class ToolExecutor {
 	}
 
 	/** Execute a single tool call. */
-	async execute(call: ToolCall): Promise<ToolResult> {
+	async execute(call: ToolCall, signal?: AbortSignal): Promise<ToolResult> {
 		// Check dynamically registered handlers first
 		const handler = this.handlers.get(call.name);
 		if (handler) {
 			try {
-				const result = await handler(call.args);
+				const result = await handler(call.args, signal);
 				return {
 					success: true,
 					content: this.serializeResult(result),
@@ -62,7 +62,7 @@ export class ToolExecutor {
 		// Fall back to adapter
 		if (this.adapter) {
 			try {
-				return await this.adapter.executeTool(call);
+				return await this.adapter.executeTool(call, signal);
 			} catch (err) {
 				return {
 					success: false,
@@ -78,8 +78,11 @@ export class ToolExecutor {
 	}
 
 	/** Execute multiple tool calls in parallel. */
-	async executeBatch(calls: ToolCall[]): Promise<ToolResult[]> {
-		return Promise.all(calls.map((call) => this.execute(call)));
+	async executeBatch(
+		calls: ToolCall[],
+		signal?: AbortSignal,
+	): Promise<ToolResult[]> {
+		return Promise.all(calls.map((call) => this.execute(call, signal)));
 	}
 
 	private serializeResult(result: unknown): string {

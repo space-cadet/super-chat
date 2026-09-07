@@ -158,7 +158,11 @@ describe("external Arxivite integration adapter", () => {
 			registry,
 			userId: "arxivite-test-user",
 		});
-		const tools = await host.capabilities.tools!.getTools({ requestId: "metadata" });
+		const toolCapability = host.capabilities.tools!;
+		const tools = await (Array.isArray(toolCapability)
+			? toolCapability[0]
+			: toolCapability
+		).getTools({ requestId: "metadata" });
 
 		expect(tools.map((tool) => tool.name)).toEqual([
 			"bookmarks",

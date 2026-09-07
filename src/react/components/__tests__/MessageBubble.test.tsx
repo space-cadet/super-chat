@@ -141,4 +141,17 @@ describe('MessageBubble', () => {
     render(<MessageBubble message={messageWithTokens} />);
     expect(screen.getByText('42 tokens')).toBeInTheDocument();
   });
+
+  it('shows the stable sender name for shared human or agent messages', () => {
+    render(
+      <MessageBubble
+        message={{
+          ...assistantMessage,
+          sender: { id: 'researcher', name: 'Researcher', kind: 'agent', color: '#9333ea' },
+        }}
+      />,
+    );
+
+    expect(screen.getByText('Researcher')).toBeInTheDocument();
+  });
 });

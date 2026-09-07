@@ -14,6 +14,7 @@ interface MessageBubbleProps {
 
 export function MessageBubble({ message, onEdit, onRetry, onApproveTool, onRejectTool }: MessageBubbleProps) {
   const isUser = message.role === 'user';
+  const senderName = message.sender?.name ?? (isUser ? 'You' : 'Assistant');
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(message.content);
   const [copied, setCopied] = useState(false);
@@ -54,6 +55,14 @@ export function MessageBubble({ message, onEdit, onRetry, onApproveTool, onRejec
             : 'bg-white border border-gray-200 text-gray-900'
         }`}
       >
+        {message.sender && (
+          <div
+            className={`mb-1 text-xs font-semibold ${isUser ? 'text-blue-100' : 'text-gray-500'}`}
+            style={message.sender.color ? { color: message.sender.color } : undefined}
+          >
+            {senderName}
+          </div>
+        )}
         {/* Edit mode */}
         {isEditing ? (
           <div className="space-y-2">

@@ -1,13 +1,21 @@
 # Memory Bank — super-chat
 
 *Created: 2026-05-19 11:15:00 IST*
-*Last Updated: 2026-09-01 11:11:59 IST*
+*Last Updated: 2026-09-07 17:32:30 IST*
 
 ## Overview
 
 A complete, embeddable chat application and reusable runtime. `super-chat`
 owns chat mechanics and UI; products such as `obsidian-ai` and `arxivite`
 provide data and platform capabilities through neutral host contracts.
+
+## Reconciliation Session — 2026-09-07
+
+The live feature branch was inspected before editing. The preserved shared
+implementation is committed as `b46731a` and `f9822cc`; the final documentation
+commit records the public-interface boundary and this verification separately.
+TypeScript, 152 tests, the package build, and diff checks passed. No task is
+closed by this session, and Arxivite adoption remains a separate consumer step.
 
 ## Completed Tasks
 
@@ -33,21 +41,28 @@ provide data and platform capabilities through neutral host contracts.
 | INFRA-1 | Unified super-chat Application Platform Program | 🔄 | CRITICAL | T14, T20 | [Details](tasks/INFRA-1.md) |
 | T21 | npm Release & GitHub CI/CD | 🔄 | HIGH | — | [Details](tasks/T21.md) |
 | T22 | super-chat Core Host Platform Workstream | 🔄 | CRITICAL | INFRA-1, T14, T20 | [Details](tasks/T22.md) |
-| T13 | Tool Result Formatting | ⬜ | MEDIUM | T4 | [Details](tasks/T13.md) |
+| T13 | Tool Result Formatting (Superseded) | ❌ | MEDIUM | T25, T16 | [Details](tasks/T13.md) |
 | T6 | Multi-Agent Orchestrator — Many-Body Agent System | ✅ **PHASE A** | **HIGH** | T3, T5 | [Details](tasks/T6.md) |
 | T7 | Mention Parser & Routing | ⬜ | MEDIUM | T6 | [Details](tasks/T7.md) |
 | T8 | React UI Components (PendingToolCard, ToolResultCard) | ⬜ | MEDIUM | T4 | [Details](tasks/T8.md) |
-| T15 | Extract obsidian-ai Chat Capabilities | ⬜ | HIGH | T22 | [Details](tasks/T15.md) |
-| T16 | Define and Integrate Host-Backed RAG | 🔄 | MEDIUM | T22 | [Details](tasks/T16.md) |
-| T18 | Migrate obsidian-ai to Obsidian Host | ⬜ | HIGH | T22, T15, T21 | [Details](tasks/T18.md) |
-| T19 | Make Arxivite a super-chat Host Harness | ⬜ | HIGH | T22, T16, T21 | [Details](tasks/T19.md) |
+| T15 | Extract obsidian-ai Agentic Capabilities | 🔄 | HIGH | T22 | [Details](tasks/T15.md) |
+| T16 | Shared Agentic RAG and Evidence Runtime | 🔄 | CRITICAL | T15, T22 | [Details](tasks/T16.md) |
+| T18 | Migrate obsidian-ai to Obsidian Host | ⬜ | HIGH | T15, T21, T22 | [Details](tasks/T18.md) |
+| T19 | Make Arxivite a super-chat Host Harness | 🔄 | HIGH | T16, T21, T22 | [Details](tasks/T19.md) |
+| T25 | Shared Agentic Tool Runtime and Built-in Provider | ⬜ | CRITICAL | T15, T22 | [Details](tasks/T25.md) |
+| T26 | Three-Tier Memory and AI Pruning | ⬜ | HIGH | T15, T22 | [Details](tasks/T26.md) |
+| T27 | PDF, Image, and Markdown Attachments | ⬜ | HIGH | T15, T22 | [Details](tasks/T27.md) |
+| T28 | Provider Profiles and Fast Model Switching | ⬜ | HIGH | T15, T21, T22 | [Details](tasks/T28.md) |
+| T29 | Shared Diagnostics | ⬜ | HIGH | T15, T22 | [Details](tasks/T29.md) |
+| T30 | Session Export and Import | ⬜ | HIGH | T21, T22 | [Details](tasks/T30.md) |
 
 ## Status Summary
 
-- **Completed**: 14 (including T17 retired/superseded)
-- **In Progress**: 4 (INFRA-1 program; T16 RAG plan/implementation; T21 publishing; T22 core platform)
-- **Pending**: 7 (T6 Phase B, T7, T8, T13, T15, T18, T19)
-- **Total**: 23 task records including INFRA-1
+- **Completed**: 12 full task records (including T17 retired/superseded)
+- **In Progress**: 6 (INFRA-1 program; T15 extraction; T16 agentic RAG; T19 Arxivite host; T21 publishing; T22 core platform)
+- **Pending**: 10 (T6 Phase B, T7, T8, T18, T25, T26, T27, T28, T29, T30)
+- **Superseded**: 1 (T13)
+- **Total**: 29 task records including INFRA-1
 
 ## Current Phase
 
@@ -58,9 +73,15 @@ not yet form the complete host-driven application.
 
 **Current Program**: INFRA-1 Unified super-chat Application Platform.
 
-**Current Workstream**: T16 Phase 5 shared-core retrieval hardening is
-implemented and pushed through reusable fixture conformance. An external
-Arxivite test area now exercises the real chatbot tool registry through the
-current engine and passes 6 focused tests. Live product-host conformance and
-the Arxivite host migration remain open; package compatibility must be settled
-before product code is updated.
+**Current Workstream**: T15/T25 extract the obsidian-ai agentic runtime and
+tool-provider model; T16 turns that runtime into shared agentic RAG with
+structured evidence. An external Arxivite test area exercises the real
+chatbot tool registry through the current engine, but live provider, product
+host, and UI acceptance remain open. Package compatibility must be settled
+before product code is updated. The Arxivite-first inter-user messaging
+boundary is documented under T22/T19; Arxivite routing remains in its T32/T78
+records.
+
+T22 also owns the canonical public interface-component catalog. T19 tracks
+shared compatibility with Arxivite, while Arxivite T101 owns package-pin
+adoption, adapter work, and product acceptance.

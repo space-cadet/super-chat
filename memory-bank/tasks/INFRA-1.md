@@ -1,11 +1,19 @@
 # INFRA-1: Unified super-chat Application Platform Program
 
 *Created: 2026-08-31 22:44:08 IST*
-*Last Updated: 2026-09-01 11:11:59 IST*
+*Last Updated: 2026-09-07 17:32:30 IST*
 
 **Status**: 🔄 **IN PROGRESS**
 **Priority**: CRITICAL
 **Scope**: `super-chat`, `obsidian-ai`, `arxivite`, standalone desktop, mobile
+
+## Reconciliation Session — 2026-09-07
+
+The live standalone branch was verified before editing. Shared implementation
+is committed as `b46731a` and `f9822cc`; TypeScript, 152 Vitest tests, the
+package build, and diff checks pass. No INFRA-1 task is closed by this
+session. Package verification is separate from Arxivite pin adoption and
+product/browser/device acceptance, which remain out of scope here.
 
 ## Program Objective
 
@@ -29,6 +37,8 @@ return <SuperChatApp host={host} />;
 
 - Architecture, ownership, contracts, and migration method:
   [`implementation-details/embeddable-super-chat-platform.md`](../implementation-details/embeddable-super-chat-platform.md)
+- Public interface components, capability ownership, and compatibility rules:
+  [`implementation-details/public-interface-components.md`](../implementation-details/public-interface-components.md)
 - Shared-core execution workstream: [T22](T22.md)
 - Global task registry: [`tasks.md`](../tasks.md)
 
@@ -153,34 +163,42 @@ without Obsidian or Arxivite.
   tsup ESM/CJS/declaration build passed; Vite demo build passed; diff checks
   passed.
 
-### Phase 5: Shared host-backed RAG
+### Phase 5: Shared agentic tool and RAG runtime
 
-**Owner**: T16  
-**Status**: 🔄 Shared-core hardening implemented (2026-09-01); product-host
-conformance remains
+**Owners**: T15, T16, T25
+**Status**: 🔄 Foundation exists; agentic extraction and evidence runtime remain
 
-- [x] Put the first retrieval path through `super-chat`; hardening remains.
+- [x] Put the first retrieval path through `super-chat`; the thin path is not
+      the final agentic implementation.
 - [x] Define the initial normalized host source shape and provenance.
 - [x] Move retrieval into the protected turn lifecycle with cancellation and
       durable failure handling.
 - [x] Apply shared progress, citations, and replay; context budgeting,
       normalized outcomes, and React retrieval state are now implemented.
-- [ ] Keep domain retrieval algorithms in their host repositories.
+- [x] Add the minimal composed host-tool capability integration with cancellation
+      propagation and duplicate-name rejection.
+- [ ] Extract the obsidian-ai agentic retrieval/tool behavior into
+      `super-chat`.
+- [ ] Keep host-specific indexes, document access, data, and handlers in the
+      host providers.
+- [ ] Preserve every tool call and result in valid message context, following
+      the provider conversion already used by `obsidian-ai`.
+- [ ] Keep complete tool results for storage and display while shortening the
+      copy sent in the next provider request when necessary.
+- [ ] Keep context selection simple at first; add advanced selection or
+      compaction only when a real problem justifies it.
 
-**Exit criterion**: `enableRAG` affects the actual turn path, and provenance
-survives persistence and reload.
+**Exit criterion**: agentic retrieval tools affect the actual shared turn
+path, and evidence/provenance survives persistence and reload.
 
 **Plan verification**:
 
-- The Sol-medium read-only review found Phase 4 already proves a thin
-  host-backed retrieval path, so Phase 5 is a hardening pass rather than a new
-  RAG system.
-- First priority is moving retrieval inside the engine lock/persistence/
-  cancellation/failure lifecycle. The current call occurs too early.
-- Use a small pure retrieval/context module; do not add a large RAG manager or
-  change `AgentLoop`.
-- Preserve host ownership of PocketFlow, paper ranking, vault search, and other
-  domain retrieval algorithms.
+- Phase 4 proves a thin host-backed retrieval path, but the approved target is
+  the agentic tool-calling behavior extracted from `obsidian-ai`.
+- Retrieval is driven by the shared `AgentLoop`; hosts provide search/fetch
+  tools and evidence sources.
+- Do not retain PocketFlow, host-owned chatbot intent routing, or an opaque
+  host function that returns a completed RAG answer.
 - Full-suite review evidence included a timing-sensitive `SuperChatApp` test:
   121/122 passed under parallel load and the isolated test passed. Stabilize it
   before the Phase 5 all-green gate.
@@ -197,10 +215,17 @@ and durable assembled context are implemented. Latest-turn replay now reuses
 saved retrieval outcomes safely, with explicit refresh behavior; richer host
 conformance remains open.
 
+The first survey-driven provider slice is now implemented. The neutral host
+contract accepts one or several tool capabilities, and the host adapter routes
+each resolved tool to its owning provider while preserving the active abort
+signal. TypeScript, 16 Vitest files / 145 tests, the package build, the
+Arxivite engine harness (3 tests), and diff checks passed. This does not yet
+extract the 31 built-in tools or satisfy cross-host product acceptance.
+
 Normalized retrieval outcomes and observable React retrieval state are now
 verified: partial results continue provider work with warnings, while unsafe
 or unavailable outcomes stop the turn with typed errors. Replay policy and
-durable retrieval presence are now hardened. The reusable retrieval response
+durable retrieval presence are now improved. The reusable retrieval response
 conformance runner passes against the fixture host and was pushed as `4015d8b`
 on `main`; product-host application remains open.
 
@@ -219,10 +244,12 @@ on `main`; product-host application remains open.
 **2026-09-01 evidence**: The external test area under
 `super-chat/integrations/arxivite/` passes 6 focused tests and exercises
 Arxivite's real chatbot tool registry through the current engine. Arxivite
-still pins `super-chat` at `7ccf5609`, while the current checkout is
-`919e2db`. Arxivite's root application uses AI SDK `5.0.52`; the shared
+is now reconciled to super-chat `5e0430b`. Arxivite's root application uses AI SDK `5.0.52`; the shared
 package uses AI SDK 6. This does not replace the clean-install and supported
 package-model checks above.
+
+The target Arxivite integration is a shared agentic tool/evidence path; the
+former PocketFlow and intent-router path is not retained.
 
 **Exit criterion**: each host consumes a traceable artifact and passes a clean
 install/build compatibility check.
@@ -230,7 +257,7 @@ install/build compatibility check.
 ### Phase 7: First obsidian-ai extraction slice
 
 **Owner**: T15  
-**Status**: ⬜ Pending; blocked by Phase 4
+**Status**: ⬜ Pending; depends on T25 and T16
 
 - [ ] Characterize one read-only and one mutating Obsidian tool.
 - [ ] Extract reusable descriptors, policy, approval, execution, audit,
@@ -251,7 +278,8 @@ fixture and Obsidian hosts.
 - [ ] Migrate provider/model behavior.
 - [ ] Migrate sessions, tabs, drafts, search, and replay.
 - [ ] Migrate tool, approval, audit, and result behavior.
-- [ ] Migrate model history, pairing, budgets, and compaction.
+- [ ] Migrate message context, call/result ID checks, and context limits;
+      add compaction only if acceptance evidence requires it.
 - [ ] Migrate retry, cancellation, agents, mentions, usage, memory, rendering,
       and reusable settings in dependency order.
 - [ ] Perform automated and manual Obsidian acceptance for every slice.
@@ -266,8 +294,9 @@ vault, editor, workspace, plugin, sync, and updater behavior remain host-owned.
 remains
 
 - [ ] Implement `ArxiviteSuperChatHost`.
-- [ ] Supply identity, Supabase persistence, papers, library data, retrieval,
-      tools, navigation, and authorization.
+- [ ] Supply identity, Supabase persistence, papers, PDF/tool providers,
+      evidence sources, navigation, and authorization.
+- [ ] Remove PocketFlow and `ChatbotIntentRouter` from the super-chat path.
 - [ ] Remove the untyped parallel-session mapping.
 - [ ] Make `super-chat` the sole message/session workflow owner.
 - [ ] Mount `SuperChatApp` behind the existing feature toggle.
@@ -335,7 +364,8 @@ acceptance evidence.
 ```text
 INFRA-1
   -> T22 safety, contracts, persistence, fixture host
-  -> T16 shared RAG
+  -> T25 shared agentic tool runtime
+  -> T16 shared agentic RAG and evidence
   -> T21 versioning and compatibility
   -> T15 first Obsidian extraction
   -> T18 Obsidian host migration
@@ -368,7 +398,7 @@ must wait for traceable package compatibility.
       Arxivite, and standalone desktop environments.
 - [ ] Hosts are limited to data and platform capabilities.
 - [ ] Tool approval is fail-closed and accepted across hosts.
-- [ ] Sessions, persistence, RAG, context, tools, agents, memory, and shared UI
+- [ ] Sessions, persistence, agentic RAG, context, tools, agents, memory, and shared UI
       have one reusable implementation.
 - [ ] Obsidian and Arxivite duplicate chat mechanics are removed.
 - [ ] Versioned artifacts and compatibility matrices are maintained.

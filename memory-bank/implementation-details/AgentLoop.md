@@ -1,11 +1,18 @@
 # Implementation Details: AgentLoop
 
 *Created: 2026-05-19 12:10:00 IST*
-*Last Updated: 2026-05-19 12:10:00 IST*
+*Last Updated: 2026-09-07 01:29:34 IST*
 
 ## Overview
 
-The `AgentLoop` is the core orchestration engine for multi-step LLM tool calling. It implements a manual loop around the Vercel AI SDK's `streamText` with `stopWhen: stepCountIs(1)`, giving full control over the approval flow.
+The `AgentLoop` is the core orchestration engine for multi-step LLM tool
+calling. It implements the behavior extracted from `obsidian-ai`, including
+streaming continuation, approval, cancellation, size-limited tool results, and
+evidence-producing retrieval tools. Hosts provide handlers; the loop remains
+host-agnostic.
+
+The overall agentic tool/RAG architecture is documented in
+`agentic-tool-runtime.md` and `agentic-rag-evidence.md`.
 
 ## Architecture Diagram
 
@@ -270,8 +277,23 @@ The AgentLoop reconstructs messages in the format expected by the Vercel AI SDK:
 | Tool formatting | Hardcoded `formatToolResult()` with 13 tools | Pluggable `ToolResultFormatter` |
 | LLM adapter | `ChatApiManager` (Obsidian-specific) | Generic `LLMAdapter` interface |
 | Message format | Vercel SDK v6 parts | Same Vercel SDK v6 parts |
-| Token estimation | `estimateTokens()` from context module | Not yet implemented |
+| Token estimation | `estimateTokens()` from context module | Reuse the existing estimator first |
 | Coupling | Tied to Obsidian settings/profile | Framework-agnostic |
+
+## Message Context Rules
+
+- `pendingCalls` is a list. Every tool call in one provider response is kept
+  and processed.
+- The assistant message keeps the text and all tool calls in their original
+  order. Each result keeps the ID of the call that produced it.
+- A small history check confirms that every result refers to a real call.
+- The provider adapter follows the conversion already used by `obsidian-ai`.
+  Hosts do not build provider-specific messages.
+- A complete tool result may be saved and shown while a shorter copy is used
+  in the next provider request when the result is too large.
+
+The full first-step policy is in
+[`model-history-and-context.md`](model-history-and-context.md).
 
 ## Files
 - `src/core/AgentLoop.ts` — Implementation

@@ -223,7 +223,8 @@ export interface SuperChatCapabilities {
 	identity?: IdentityCapability;
 	persistence?: ChatPersistenceCapability;
 	credentials?: CredentialCapability;
-	tools?: ToolCapability;
+	/** One tool service or several independently owned provider services. */
+	tools?: ToolCapability | ToolCapability[];
 	retrieval?: RetrievalCapability;
 	documents?: DocumentCapability;
 	navigation?: NavigationCapability;
@@ -244,6 +245,7 @@ export interface SuperChatHost {
 	capabilities: SuperChatCapabilities;
 }
 
-export type HostCapability = NonNullable<
-	SuperChatCapabilities[keyof SuperChatCapabilities]
+export type HostCapability = Exclude<
+	NonNullable<SuperChatCapabilities[keyof SuperChatCapabilities]>,
+	ToolCapability[]
 >;

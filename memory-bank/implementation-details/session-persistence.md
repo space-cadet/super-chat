@@ -1,8 +1,16 @@
 # Shared session persistence
 
+*Last Updated: 2026-09-07 15:45:36 IST*
+
 Phase 3 makes the `ChatEngine` the owner of session and turn state. A product
 or host supplies storage operations through `PersistenceAdapter`; it does not
 append messages or maintain a second copy of the conversation.
+
+Loading, hydration, active-session selection, tab/session state, creation,
+switching, in-memory unloading, persistence scheduling, archive intent, and
+delete intent are shared lifecycle concerns. The host performs physical
+storage operations. Unloading an inactive session from client memory is not a
+durable delete operation.
 
 ## Identity
 
@@ -10,6 +18,11 @@ Every session has a stable `ChatSession.id` owned by `super-chat`. A host may
 also provide `externalIdentity` with a namespace, product ID, and optional
 version. The external value is a mapping only; it is never used as the primary
 session key.
+
+For a shared conversation, the external identity identifies the host-owned
+conversation while the engine continues to own the local session lifecycle.
+Inbound human messages must enter through the same engine-owned persistence
+queue as local user messages. The host must not append a second copy directly.
 
 New sessions are written immediately. The engine also writes before provider
 work begins, so the submitted user message survives a reload even if the
@@ -23,14 +36,19 @@ The current record is schema version `1` and contains:
   streaming;
 - `modelHistory`, a provider-neutral role/content history used for the next
   request;
-- `turns`, with status, tool calls, tool results, errors, and the model
-  messages produced by that turn, plus bounded retrieval context, sources,
-  outcome status, warnings, and typed errors;
+- `turns`, with status, tool calls, tool results, structured evidence, errors,
+  and the model messages produced by that turn, plus size-limited retrieval
+  context, sources, outcome status, warnings, and typed errors;
 - `persistence` metadata, including the schema version and migration ID.
 
 The visible transcript and model history are deliberately separate. Tool
 protocol messages can remain out of the ordinary transcript while still being
 available for a valid continuation after reload.
+
+The complete tool result may remain in the saved turn even when the copy used
+in the next provider request must be shortened to fit the context limit. The
+shortened copy must say that content was omitted; the saved result is not
+silently replaced.
 
 ## Write ownership and lifecycle
 
@@ -54,6 +72,14 @@ back through the same owner with reason `migration`.
 The adapter receives a deep clone. This prevents a later in-memory mutation
 from changing an earlier queued snapshot. Deletion and archive operations are
 also serialized by the same engine queue.
+
+Remote delivery adds only the minimum additional guarantees needed for a
+second client: stable message IDs for deduplication, deterministic ordering by
+host-provided `createdAt` plus message ID for replay, and sender metadata
+preserved in the visible message while its content and role enter chronological
+model history. Messages received while a turn is streaming are merged into
+the completed model history before it is persisted. Delivery acknowledgements,
+presence, and read receipts are deferred until a real host requires them.
 
 ## Reload, migration, and recovery
 
@@ -85,7 +111,7 @@ approval, and recovery before either product migration begins.
 `ChatEngine.replayTurn` and `replayMessage` replay only the latest turn. They
 append a new durable turn using the original user message, preserving the
 original turn and response rather than overwriting history. If the original
-turn has a persisted retrieval outcome, replay uses that bounded context or
+turn has a persisted retrieval outcome, replay uses that size-limited context or
 reproduces the saved terminal retrieval outcome without calling the host again.
 `refreshRetrieval: true` explicitly enables a new host search. Older-turn
 replay is rejected until a separate branching model can define how later

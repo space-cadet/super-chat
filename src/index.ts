@@ -5,7 +5,11 @@
 // Core types
 export type {
 	MessageRole,
+	ChatParticipantKind,
+	ChatParticipant,
+	ChatMessageEnvelope,
 	ChatMessage,
+	ChatContentPart,
 	ChatModelMessage,
 	ChatRetrievedSource,
 	RetrievalStatus,
@@ -57,6 +61,8 @@ export type {
 // Core implementations
 export { ToolExecutor } from './core/ToolExecutor';
 export { AgentLoop } from './core/AgentLoop';
+export { ChatTurnOutput } from './core/ChatTurnOutput';
+export type { ChatTurnOutputEntry, ChatTurnOutputSnapshot } from './core/ChatTurnOutput';
 export type { AgentLoopOptions as AgentLoopRunOptions, AgentLoopResult, ToolResultFormatter } from './core/AgentLoop';
 
 // Topology

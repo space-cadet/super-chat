@@ -1,6 +1,58 @@
 # Session Cache — super-chat
 
-*Last Updated*: 2026-09-01 11:11:59 IST
+*Last Updated*: 2026-09-07 17:32:30 IST
+
+## Current Session: Reconciliation and implementation closeout — 2026-09-07 17:32:30 IST
+
+- Verified the live branch and preserved all pre-existing staged and untracked
+  work before editing.
+- Committed package behavior as `b46731a` and shared session-tabs UI as
+  `f9822cc`.
+- Added runtime validation and reload coverage for participant/message data.
+- TypeScript, focused tests (56), full Vitest (152), package build, and diff
+  checks pass.
+- Documentation is committed as `6054c69` and the feature branch is pushed;
+  Arxivite adoption, submodule changes, browser acceptance, and device
+  acceptance remain outside this session.
+
+## Prior synchronization checkpoint — 2026-09-07 16:56:00 IST
+
+- Merged refreshed `origin/main` into `fix/arxivite-package-build` as
+  `1ce53d5`; `origin/main` is `98fbfa2` and is fully incorporated.
+- Resolved the Memory Bank and `useChat` restore conflicts without discarding
+  the saved feature work.
+- Verification passed: TypeScript, 18 Vitest files / 152 tests, package
+  ESM/CJS/declaration build, and diff checks.
+- Arxivite remains clean at `c3af4ad`; its `packages/super-chat` submodule is
+  clean and pinned to `98fbfa2`.
+- Tabbed-session, participant/message, and public-interface changes were
+  preserved for the reconciliation session above.
+- The temporary restore backup remains as `stash@{0}` for later review.
+
+That checkpoint ended with the standalone work intentionally unpublished.
+
+## Current Continuation: T22/T19 Public Interface and Arxivite Adoption Boundary
+
+- Added the canonical catalog of public React exports, host capabilities,
+  stability labels, session ownership, and consumer delivery rules.
+- Linked the catalog from INFRA-1, T22, T19, host services, persistence, and
+  the embeddable-platform architecture.
+- Assigned product-side pin adoption, adapter mapping, and acceptance to
+  Arxivite T101 while keeping shared compatibility under T19.
+- Preserved the feature branch's existing uncommitted source work; no source
+  commit or push was performed.
+
+## Current Session: T22/T19/T32/T78/T95 Harness-Neutral Messaging Plan
+
+- Corrected the source-of-truth repository: Arxivite is the first harness, not
+  Obsidian.
+- Updated shared ownership notes so super-chat owns message lifecycle while
+  Arxivite owns user identity, membership, authorization, transport, routing,
+  and Supabase persistence.
+- Kept the generic messaging plan under existing tasks; tabs, presence, typing
+  indicators, read receipts, and a multi-agent transport remain follow-ups.
+- Added the later-approved interface catalog as a focused implementation
+  record under T22 rather than creating another shared task.
 
 ## Global Program Tracker
 
@@ -45,31 +97,31 @@
   demo build, and diff checks. The `pnpm build` wrapper was not usable in this
   non-interactive environment because pnpm attempted to remove `node_modules`;
   the pinned local tsup build completed successfully.
-- Next action: T16 Phase 5 shared host-backed RAG hardening. Keep Obsidian and
-  Arxivite migrations deferred until their host adapters pass equivalent
-  acceptance.
+- Superseded next action: the thin host-backed RAG path is not the final
+  architecture. Forward work is T15/T25 agentic-runtime extraction followed
+  by T16 shared agentic RAG/evidence.
 
-## Current Plan Review: T16 Phase 5 Shared Host-backed RAG
+## Superseded Plan Review: T16 Thin Host-backed RAG
 
 - Sol-medium read-only review completed against clean commit `42c3b75`.
-- Direction confirmed, but Phase 5 is a hardening pass over the existing
-  Phase 4 path, not a new RAG system.
+- This review is retained as historical evidence for the thin Phase 4 path,
+  but is superseded by the approved agentic-runtime architecture.
 - First implementation priority: move retrieval inside the engine lock and
   user-turn persistence/cancellation/failure lifecycle.
-- Follow with one neutral retrieval contract, bounded context assembly,
+- Follow with one neutral retrieval contract, size-limited context assembly,
   normalized errors/partial results, replay-safe persistence, and React
   retrieval status/error state.
-- Do not change `AgentLoop`, add a large RAG manager, or port Arxivite/PocketFlow
-  and Obsidian search logic into the shared core.
+- The current forward plan does change the shared agent runtime: extract the
+  mature obsidian-ai agentic tool-calling behavior and evidence handling.
 - Review caveat: the subagent's parallel full-suite run saw 121/122 because
   `SuperChatApp.test.tsx` timed out; the isolated test passed. Stabilize this
   timing-sensitive test before using the all-green Phase 5 gate.
-- Next action: implement the lifecycle-first Phase 5 slice. Keep product
-  migrations deferred until their host adapters pass equivalent acceptance.
+- Next action: implement T25 and T16; keep product migrations deferred until
+  their provider adapters pass equivalent acceptance.
 
 ## Current Continuation — T16 Phase 5 Lifecycle Slice
 
-- Implemented the first Phase 5 hardening slice in `ChatEngine`: the active
+- Implemented the first Phase 5 improvement slice in `ChatEngine`: the active
   turn lock and abort controller are established before any host retrieval.
 - Persisted the user message and streaming turn before retrieval begins.
 - Passed the active abort signal through `HostRAGAdapter` into the neutral host
@@ -80,7 +132,7 @@
   failed retrieval does not call the provider.
 - Verification passed: TypeScript, 13 test files / 124 tests, pinned tsup
   ESM/CJS/declaration build, and `git diff --check`.
-- Remaining: bounded source validation/deduplication, context budgeting and
+- Remaining: source validation/deduplication, context budgeting and
   evidence formatting, normalized partial/error results, replay shaping, and
   shared React retrieval state. Product migrations remain deferred.
 
@@ -109,7 +161,7 @@
 - Verification passed: TypeScript, 14 test files / 130 tests, pinned tsup
   ESM/CJS/declaration build, and `git diff --check`.
 - Remaining: richer host conformance and product migration. Latest-turn replay
-  now reuses persisted bounded retrieval context by default and supports an
+  now reuses persisted size-limited retrieval context by default and supports an
   explicit host refresh.
 
 ## Current Continuation — T16 Host Adapter Conformance
@@ -150,7 +202,7 @@
 ## Current Continuation — Arxivite External Integration Readiness
 
 - Pulled Arxivite to `2822a6b5`; its working tree remains clean. The Arxivite
-  `packages/super-chat` submodule remains at `7ccf5609`.
+  `packages/super-chat` submodule is reconciled to `5e0430b`.
 - Created `integrations/arxivite/` in `super-chat` without changing Arxivite or
   `obsidian-ai`.
 - Added a test-only external adapter that loads Arxivite's real chatbot
@@ -159,11 +211,68 @@
 - Verified retrieval provenance and session reload with deterministic test
   storage. The focused TypeScript check and 6 Vitest tests passed.
 - This does not yet test Arxivite's live Supabase persistence, provider,
-  PocketFlow/PDF retrieval, or UI path. The product host migration remains
-  under T19, and package compatibility remains under T21.
+  agentic paper/PDF tool provider, or UI path. The product host migration
+  remains under T19, and package compatibility remains under T21.
 - Next action: record this evidence in the owning task and current session
   records, then decide whether to update Arxivite's package reference after
   the compatibility plan is approved.
+
+## Current Session: Agentic Runtime and Provider Plan
+
+- Confirmed that PocketFlow and the host-owned Arxivite RAG pipeline are
+  obsolete for forward work.
+- Recorded the approved architecture: `super-chat` owns the reusable
+  obsidian-ai agentic tool-calling and RAG/evidence runtime; Arxivite and
+  Obsidian expose pluggable tool/data providers.
+- Added T25-T30 for the shared agentic tool runtime, memory/pruning,
+  attachments, provider switching, diagnostics, and export/import.
+- Updated T15, T16, T18, T19, T21, T22, INFRA-1, and the task registry.
+- Added implementation-detail documents with ASCII logic-flow, component,
+  dependency, evidence, memory, attachment, provider, diagnostics, and
+  import/export diagrams.
+- Preserved historical session and edit records that describe the former
+  PocketFlow direction.
+
+## Current Continuation — Survey and Minimal Provider Integration
+
+- Surveyed `obsidian-ai` read-only before implementation. Its canonical
+  registry feeds both model exposure and execution, validates schemas, filters
+  availability, maps provider metadata, and its executor preserves approval,
+  cancellation, write locking, audit, and result behavior around
+  Obsidian-specific handlers.
+- Added the smallest shared provider integration in `super-chat`: one or several host
+  tool capabilities, deterministic routing by tool name, duplicate-name
+  rejection, and abort-signal propagation through `ToolExecutor`, `AgentLoop`,
+  `ChatEngine`, and `HostToolAdapter`.
+- Verification passed: TypeScript, 16 Vitest files / 145 tests, package
+  ESM/CJS/declaration build, Arxivite harness typecheck, Arxivite engine
+  harness (3 tests), and `git diff --check`.
+- The complete 31-tool catalog and structured evidence runtime remain open.
+  The full Arxivite readiness suite reported the external checkout's existing
+  unrelated dirty files; no product files were changed.
+- Next smallest slice: turn the survey into characterization coverage and
+  extract one read-only plus one approval-required Obsidian capability through
+  an external harness before defining the full built-in catalog.
+
+## Current Continuation — Message Context Plan — 2026-09-07
+
+- Recorded the KISS plan for the next extraction in
+  `implementation-details/model-history-and-context.md`.
+- The first step preserves every tool call and result, checks call IDs,
+  follows `obsidian-ai`'s provider conversion, and reuses its token estimate.
+- Complete results remain available for storage and display; the copy sent in
+  the next provider request may be shortened when necessary.
+- Chronological context is the starting point. Advanced selection, exact
+  tokenizers, and compaction are deferred until a real problem justifies them.
+- The single-tool-call retention defect is recorded as an `obsidian-ai` fix,
+  not a behavior for super-chat to copy.
+
+## Session Closeout — 2026-09-07 01:45:10 IST
+
+- The message-context plan is recorded in the task and implementation files.
+- `git diff --check` passed.
+- No commit was created; source and Memory Bank changes remain uncommitted for
+  deliberate staging later.
 
 ## Previous Session
 

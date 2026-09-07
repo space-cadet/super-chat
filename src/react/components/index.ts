@@ -5,5 +5,6 @@ export { MessageBubble } from './MessageBubble';
 export { ChatInput } from './ChatInput';
 export { PendingToolCard } from './PendingToolCard';
 export { SessionSidebar } from './SessionSidebar';
+export { SessionTabs } from './SessionTabs';
 export { ToolResultCard } from './ToolResultCard';
 export { MarkdownRenderer } from './MarkdownRenderer';

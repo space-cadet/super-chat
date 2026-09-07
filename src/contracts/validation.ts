@@ -47,7 +47,11 @@ export function hasHostCapability<K extends keyof SuperChatCapabilities>(
 export function listHostCapabilities(host: SuperChatHost): HostCapability[] {
 	return capabilityKinds.flatMap((kind) => {
 		const capability = host.capabilities[kind];
-		return capability ? [capability] : [];
+		return capability
+			? Array.isArray(capability)
+				? capability
+				: [capability]
+			: [];
 	});
 }
 
@@ -103,7 +107,11 @@ function findCapabilityKey(
 	capability: HostCapability,
 ): HostCapabilityKind | undefined {
 	return capabilityKinds.find(
-		(kind) => host.capabilities[kind] === capability,
+		(kind) => {
+			const candidate = host.capabilities[kind];
+			return Array.isArray(candidate)
+				? candidate.some((item) => item === capability)
+				: candidate === capability;
+		},
 	);
 }
-

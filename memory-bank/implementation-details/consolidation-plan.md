@@ -6,8 +6,14 @@
 > plan. Use T22 and
 > `implementation-details/embeddable-super-chat-platform.md` instead.
 
+> **Architecture correction (2026-09-06):** The former PocketFlow and
+> `ChatbotIntentRouter` approach is obsolete. Forward work uses the
+> obsidian-ai agentic tool-calling behavior in shared `super-chat`; Arxivite
+> and Obsidian provide pluggable tool/data providers. See T25, T16, and
+> `implementation-details/agentic-tool-runtime.md`.
+
 *Created: 2026-06-20 00:22:00 IST*
-*Last Updated: 2026-08-31 22:25:18 IST*
+*Last Updated: 2026-09-06 13:13:22 IST*
 *Related Tasks: T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24*
 
 ---

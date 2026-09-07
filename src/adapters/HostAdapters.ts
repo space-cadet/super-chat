@@ -49,21 +49,45 @@ export class HostPersistenceAdapter implements PersistenceAdapter {
 
 export class HostToolAdapter implements ToolAdapter {
 	private constructor(
-		private readonly capability: ToolCapability,
-		private readonly descriptors: HostToolDescriptor[],
+		private readonly routes: Map<
+			string,
+			{ capability: ToolCapability; descriptor: HostToolDescriptor }
+		>,
 	) {}
 
-	static async create(capability: ToolCapability): Promise<HostToolAdapter> {
-		const descriptors = await capability.getTools(createOperationContext());
-		return new HostToolAdapter(capability, descriptors);
+	static async create(
+		capability: ToolCapability | readonly ToolCapability[],
+	): Promise<HostToolAdapter> {
+		const capabilities = Array.isArray(capability) ? capability : [capability];
+		const routes = new Map<
+			string,
+			{ capability: ToolCapability; descriptor: HostToolDescriptor }
+		>();
+		for (const provider of capabilities) {
+			const descriptors = await provider.getTools(createOperationContext());
+			for (const descriptor of descriptors) {
+				if (routes.has(descriptor.name)) {
+					throw new Error(`Duplicate host tool name: ${descriptor.name}`);
+				}
+				routes.set(descriptor.name, { capability: provider, descriptor });
+			}
+		}
+		return new HostToolAdapter(routes);
 	}
 
 	getAvailableTools(): ToolDefinition[] {
-		return this.descriptors.map((descriptor) => ({ ...descriptor }));
+		return [...this.routes.values()].map(({ descriptor }) => ({ ...descriptor }));
 	}
 
-	executeTool(call: ToolCall): Promise<ToolResult> {
-		return this.capability.executeTool(call, createOperationContext());
+	executeTool(call: ToolCall, signal?: AbortSignal): Promise<ToolResult> {
+		const route = this.routes.get(call.name);
+		if (!route) {
+			return Promise.resolve({
+				success: false,
+				error: `Unknown host tool: ${call.name}`,
+			});
+		}
+		return route.capability.executeTool(call, createOperationContext(signal));
 	}
 }
 

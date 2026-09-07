@@ -73,6 +73,7 @@ export function useAgent(initialAgents: AgentConfig[] = []): UseAgentReturn {
                 role: "assistant",
                 content,
                 timestamp: Date.now(),
+                sender: { id: agent.id, name: agent.name, kind: "agent", color: agent.color },
               },
             };
 
@@ -101,6 +102,7 @@ export function useAgent(initialAgents: AgentConfig[] = []): UseAgentReturn {
                 role: "assistant",
                 content,
                 timestamp: Date.now(),
+                sender: { id: agent.id, name: agent.name, kind: "agent", color: agent.color },
               },
             };
 

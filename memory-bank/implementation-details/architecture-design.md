@@ -1,5 +1,7 @@
 # Architecture Design — super-chat
 
+*Last Updated: 2026-09-06 13:13:22 IST*
+
 *Created: 2026-05-19 11:15:00 IST*
 *Last Updated: 2026-08-31 22:25:18 IST*
 
@@ -22,7 +24,8 @@ provide data and platform capabilities without reimplementing chat workflow.
 3. **Approval-first safety** — Tools execute only after user approval (unless auto-approve)
 4. **Multi-agent orchestration** — Multiple agents in one conversation, mention-based routing
 5. **SDK insulation** — StreamEvent union protects consumers from Vercel AI SDK changes
-6. **Pluggable adapters** — Swap LLM providers, persistence layers, RAG systems
+6. **Pluggable providers** — Compose LLM providers, persistence layers, agent
+   tool packs, and retrieval data sources
 
 ## Architecture Layers
 
@@ -38,7 +41,7 @@ provide data and platform capabilities without reimplementing chat workflow.
 │  ChatEngine, AgentLoop, Orchestrator, ToolExecutor          │
 ├─────────────────────────────────────────────────────────────┤
 │  Adapter Layer (pluggable implementations)                  │
-│  LLMAdapter, ToolAdapter, RAGAdapter, PersistenceAdapter    │
+│  LLMAdapter, ToolProvider, Evidence, PersistenceAdapter    │
 ├─────────────────────────────────────────────────────────────┤
 │  Provider SDKs (Vercel AI SDK, direct API calls, etc.)    │
 │  streamText, generateText, fetch                            │
@@ -107,7 +110,8 @@ All external dependencies are behind interfaces:
 
 - **LLMAdapter** — wraps any LLM provider (OpenAI, Anthropic, Google, etc.)
 - **ToolAdapter** — defines available tools and executes them
-- **RAGAdapter** — retrieves and formats context
+- **ToolProvider/Evidence** — supplies host search/fetch tools and records
+  structured evidence for shared RAG grounding and citations
 - **PersistenceAdapter** — saves/loads sessions
 - **ContextAdapter** — resolves @mentions to content
 
@@ -368,7 +372,7 @@ React is optional — core works without it.
 | **Multi-agent** | ✅ Orchestrator | ✅ Orchestrator | ❌ Single | ❌ Single |
 | **SDK insulation** | ✅ StreamEvent | ✅ StreamEvent | ✅ StreamEvent | ❌ N/A |
 | **Testability** | ✅ Unit tests | ✅ Unit tests | ✅ Unit tests | ❌ Integration only |
-| **Reusability** | ✅ Standalone | ❌ Obsidian-only | ⚠️ Demo | ❌ Arxivite-only |
+| **Reusability** | ✅ Standalone | ❌ Obsidian-only | ⚠️ Demo | ✅ Host-provider based |
 
 ## Next Steps
 

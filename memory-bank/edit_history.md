@@ -1,6 +1,33 @@
 # Edit History
 *Created: 2026-05-19 11:15:00 IST*
-*Last Updated: 2026-09-07 16:11:58 IST*
+*Last Updated: 2026-09-07 17:32:30 IST*
+
+#### 17:32:30 IST - T22/T25: Reconcile and commit shared participant/context/session work
+- Verified the live branch, staged/unstaged/untracked state, and relevant task
+  and implementation records before editing.
+- Committed shared engine, persistence, participant/context, and agent metadata
+  as `b46731a`; committed session tabs, sender rendering, hook wiring, and
+  focused UI tests as `f9822cc`.
+- Verified TypeScript, focused tests, full Vitest, package ESM/CJS/declaration
+  build, and `git diff --check`. Kept Arxivite adoption separate.
+
+#### 17:36:20 IST - T19/T22: Push reconciled feature branch
+- Pushed `b46731a`, `f9822cc`, and `6054c69` through the existing
+  `fix/arxivite-package-build` branch.
+- Confirmed a clean worktree and zero ahead/behind against the refreshed local
+  remote-tracking ref. Direct `ls-remote` lookup was unavailable afterward due
+  to transient DNS, while the push itself reported success.
+
+#### 16:56:00 IST - T22/T19: Close out repository synchronization session
+- Updated `memory-bank/activeContext.md`, `memory-bank/session_cache.md`,
+  `memory-bank/tasks.md`, `memory-bank/tasks/INFRA-1.md`,
+  `memory-bank/tasks/T19.md`, and `memory-bank/tasks/T22.md` - Recorded the
+  completed standalone merge, Arxivite/submodule synchronization, verification,
+  and intentionally unpublished feature work.
+- Updated `memory-bank/sessions/2026-09-07-message-context-plan.md` - Recorded
+  the session closeout and next-session handoff.
+- Refreshed `origin/main` into `fix/arxivite-package-build` as local merge
+  `1ce53d5`; restored the staged/untracked work without committing or pushing it.
 
 ## 2026-09-07
 
@@ -12,6 +39,83 @@
 - The shared source change is ready for its repository commit; Arxivite
   adoption requires a later gitlink update after that commit is pushed.
 
+#### 15:45:36 IST - INFRA-1, T22, T19: Define public interfaces and Arxivite adoption boundary
+- Created `memory-bank/implementation-details/public-interface-components.md` - Cataloged public React exports, host capabilities, lifecycle ownership, stability, and delivery rules.
+- Updated `memory-bank/tasks/T22.md` and `memory-bank/tasks/T19.md` - Assigned canonical interface ownership and Arxivite compatibility tracking.
+- Updated `memory-bank/tasks/INFRA-1.md` and `memory-bank/tasks.md` - Linked the interface catalog and marked T19 in progress.
+- Updated `memory-bank/implementation-details/embeddable-super-chat-platform.md`, `memory-bank/implementation-details/host-services.md`, and `memory-bank/implementation-details/session-persistence.md` - Clarified public imports, consumer documentation, and session unloading boundaries.
+- Updated `memory-bank/activeContext.md`, `memory-bank/session_cache.md`, and `memory-bank/sessions/2026-09-07-message-context-plan.md` - Recorded the paired cross-repository workflow and preserved uncommitted source state.
+
+#### 14:25:26 IST - T22, T19: Record Arxivite-first inter-user messaging boundary
+- Updated `memory-bank/tasks/T22.md` - Recorded the optional harness-neutral messaging capability and two-client acceptance boundary.
+- Updated `memory-bank/tasks/T19.md` - Recorded Arxivite routing ownership and linked the follow-up to Arxivite T32/T78 rather than reopening T95.
+- Updated `memory-bank/implementation-details/host-services.md` - Documented the planned messaging capability and host transport ownership.
+- Updated `memory-bank/implementation-details/session-persistence.md` - Recorded remote message identity, deduplication, ordering, and replay requirements.
+- Updated `memory-bank/implementation-details/model-history-and-context.md` - Recorded preservation of human sender identity.
+- Updated `memory-bank/implementation-details/embeddable-super-chat-platform.md` - Reconciled shared lifecycle ownership with host routing ownership.
+- Updated `memory-bank/activeContext.md`, `memory-bank/session_cache.md`, `memory-bank/tasks.md`, and `memory-bank/sessions/2026-09-07-message-context-plan.md` - Recorded the corrected Arxivite-first source of truth and current documentation status.
+
+#### 01:49:43 IST - T15/T16/T22/T25: Correct the session title
+- Updated `memory-bank/sessions/2026-09-07-message-context-plan.md` - Changed the title to include both the `ChatTurnOutput` implementation and the message-context planning work completed in this session.
+
+#### 01:45:10 IST - T15/T16/T22/T25: Close the message context planning session
+- Updated `memory-bank/sessions/2026-09-07-message-context-plan.md` - Applied the task-based session title and recorded the closeout, verification, and proposed commit title.
+- Confirmed `git diff --check` passed and left all source and Memory Bank changes uncommitted for deliberate staging.
+
+#### 01:29:34 IST - T15/T16/T18/T19/T22/T25/T28/INFRA-1: Record the simple message context plan
+- Created `memory-bank/implementation-details/model-history-and-context.md` - Recorded the rules for message order, tool-call/result IDs, provider conversion, token estimates, large results, and simple context selection.
+- Created `memory-bank/sessions/2026-09-07-message-context-plan.md` - Recorded the approved plan and its scope.
+- Updated `memory-bank/tasks/T15.md`, `memory-bank/tasks/T16.md`, `memory-bank/tasks/T18.md`, `memory-bank/tasks/T19.md`, `memory-bank/tasks/T22.md`, `memory-bank/tasks/T25.md`, and `memory-bank/tasks/T28.md` - Recorded extraction scope, acceptance checks, and provider ownership.
+- Updated `memory-bank/tasks/INFRA-1.md` - Added message-context rules to the shared execution plan.
+- Updated `memory-bank/implementation-details/AgentLoop.md`, `memory-bank/implementation-details/host-tool-provider-contract.md`, `memory-bank/implementation-details/session-persistence.md`, `memory-bank/implementation-details/attachments-and-context.md`, `memory-bank/implementation-details/agentic-rag-evidence.md`, and `memory-bank/implementation-details/embeddable-super-chat-platform.md` - Aligned the implementation notes with the simple message-context plan.
+- Updated `memory-bank/activeContext.md` and `memory-bank/session_cache.md` - Recorded the current plan and replaced unclear provider-integration wording.
+- Updated `memory-bank/tasks.md` and `memory-bank/edit_history.md` - Refreshed the Memory Bank timestamps and recorded this update.
+
+#### 20:27:32 IST - INFRA-1/T22/T25: Complete super-chat Memory Bank update
+- Updated `memory-bank/activeContext.md`, `memory-bank/session_cache.md`, and `memory-bank/tasks.md` - Refreshed the current workstream timestamps.
+- Updated `memory-bank/tasks/INFRA-1.md`, `memory-bank/tasks/T22.md`, and `memory-bank/tasks/T25.md` - Preserved the minimal provider seam status and open follow-ups.
+- Created `memory-bank/edits/2026-09-06/202732-INFRA-1-T22-T25-provider-seam.md` - Recorded source branch, source commit, and file-level provenance.
+- Updated `memory-bank/sessions/2026-09-06-agentic-provider-seam.md` - Recorded the Memory Bank closeout and next slice.
+
+#### 14:17:00 IST - T22, T25: Survey obsidian-ai and add minimal provider seam
+- Surveyed `/Users/deepak/code/obsidian-ai` read-only before implementation,
+  including its canonical tool registry, executor, turn coordinator,
+  model-history, context-budget, and focused tests.
+- Modified `src/contracts/host.ts` and `src/contracts/validation.ts` to allow
+  composed host tool capabilities while flattening validation safely.
+- Modified `src/adapters/HostAdapters.ts` to route each tool to its owning host
+  capability, reject duplicate names, and forward cancellation.
+- Modified `src/core/types.ts`, `src/core/ToolExecutor.ts`,
+  `src/core/AgentLoop.ts`, and `src/core/ChatEngine.ts` to preserve abort
+  signals through adapter-backed execution.
+- Added focused composition, routing, duplicate-name, and capability-discovery
+  tests. Updated the Arxivite test harness for the widened host type.
+- Verification passed: TypeScript, 16 Vitest files / 145 tests, package build,
+  Arxivite harness typecheck, Arxivite engine integration (3 tests), and diff
+  checks. Arxivite readiness remains blocked by its existing dirty checkout.
+- Created `memory-bank/sessions/2026-09-06-agentic-provider-seam.md` and
+  updated T22, T25, INFRA-1, active context, and session cache.
+
+#### 13:13:22 IST - T15/T16/T19/T25-T30: Record agentic runtime architecture
+- Updated `memory-bank/tasks/T15.md` - Reframed extraction around obsidian-ai's shared agentic runtime.
+- Updated `memory-bank/tasks/T16.md` - Replaced host-owned RAG/PocketFlow plan with shared agentic RAG and evidence.
+- Updated `memory-bank/tasks/T18.md` - Added Obsidian tool-provider subtasks.
+- Updated `memory-bank/tasks/T19.md` - Reframed Arxivite as a pluggable tool/data provider.
+- Created `memory-bank/tasks/T25.md` through `memory-bank/tasks/T30.md` - Added approved priority capability tasks.
+- Updated `memory-bank/tasks/T2.md`, `memory-bank/tasks/T5.md`, and `memory-bank/tasks/T13.md` - Reconciled core types, provider contracts, and superseded formatter work.
+- Updated `memory-bank/tasks/T21.md`, `memory-bank/tasks/T22.md`, `memory-bank/tasks/INFRA-1.md`, and `memory-bank/tasks.md` - Reconciled dependencies, status, and registry.
+- Updated `memory-bank/implementation-details/` architecture documents - Recorded shared agentic runtime and ASCII diagrams.
+- Created `memory-bank/implementation-details/agentic-tool-runtime.md` - Documented shared tool runtime and provider composition.
+- Created `memory-bank/implementation-details/agentic-rag-evidence.md` - Documented agentic RAG and evidence lifecycle.
+- Created `memory-bank/implementation-details/host-tool-provider-contract.md` - Documented provider contracts.
+- Created `memory-bank/implementation-details/obsidian-ai-capability-matrix.md` - Documented extraction ownership.
+- Created `memory-bank/implementation-details/memory-and-pruning.md` - Documented memory tiers and pruning.
+- Created `memory-bank/implementation-details/attachments-and-context.md` - Documented attachment resolution.
+- Created `memory-bank/implementation-details/provider-profiles-and-switching.md` - Documented provider switching.
+- Created `memory-bank/implementation-details/diagnostics.md` - Documented diagnostic flow.
+- Created `memory-bank/implementation-details/session-export-import.md` - Documented session exchange.
+- Updated `memory-bank/activeContext.md` and `memory-bank/session_cache.md` - Recorded the approved architecture.
+- Created `memory-bank/sessions/2026-09-06-agentic-runtime-plan.md` - Recorded the decision and forward plan.
 ## 2026-09-01
 
 #### 11:11:59 IST - T19, T21, T16, T22, INFRA-1: Record Arxivite external integration readiness

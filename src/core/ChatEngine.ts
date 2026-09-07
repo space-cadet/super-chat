@@ -23,6 +23,8 @@ import type {
 	ChatEngineListener,
 	ChatEngineSnapshot,
 	ChatMessage,
+	ChatMessageEnvelope,
+	ChatParticipant,
 	ChatModelMessage,
 	ChatSession,
 	ChatSettings,
@@ -41,6 +43,7 @@ import type {
 	ToolResult,
 } from "./types";
 import type { AgentLoopResult } from "./AgentLoop";
+import type { ChatTurnOutputSnapshot } from "./ChatTurnOutput";
 import {
 	cloneSession,
 	createSessionId,
@@ -58,6 +61,7 @@ import { assembleRetrievedContext, normalizeRetrievalResult } from "./retrieval"
 interface InternalState {
 	sessions: ChatSession[];
 	activeSessionId: string | null;
+	openSessionIds: string[];
 	settings: ChatSettings;
 	isStreaming: boolean;
 	abortController: AbortController | null;
@@ -78,6 +82,21 @@ interface ReplayContext {
 	error?: RetrievalError;
 }
 
+interface OrderedMessage {
+	id: string;
+	timestamp: number;
+}
+
+function compareMessageOrder(left: OrderedMessage, right: OrderedMessage): number {
+	return left.timestamp - right.timestamp || left.id.localeCompare(right.id);
+}
+
+function insertMessageInOrder<T extends OrderedMessage>(messages: T[], message: T): void {
+	const index = messages.findIndex((candidate) => compareMessageOrder(message, candidate) < 0);
+	if (index === -1) messages.push(message);
+	else messages.splice(index, 0, message);
+}
+
 const defaultSettings: ChatSettings = {
 	activeProviderProfileId: "",
 	providerProfiles: [],
@@ -93,6 +112,44 @@ const defaultSettings: ChatSettings = {
 	autoApply: false,
 	showProviderIndicator: true,
 };
+
+function mergeParticipants(
+	existing: ChatParticipant[],
+	additions: ChatParticipant[],
+): ChatParticipant[] {
+	const merged = new Map(
+		existing.map((participant) => [participant.id, { ...participant }]),
+	);
+	for (const participant of additions) {
+		merged.set(participant.id, { ...participant });
+	}
+	return [...merged.values()];
+}
+
+function isValidParticipant(value: unknown): value is ChatParticipant {
+	if (!value || typeof value !== "object") return false;
+	const participant = value as Record<string, unknown>;
+	return (
+		typeof participant.id === "string" && participant.id.trim().length > 0 &&
+		typeof participant.name === "string" && participant.name.trim().length > 0 &&
+		(participant.kind === "human" || participant.kind === "agent" ||
+			participant.kind === "assistant" || participant.kind === "system") &&
+		(participant.color === undefined || typeof participant.color === "string")
+	);
+}
+
+function isValidMessageEnvelope(value: unknown): value is ChatMessageEnvelope {
+	if (!value || typeof value !== "object") return false;
+	const envelope = value as Record<string, unknown>;
+	return (
+		typeof envelope.id === "string" && envelope.id.trim().length > 0 &&
+		typeof envelope.conversationId === "string" &&
+			envelope.conversationId.trim().length > 0 &&
+		typeof envelope.content === "string" && envelope.content.trim().length > 0 &&
+		typeof envelope.createdAt === "number" && Number.isFinite(envelope.createdAt) &&
+		isValidParticipant(envelope.sender)
+	);
+}
 
 // ============================================================================
 // ChatEngine
@@ -135,6 +192,7 @@ export class ChatEngine {
 		this.state = {
 			sessions: [],
 			activeSessionId: null,
+			openSessionIds: [],
 			settings: { ...defaultSettings },
 			isStreaming: false,
 			abortController: null,
@@ -187,6 +245,12 @@ export class ChatEngine {
 			) {
 				this.state.activeSessionId = this.state.sessions[0]?.id ?? null;
 			}
+			this.state.openSessionIds = this.state.openSessionIds.filter((id) =>
+				this.state.sessions.some((session) => session.id === id),
+			);
+			if (this.state.openSessionIds.length === 0 && this.state.activeSessionId) {
+				this.state.openSessionIds = [this.state.activeSessionId];
+			}
 			for (const session of this.state.sessions) {
 				if (
 					report.migratedSessionIds.includes(session.id) ||
@@ -231,12 +295,19 @@ export class ChatEngine {
 			persistence: createSessionPersistenceMetadata(),
 			turns: [],
 			modelHistory: [],
+			...(this.opts.participant
+				? { participants: [{ ...this.opts.participant }] }
+				: {}),
 			...(externalIdentity ? { externalIdentity } : {}),
 			llmProvider: this.opts.llmAdapter.getProviders()[0]?.id,
 		};
 
 		this.state.sessions.unshift(session);
 		this.state.activeSessionId = session.id;
+		this.state.openSessionIds = [
+			session.id,
+			...this.state.openSessionIds.filter((id) => id !== session.id),
+		];
 		this.emitState();
 		void this.persistSession(session, {
 			owner: "chat-engine",
@@ -253,8 +324,37 @@ export class ChatEngine {
 		if (this.state.isStreaming) this.stopStreaming();
 		else this.cancelPendingApprovals();
 		this.state.activeSessionId = sessionId;
+		if (!this.state.openSessionIds.includes(sessionId)) {
+			this.state.openSessionIds.push(sessionId);
+		}
 		this.emitState();
 		return true;
+	}
+
+	/** Open a saved conversation as a tab and make it active. */
+	openSession(sessionId: string): boolean {
+		return this.switchSession(sessionId);
+	}
+
+	/** Close a tab without deleting the saved conversation. */
+	closeSessionTab(sessionId: string): boolean {
+		const index = this.state.openSessionIds.indexOf(sessionId);
+		if (index < 0) return false;
+		if (this.state.activeSessionId === sessionId) {
+			if (this.state.isStreaming) this.stopStreaming();
+			else this.cancelPendingApprovals();
+		}
+		this.state.openSessionIds.splice(index, 1);
+		if (this.state.activeSessionId === sessionId) {
+			const nextId = this.state.openSessionIds[index] ?? this.state.openSessionIds[index - 1] ?? null;
+			this.state.activeSessionId = nextId;
+		}
+		this.emitState();
+		return true;
+	}
+
+	getOpenSessionIds(): string[] {
+		return [...this.state.openSessionIds];
 	}
 
 	getActiveSession(): ChatSession | null {
@@ -274,9 +374,9 @@ export class ChatEngine {
 		this.state.sessions = this.state.sessions.filter(
 			(s) => s.id !== sessionId,
 		);
+		this.state.openSessionIds = this.state.openSessionIds.filter((id) => id !== sessionId);
 		if (this.state.activeSessionId === sessionId) {
-			this.state.activeSessionId =
-				this.state.sessions[0]?.id ?? null;
+			this.state.activeSessionId = this.state.openSessionIds[0] ?? null;
 		}
 		this.emitState();
 	}
@@ -297,6 +397,51 @@ export class ChatEngine {
 
 	getSessions(): ChatSession[] {
 		return [...this.state.sessions];
+	}
+
+	/**
+	 * Accept a host-delivered human or agent message. Hosts remain responsible
+	 * for authentication, membership, routing, and transport; this method only
+	 * applies the message to the engine-owned session lifecycle.
+	 */
+	async receiveMessage(
+		envelope: ChatMessageEnvelope,
+		sessionId?: string,
+	): Promise<boolean> {
+		if (this.disposed || !isValidMessageEnvelope(envelope)) return false;
+		const session = this.state.sessions.find((candidate) =>
+			candidate.id === (sessionId ?? this.state.activeSessionId),
+		);
+		if (!session || session.messages.some((message) => message.id === envelope.id)) {
+			return false;
+		}
+
+		const role = envelope.sender.kind === "system"
+			? "system"
+			: envelope.sender.kind === "human"
+				? "user"
+				: "assistant";
+		const message: ChatMessage = {
+			id: envelope.id,
+			role,
+			content: envelope.content,
+			timestamp: envelope.createdAt,
+			sender: { ...envelope.sender },
+			metadata: { conversationId: envelope.conversationId, remote: true },
+		};
+		insertMessageInOrder(session.messages, message);
+		session.modelHistory = this.insertInboundModelMessage(
+			session.modelHistory ?? [],
+			message,
+		);
+		session.participants = mergeParticipants(session.participants ?? [], [envelope.sender]);
+		session.updatedAt = Date.now();
+		await this.persistSession(session, {
+			owner: "chat-engine",
+			reason: "inbound-message",
+		});
+		this.emitState();
+		return true;
 	}
 
 	// --------------------------------------------------------------------------
@@ -415,11 +560,19 @@ export class ChatEngine {
 		this.emitState();
 
 		const priorModelHistory = this.getModelHistory(session);
+		const priorInboundMessageIds = new Set(
+			session.messages
+				.filter((message) => message.metadata?.remote === true)
+				.map((message) => message.id),
+		);
 		const userMessage: ChatMessage = {
 			id: `msg-${Date.now()}`,
 			role: "user",
 			content: text,
 			timestamp: Date.now(),
+			sender: this.opts.participant
+				? { ...this.opts.participant }
+				: { id: "local-user", name: "You", kind: "human" },
 		};
 		const userModelMessage: ChatModelMessage = {
 			role: "user",
@@ -457,6 +610,10 @@ export class ChatEngine {
 		// The engine is the only write owner. Persist the user input before
 		// retrieval or provider work starts so a reload cannot lose the turn.
 		session.messages.push(userMessage);
+		session.participants = mergeParticipants(
+			session.participants ?? [],
+			[userMessage.sender!],
+		);
 		try {
 			await this.persistSession(session, {
 				owner: "chat-engine",
@@ -677,6 +834,8 @@ export class ChatEngine {
 					signal,
 					turn,
 					priorModelHistory.length,
+					priorInboundMessageIds,
+					userMessage.timestamp,
 					options,
 				);
 			} else {
@@ -687,6 +846,8 @@ export class ChatEngine {
 					signal,
 					turn,
 					priorModelHistory,
+					priorInboundMessageIds,
+					userMessage.timestamp,
 					options,
 				);
 			}
@@ -723,6 +884,7 @@ export class ChatEngine {
 		return {
 			sessions: [...this.state.sessions],
 			activeSessionId: this.state.activeSessionId,
+			openSessionIds: [...this.state.openSessionIds],
 			isStreaming: this.state.isStreaming,
 			pendingApprovals: [...this.pendingApprovals.values()].map(
 				({ call }) => call,
@@ -825,6 +987,8 @@ export class ChatEngine {
 		signal: AbortSignal,
 		turn: ChatTurn,
 		priorModelHistoryLength: number,
+		priorInboundMessageIds: ReadonlySet<string>,
+		userMessageTimestamp: number,
 		_options?: SendOptions,
 	): AsyncIterable<StreamEvent> {
 		let assistantText = "";
@@ -913,12 +1077,29 @@ export class ChatEngine {
 						...(session.modelHistory ?? []),
 						{ role: "assistant", content: result.text },
 					];
-			const generatedMessages = modelHistory.slice(priorModelHistoryLength);
-			session.modelHistory = modelHistory;
+			const mergedModelHistory = this.mergeInboundMessagesIntoHistory(
+				modelHistory,
+				session,
+				priorInboundMessageIds,
+				priorModelHistoryLength,
+				userMessageTimestamp,
+			);
+			const generatedMessages = mergedModelHistory.slice(priorModelHistoryLength);
+			session.modelHistory = mergedModelHistory;
 			turn.modelMessages = generatedMessages;
 			turn.status = "completed";
 			turn.updatedAt = Date.now();
 			this.updateAssistantMessage(session, turn, assistantMessageId, assistantText, "completed");
+			if (result.output) {
+				this.updateAssistantMessage(
+					session,
+					turn,
+					assistantMessageId,
+					assistantText,
+					"completed",
+					result.output,
+				);
+			}
 			// Yield metrics
 			yield {
 				type: "usage",
@@ -961,6 +1142,8 @@ export class ChatEngine {
 		signal: AbortSignal,
 		turn: ChatTurn,
 		priorModelHistory: ChatModelMessage[],
+		priorInboundMessageIds: ReadonlySet<string>,
+		userMessageTimestamp: number,
 		_options?: SendOptions,
 	): AsyncIterable<StreamEvent> {
 		const adapterMessages = messages.map((m) => ({
@@ -1037,11 +1220,18 @@ export class ChatEngine {
 				role: "user",
 				content: "",
 			};
-			session.modelHistory = [
-				...priorModelHistory,
-				userModelMessage,
-				assistantModelMessage,
-			];
+			const modelHistory = this.mergeInboundMessagesIntoHistory(
+				[
+					...priorModelHistory,
+					userModelMessage,
+					assistantModelMessage,
+				],
+				session,
+				priorInboundMessageIds,
+				priorModelHistory.length,
+				userMessageTimestamp,
+			);
+			session.modelHistory = modelHistory;
 			turn.modelMessages = [
 				...turn.modelMessages,
 				assistantModelMessage,
@@ -1103,7 +1293,87 @@ export class ChatEngine {
 	): ChatModelMessage[] {
 		return messages
 			.filter((message) => message.role !== "system")
-			.map(({ role, content }) => ({ role, content }));
+			.map((message) => ({ ...message }));
+	}
+
+	private insertInboundModelMessage(
+		history: ChatModelMessage[],
+		message: ChatMessage,
+	): ChatModelMessage[] {
+		const inboundMessage: ChatModelMessage = {
+			role: message.role,
+			content: message.content,
+			messageId: message.id,
+			timestamp: message.timestamp,
+		};
+		const nextHistory = history.map((entry) => ({ ...entry }));
+		const existingIndex = nextHistory.findIndex(
+			(entry) => entry.messageId === inboundMessage.messageId,
+		);
+		if (existingIndex !== -1) return nextHistory;
+
+		const orderIndex = nextHistory.findIndex(
+			(entry) =>
+				entry.messageId !== undefined &&
+				entry.timestamp !== undefined &&
+				compareMessageOrder(
+					{ id: inboundMessage.messageId!, timestamp: inboundMessage.timestamp! },
+					{ id: entry.messageId, timestamp: entry.timestamp },
+				) < 0,
+		);
+		if (orderIndex === -1) nextHistory.push(inboundMessage);
+		else nextHistory.splice(orderIndex, 0, inboundMessage);
+		return nextHistory;
+	}
+
+	private mergeInboundMessagesIntoHistory(
+		history: ChatModelMessage[],
+		session: ChatSession,
+		priorInboundMessageIds: ReadonlySet<string>,
+		priorModelHistoryLength: number,
+		userMessageTimestamp: number,
+	): ChatModelMessage[] {
+		const inboundMessages = session.messages
+			.filter(
+				(message) =>
+					message.metadata?.remote === true &&
+					!priorInboundMessageIds.has(message.id),
+			)
+			.sort((left, right) => compareMessageOrder(left, right))
+			.map((message) => ({
+				role: message.role,
+				content: message.content,
+				messageId: message.id,
+				timestamp: message.timestamp,
+			}));
+		if (inboundMessages.length === 0) return history;
+
+		const existingIds = new Set(
+			history.flatMap((message) => message.messageId ? [message.messageId] : []),
+		);
+		const newInboundMessages = inboundMessages.filter(
+			(message) => !existingIds.has(message.messageId!),
+		);
+		if (newInboundMessages.length === 0) return history;
+
+		const olderMessages = newInboundMessages.filter(
+			(message) => message.timestamp! < userMessageTimestamp,
+		);
+		const newerMessages = newInboundMessages.filter(
+			(message) => message.timestamp! >= userMessageTimestamp,
+		);
+		const beforeUser = Math.min(priorModelHistoryLength, history.length);
+		const merged = [
+			...history.slice(0, beforeUser),
+			...olderMessages,
+			...history.slice(beforeUser),
+		];
+		const afterUser = Math.min(
+			beforeUser + olderMessages.length + 1,
+			merged.length,
+		);
+		merged.splice(afterUser, 0, ...newerMessages);
+		return merged;
 	}
 
 	private updateAssistantMessage(
@@ -1112,6 +1382,7 @@ export class ChatEngine {
 		messageId: string,
 		content: string,
 		status: ChatMessage["status"],
+		output?: ChatTurnOutputSnapshot,
 	): void {
 		const existing = session.messages.find((message) => message.id === messageId);
 		if (existing) {
@@ -1119,6 +1390,15 @@ export class ChatEngine {
 			existing.status = status;
 			existing.turnId = turn.id;
 			existing.sources = turn.retrievedSources;
+			if (output) {
+				existing.contentParts = output.contentParts;
+				existing.toolCalls = output.toolCalls.map(({ call }) => call);
+				if (output.toolCalls.every(({ result }) => result)) {
+					existing.toolResults = output.toolCalls.map(
+						({ result }) => result as ToolResult,
+					);
+				}
+			}
 			return;
 		}
 		session.messages.push({
@@ -1126,9 +1406,23 @@ export class ChatEngine {
 			role: "assistant",
 			content,
 			timestamp: Date.now(),
+			sender: { id: "assistant", name: "Assistant", kind: "assistant" },
 			status,
 			turnId: turn.id,
 			sources: turn.retrievedSources,
+			...(output
+				? {
+						contentParts: output.contentParts,
+						toolCalls: output.toolCalls.map(({ call }) => call),
+						...(output.toolCalls.every(({ result }) => result)
+							? {
+									toolResults: output.toolCalls.map(
+										({ result }) => result as ToolResult,
+									),
+								  }
+							: {}),
+					  }
+				: {}),
 		});
 	}
 
@@ -1227,12 +1521,12 @@ export class ChatEngine {
 	private registerAdapterTools(adapter: ToolAdapter): void {
 		const tools = adapter.getAvailableTools();
 		for (const tool of tools) {
-			this.toolExecutor.register(tool.name, (args: unknown) =>
+			this.toolExecutor.register(tool.name, (args: unknown, signal?: AbortSignal) =>
 				adapter.executeTool({
 					id: `tool-${Date.now()}`,
 					name: tool.name,
 					args: args as Record<string, unknown>,
-				}),
+				}, signal),
 			);
 		}
 	}

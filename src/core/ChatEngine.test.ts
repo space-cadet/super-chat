@@ -656,6 +656,26 @@ describe("ChatEngine", () => {
 			const assistantMessages = session!.messages.filter((m) => m.role === "assistant");
 			expect(assistantMessages).toHaveLength(1);
 			expect(assistantMessages[0].content).toBe("The answer is 4.");
+			expect(assistantMessages[0].contentParts).toEqual([
+				{
+					type: "tool_call",
+					call: { id: "call-1", name: "calculate", args: {} },
+					result: {
+						success: true,
+						content: expect.stringContaining("4"),
+					},
+				},
+				{ type: "text", content: "The answer is 4." },
+			]);
+			expect(assistantMessages[0].toolCalls).toEqual([
+				{ id: "call-1", name: "calculate", args: {} },
+			]);
+			expect(assistantMessages[0].toolResults).toEqual([
+				expect.objectContaining({
+					success: true,
+					content: expect.stringContaining("4"),
+				}),
+			]);
 		});
 
 		it("handles errors from AgentLoop gracefully", async () => {
@@ -835,6 +855,137 @@ describe("ChatEngine", () => {
 			expect(events).toEqual([
 				{ type: "error", message: "ChatEngine has been disposed" },
 			]);
+		});
+	});
+
+	describe("conversation tabs and participants", () => {
+		it("opens and closes tabs without deleting saved sessions", () => {
+			const engine = new ChatEngine({ llmAdapter: createMockLLMAdapter() });
+			const first = engine.createSession("First");
+			const second = engine.createSession("Second");
+
+			expect(engine.getOpenSessionIds()).toEqual([second.id, first.id]);
+			expect(engine.openSession(first.id)).toBe(true);
+			expect(engine.getActiveSession()?.id).toBe(first.id);
+			expect(engine.closeSessionTab(first.id)).toBe(true);
+			expect(engine.getOpenSessionIds()).toEqual([second.id]);
+			expect(engine.getActiveSession()?.id).toBe(second.id);
+			expect(engine.getSessions()).toHaveLength(2);
+		});
+
+		it("persists an inbound participant message once and suppresses duplicates", async () => {
+			const persistence = createMockPersistenceAdapter();
+			const engine = new ChatEngine({
+				llmAdapter: createMockLLMAdapter(),
+				persistenceAdapter: persistence,
+			});
+			const session = engine.createSession("Shared");
+			const envelope = {
+				id: "remote-message-1",
+				conversationId: "conversation-1",
+				sender: { id: "agent-1", name: "Researcher", kind: "agent" as const, color: "#9333ea" },
+				content: "I found a relevant paper.",
+				createdAt: 123,
+			};
+
+			expect(await engine.receiveMessage(envelope, session.id)).toBe(true);
+			expect(await engine.receiveMessage(envelope, session.id)).toBe(false);
+			expect(engine.getActiveSession()?.messages).toEqual([
+				expect.objectContaining({
+					id: envelope.id,
+					role: "assistant",
+					content: envelope.content,
+					sender: envelope.sender,
+				}),
+			]);
+			expect(engine.getActiveSession()?.participants).toContainEqual(envelope.sender);
+			expect(persistence.saveSession).toHaveBeenCalled();
+		});
+
+		it("orders replayed inbound messages by timestamp and stable id", async () => {
+			const engine = new ChatEngine({ llmAdapter: createMockLLMAdapter() });
+			const session = engine.createSession("Shared");
+			const sender = { id: "agent-1", name: "Researcher", kind: "agent" as const };
+
+			expect(await engine.receiveMessage({
+				id: "remote-newer",
+				conversationId: "conversation-1",
+				sender,
+				content: "Newer message",
+				createdAt: 200,
+			}, session.id)).toBe(true);
+			expect(await engine.receiveMessage({
+				id: "remote-older",
+				conversationId: "conversation-1",
+				sender,
+				content: "Older message",
+				createdAt: 100,
+			}, session.id)).toBe(true);
+
+			expect(session.messages.map((message) => message.id)).toEqual([
+				"remote-older",
+				"remote-newer",
+			]);
+			expect(session.modelHistory?.map((message) => message.messageId)).toEqual([
+				"remote-older",
+				"remote-newer",
+			]);
+		});
+
+		it("preserves inbound messages received while a turn is streaming", async () => {
+			let releaseProvider!: () => void;
+			const providerPaused = new Promise<void>((resolve) => {
+				releaseProvider = resolve;
+			});
+			const adapter = {
+				...createMockLLMAdapter(),
+				streamChat: async function* (_messages: unknown, signal?: AbortSignal) {
+					yield "first";
+					await providerPaused;
+					if (!signal?.aborted) yield "second";
+				},
+			};
+			const engine = new ChatEngine({ llmAdapter: adapter });
+			const session = engine.createSession("Shared");
+			const iterator = engine.sendMessage("Question")[Symbol.asyncIterator]();
+
+			expect(await iterator.next()).toEqual({
+				done: false,
+				value: { type: "text-delta", text: "first" },
+			});
+			expect(await engine.receiveMessage({
+				id: "remote-during-turn",
+				conversationId: "conversation-1",
+				sender: { id: "agent-1", name: "Researcher", kind: "agent" },
+				content: "A message arrived while you were answering.",
+				createdAt: Date.now() + 1000,
+			}, session.id)).toBe(true);
+
+			releaseProvider();
+			let next = await iterator.next();
+			while (!next.done) next = await iterator.next();
+
+			expect(session.modelHistory).toEqual(expect.arrayContaining([
+				expect.objectContaining({
+					messageId: "remote-during-turn",
+					content: "A message arrived while you were answering.",
+				}),
+			]));
+		});
+
+		it("rejects malformed inbound envelopes without changing the session", async () => {
+			const engine = new ChatEngine({ llmAdapter: createMockLLMAdapter() });
+			const session = engine.createSession("Shared");
+
+			expect(await engine.receiveMessage(null as never, session.id)).toBe(false);
+			expect(await engine.receiveMessage({
+				id: "remote-2",
+				conversationId: "conversation-1",
+				sender: { id: "person-1", name: "Reader", kind: "human" },
+				content: "   ",
+				createdAt: Number.NaN,
+			} as never, session.id)).toBe(false);
+			expect(session.messages).toEqual([]);
 		});
 	});
 

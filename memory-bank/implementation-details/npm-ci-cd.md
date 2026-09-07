@@ -1,6 +1,7 @@
 # Implementation: GitHub CI/CD & npm Publishing
 
 *Created: 2026-06-20 12:10:00 IST*
+*Last Updated: 2026-09-06 13:13:22 IST*
 
 ## Workflow Design
 
@@ -80,10 +81,26 @@ Tag push (v*) ──→ publish-npm job
 
 | Version | Meaning | When to Use |
 |---------|---------|------------|
-| 0.1.0 | Initial release | Already published (if done) |
-| 0.2.0 | Minor feature | After T14/T20 (streaming + React UI) |
+| 0.1.0 | Initial release | Existing development baseline |
+| 0.2.0 | Minor feature | After T25/T16 shared agentic runtime slices |
 | 0.2.1 | Patch fix | Bug fixes |
-| 1.0.0 | Stable API | After T17/T18/T19 (integrations complete) |
+| 1.0.0 | Stable API | After T18/T19 and cross-host acceptance |
+
+## Cross-Host Compatibility
+
+```text
+super-chat artifact
+        |
+        +--> fixture host: clean install/build/test
+        +--> Obsidian host: package + React + platform checks
+        +--> Arxivite host: package + AI SDK + provider checks
+        +--> standalone host: package + runtime checks
+```
+
+The supported consumption model, package revision, React range, AI SDK range,
+and host-provider compatibility must be recorded before a product path becomes
+the default. Do not mix stale source, linked packages, and unrelated `dist`
+artifacts.
 
 ## Dry-Run Results
 
