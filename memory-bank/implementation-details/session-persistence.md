@@ -74,11 +74,12 @@ from changing an earlier queued snapshot. Deletion and archive operations are
 also serialized by the same engine queue.
 
 Remote delivery adds only the minimum additional guarantees needed for a
-second client: stable message IDs for deduplication, host-provided ordering or
-replay cursors for reconnect, and sender metadata preserved in the visible
-message while its content and role enter chronological model history.
-Delivery acknowledgements, presence, and read receipts are deferred until a
-real host requires them.
+second client: stable message IDs for deduplication, deterministic ordering by
+host-provided `createdAt` plus message ID for replay, and sender metadata
+preserved in the visible message while its content and role enter chronological
+model history. Messages received while a turn is streaming are merged into
+the completed model history before it is persisted. Delivery acknowledgements,
+presence, and read receipts are deferred until a real host requires them.
 
 ## Reload, migration, and recovery
 

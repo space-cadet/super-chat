@@ -53,6 +53,10 @@ export type ChatTurnStatus =
 export interface ChatModelMessage {
   role: string;
   content: string;
+  /** Stable visible-message identity when this model entry came from a host. */
+  messageId?: string;
+  /** Visible-message timestamp used to order replayed host messages. */
+  timestamp?: number;
 }
 
 export interface ChatRetrievedSource {

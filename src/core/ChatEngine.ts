@@ -82,6 +82,21 @@ interface ReplayContext {
 	error?: RetrievalError;
 }
 
+interface OrderedMessage {
+	id: string;
+	timestamp: number;
+}
+
+function compareMessageOrder(left: OrderedMessage, right: OrderedMessage): number {
+	return left.timestamp - right.timestamp || left.id.localeCompare(right.id);
+}
+
+function insertMessageInOrder<T extends OrderedMessage>(messages: T[], message: T): void {
+	const index = messages.findIndex((candidate) => compareMessageOrder(message, candidate) < 0);
+	if (index === -1) messages.push(message);
+	else messages.splice(index, 0, message);
+}
+
 const defaultSettings: ChatSettings = {
 	activeProviderProfileId: "",
 	providerProfiles: [],
@@ -414,11 +429,11 @@ export class ChatEngine {
 			sender: { ...envelope.sender },
 			metadata: { conversationId: envelope.conversationId, remote: true },
 		};
-		session.messages.push(message);
-		session.modelHistory = [
-			...(session.modelHistory ?? []),
-			{ role, content: envelope.content },
-		];
+		insertMessageInOrder(session.messages, message);
+		session.modelHistory = this.insertInboundModelMessage(
+			session.modelHistory ?? [],
+			message,
+		);
 		session.participants = mergeParticipants(session.participants ?? [], [envelope.sender]);
 		session.updatedAt = Date.now();
 		await this.persistSession(session, {
@@ -545,6 +560,11 @@ export class ChatEngine {
 		this.emitState();
 
 		const priorModelHistory = this.getModelHistory(session);
+		const priorInboundMessageIds = new Set(
+			session.messages
+				.filter((message) => message.metadata?.remote === true)
+				.map((message) => message.id),
+		);
 		const userMessage: ChatMessage = {
 			id: `msg-${Date.now()}`,
 			role: "user",
@@ -814,6 +834,8 @@ export class ChatEngine {
 					signal,
 					turn,
 					priorModelHistory.length,
+					priorInboundMessageIds,
+					userMessage.timestamp,
 					options,
 				);
 			} else {
@@ -824,6 +846,8 @@ export class ChatEngine {
 					signal,
 					turn,
 					priorModelHistory,
+					priorInboundMessageIds,
+					userMessage.timestamp,
 					options,
 				);
 			}
@@ -963,6 +987,8 @@ export class ChatEngine {
 		signal: AbortSignal,
 		turn: ChatTurn,
 		priorModelHistoryLength: number,
+		priorInboundMessageIds: ReadonlySet<string>,
+		userMessageTimestamp: number,
 		_options?: SendOptions,
 	): AsyncIterable<StreamEvent> {
 		let assistantText = "";
@@ -1051,8 +1077,15 @@ export class ChatEngine {
 						...(session.modelHistory ?? []),
 						{ role: "assistant", content: result.text },
 					];
-			const generatedMessages = modelHistory.slice(priorModelHistoryLength);
-			session.modelHistory = modelHistory;
+			const mergedModelHistory = this.mergeInboundMessagesIntoHistory(
+				modelHistory,
+				session,
+				priorInboundMessageIds,
+				priorModelHistoryLength,
+				userMessageTimestamp,
+			);
+			const generatedMessages = mergedModelHistory.slice(priorModelHistoryLength);
+			session.modelHistory = mergedModelHistory;
 			turn.modelMessages = generatedMessages;
 			turn.status = "completed";
 			turn.updatedAt = Date.now();
@@ -1109,6 +1142,8 @@ export class ChatEngine {
 		signal: AbortSignal,
 		turn: ChatTurn,
 		priorModelHistory: ChatModelMessage[],
+		priorInboundMessageIds: ReadonlySet<string>,
+		userMessageTimestamp: number,
 		_options?: SendOptions,
 	): AsyncIterable<StreamEvent> {
 		const adapterMessages = messages.map((m) => ({
@@ -1185,11 +1220,18 @@ export class ChatEngine {
 				role: "user",
 				content: "",
 			};
-			session.modelHistory = [
-				...priorModelHistory,
-				userModelMessage,
-				assistantModelMessage,
-			];
+			const modelHistory = this.mergeInboundMessagesIntoHistory(
+				[
+					...priorModelHistory,
+					userModelMessage,
+					assistantModelMessage,
+				],
+				session,
+				priorInboundMessageIds,
+				priorModelHistory.length,
+				userMessageTimestamp,
+			);
+			session.modelHistory = modelHistory;
 			turn.modelMessages = [
 				...turn.modelMessages,
 				assistantModelMessage,
@@ -1251,7 +1293,87 @@ export class ChatEngine {
 	): ChatModelMessage[] {
 		return messages
 			.filter((message) => message.role !== "system")
-			.map(({ role, content }) => ({ role, content }));
+			.map((message) => ({ ...message }));
+	}
+
+	private insertInboundModelMessage(
+		history: ChatModelMessage[],
+		message: ChatMessage,
+	): ChatModelMessage[] {
+		const inboundMessage: ChatModelMessage = {
+			role: message.role,
+			content: message.content,
+			messageId: message.id,
+			timestamp: message.timestamp,
+		};
+		const nextHistory = history.map((entry) => ({ ...entry }));
+		const existingIndex = nextHistory.findIndex(
+			(entry) => entry.messageId === inboundMessage.messageId,
+		);
+		if (existingIndex !== -1) return nextHistory;
+
+		const orderIndex = nextHistory.findIndex(
+			(entry) =>
+				entry.messageId !== undefined &&
+				entry.timestamp !== undefined &&
+				compareMessageOrder(
+					{ id: inboundMessage.messageId!, timestamp: inboundMessage.timestamp! },
+					{ id: entry.messageId, timestamp: entry.timestamp },
+				) < 0,
+		);
+		if (orderIndex === -1) nextHistory.push(inboundMessage);
+		else nextHistory.splice(orderIndex, 0, inboundMessage);
+		return nextHistory;
+	}
+
+	private mergeInboundMessagesIntoHistory(
+		history: ChatModelMessage[],
+		session: ChatSession,
+		priorInboundMessageIds: ReadonlySet<string>,
+		priorModelHistoryLength: number,
+		userMessageTimestamp: number,
+	): ChatModelMessage[] {
+		const inboundMessages = session.messages
+			.filter(
+				(message) =>
+					message.metadata?.remote === true &&
+					!priorInboundMessageIds.has(message.id),
+			)
+			.sort((left, right) => compareMessageOrder(left, right))
+			.map((message) => ({
+				role: message.role,
+				content: message.content,
+				messageId: message.id,
+				timestamp: message.timestamp,
+			}));
+		if (inboundMessages.length === 0) return history;
+
+		const existingIds = new Set(
+			history.flatMap((message) => message.messageId ? [message.messageId] : []),
+		);
+		const newInboundMessages = inboundMessages.filter(
+			(message) => !existingIds.has(message.messageId!),
+		);
+		if (newInboundMessages.length === 0) return history;
+
+		const olderMessages = newInboundMessages.filter(
+			(message) => message.timestamp! < userMessageTimestamp,
+		);
+		const newerMessages = newInboundMessages.filter(
+			(message) => message.timestamp! >= userMessageTimestamp,
+		);
+		const beforeUser = Math.min(priorModelHistoryLength, history.length);
+		const merged = [
+			...history.slice(0, beforeUser),
+			...olderMessages,
+			...history.slice(beforeUser),
+		];
+		const afterUser = Math.min(
+			beforeUser + olderMessages.length + 1,
+			merged.length,
+		);
+		merged.splice(afterUser, 0, ...newerMessages);
+		return merged;
 	}
 
 	private updateAssistantMessage(

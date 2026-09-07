@@ -902,6 +902,77 @@ describe("ChatEngine", () => {
 			expect(persistence.saveSession).toHaveBeenCalled();
 		});
 
+		it("orders replayed inbound messages by timestamp and stable id", async () => {
+			const engine = new ChatEngine({ llmAdapter: createMockLLMAdapter() });
+			const session = engine.createSession("Shared");
+			const sender = { id: "agent-1", name: "Researcher", kind: "agent" as const };
+
+			expect(await engine.receiveMessage({
+				id: "remote-newer",
+				conversationId: "conversation-1",
+				sender,
+				content: "Newer message",
+				createdAt: 200,
+			}, session.id)).toBe(true);
+			expect(await engine.receiveMessage({
+				id: "remote-older",
+				conversationId: "conversation-1",
+				sender,
+				content: "Older message",
+				createdAt: 100,
+			}, session.id)).toBe(true);
+
+			expect(session.messages.map((message) => message.id)).toEqual([
+				"remote-older",
+				"remote-newer",
+			]);
+			expect(session.modelHistory?.map((message) => message.messageId)).toEqual([
+				"remote-older",
+				"remote-newer",
+			]);
+		});
+
+		it("preserves inbound messages received while a turn is streaming", async () => {
+			let releaseProvider!: () => void;
+			const providerPaused = new Promise<void>((resolve) => {
+				releaseProvider = resolve;
+			});
+			const adapter = {
+				...createMockLLMAdapter(),
+				streamChat: async function* (_messages: unknown, signal?: AbortSignal) {
+					yield "first";
+					await providerPaused;
+					if (!signal?.aborted) yield "second";
+				},
+			};
+			const engine = new ChatEngine({ llmAdapter: adapter });
+			const session = engine.createSession("Shared");
+			const iterator = engine.sendMessage("Question")[Symbol.asyncIterator]();
+
+			expect(await iterator.next()).toEqual({
+				done: false,
+				value: { type: "text-delta", text: "first" },
+			});
+			expect(await engine.receiveMessage({
+				id: "remote-during-turn",
+				conversationId: "conversation-1",
+				sender: { id: "agent-1", name: "Researcher", kind: "agent" },
+				content: "A message arrived while you were answering.",
+				createdAt: Date.now() + 1000,
+			}, session.id)).toBe(true);
+
+			releaseProvider();
+			let next = await iterator.next();
+			while (!next.done) next = await iterator.next();
+
+			expect(session.modelHistory).toEqual(expect.arrayContaining([
+				expect.objectContaining({
+					messageId: "remote-during-turn",
+					content: "A message arrived while you were answering.",
+				}),
+			]));
+		});
+
 		it("rejects malformed inbound envelopes without changing the session", async () => {
 			const engine = new ChatEngine({ llmAdapter: createMockLLMAdapter() });
 			const session = engine.createSession("Shared");

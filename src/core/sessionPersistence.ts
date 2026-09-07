@@ -240,7 +240,14 @@ function isChatParticipant(value: unknown): value is ChatParticipant {
 }
 
 function isModelMessage(value: unknown): value is ChatModelMessage {
-	return isRecord(value) && typeof value.role === "string" && typeof value.content === "string";
+	return (
+		isRecord(value) &&
+		typeof value.role === "string" &&
+		typeof value.content === "string" &&
+		(value.messageId === undefined || typeof value.messageId === "string") &&
+		(value.timestamp === undefined ||
+			(typeof value.timestamp === "number" && Number.isFinite(value.timestamp)))
+	);
 }
 
 function isChatTurn(value: unknown): value is ChatTurn {
