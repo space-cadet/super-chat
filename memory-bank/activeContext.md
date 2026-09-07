@@ -11,11 +11,11 @@ public-interface records untracked. The preserved shared work is now split
 into package commits `b46731a` (agent/context/session behavior) and `f9822cc`
 (session tabs, sender UI, and tests).
 
-TypeScript, focused tests (56 tests), the full Vitest suite (152 tests), the
-package ESM/CJS/declaration build, and diff checks pass. The documentation
-commit is still being prepared in this checkout. These are package-level
-results only; no Arxivite source, submodule pointer, browser acceptance, or
-device acceptance was changed or claimed.
+TypeScript, focused tests (56 tests), the full Vitest suite (154 tests), the
+package ESM/CJS/declaration build, and diff checks pass. Documentation is
+committed as `6054c69` and the feature branch has been pushed. These are
+package-level results only; no Arxivite source, submodule pointer, browser
+acceptance, or device acceptance was changed or claimed.
 
 ## Prior synchronization checkpoint — 2026-09-07
 

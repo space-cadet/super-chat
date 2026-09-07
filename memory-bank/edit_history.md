@@ -11,6 +11,13 @@
 - Verified TypeScript, focused tests, full Vitest, package ESM/CJS/declaration
   build, and `git diff --check`. Kept Arxivite adoption separate.
 
+#### 17:36:20 IST - T19/T22: Push reconciled feature branch
+- Pushed `b46731a`, `f9822cc`, and `6054c69` through the existing
+  `fix/arxivite-package-build` branch.
+- Confirmed a clean worktree and zero ahead/behind against the refreshed local
+  remote-tracking ref. Direct `ls-remote` lookup was unavailable afterward due
+  to transient DNS, while the push itself reported success.
+
 #### 16:56:00 IST - T22/T19: Close out repository synchronization session
 - Updated `memory-bank/activeContext.md`, `memory-bank/session_cache.md`,
   `memory-bank/tasks.md`, `memory-bank/tasks/INFRA-1.md`,

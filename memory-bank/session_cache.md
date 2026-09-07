@@ -11,9 +11,9 @@
 - Added runtime validation and reload coverage for participant/message data.
 - TypeScript, focused tests (56), full Vitest (152), package build, and diff
   checks pass.
-- Documentation remains in the final task-scoped commit; Arxivite adoption,
-  submodule changes, browser acceptance, and device acceptance remain outside
-  this session.
+- Documentation is committed as `6054c69` and the feature branch is pushed;
+  Arxivite adoption, submodule changes, browser acceptance, and device
+  acceptance remain outside this session.
 
 ## Prior synchronization checkpoint — 2026-09-07 16:56:00 IST
 
