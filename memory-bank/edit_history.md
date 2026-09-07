@@ -1,6 +1,16 @@
 # Edit History
 *Created: 2026-05-19 11:15:00 IST*
-*Last Updated: 2026-09-01 11:11:59 IST*
+*Last Updated: 2026-09-07 16:11:58 IST*
+
+## 2026-09-07
+
+#### 16:11:58 IST - T19/T22: Make shared application initialization route-safe
+- Updated `memory-bank/tasks/T19.md` and `memory-bank/tasks/T22.md` with the
+  shared `SuperChatApp` cache-key and background-hydration behavior.
+- Added `memory-bank/edits/2026-09-07/161158-T19-T22-route-safe-initialization.md`
+  with the implementation and verification record.
+- The shared source change is ready for its repository commit; Arxivite
+  adoption requires a later gitlink update after that commit is pushed.
 
 ## 2026-09-01
 
