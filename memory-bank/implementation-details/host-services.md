@@ -6,9 +6,9 @@
 
 ## What This Is
 
-A host is the product that runs `super-chat`. For example, Arxivite is a host
-because it knows about papers, PDFs, Supabase, and its signed-in user. Obsidian
-AI is a host because it knows about the vault, notes, and the editor.
+A host is the product that runs `super-chat`. Obsidian AI is the current
+product host because it knows about the vault, notes, and the editor. Arxivite
+was evaluated as a host during the retired integration experiment.
 
 The host gives `super-chat` only the small services it needs. `super-chat`
 still owns the chat screen, streaming, sessions, tools, approvals, and other

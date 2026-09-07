@@ -84,7 +84,7 @@ Tag push (v*) ──→ publish-npm job
 | 0.1.0 | Initial release | Existing development baseline |
 | 0.2.0 | Minor feature | After T25/T16 shared agentic runtime slices |
 | 0.2.1 | Patch fix | Bug fixes |
-| 1.0.0 | Stable API | After T18/T19 and cross-host acceptance |
+| 1.0.0 | Stable API | After T18 and active-host acceptance |
 
 ## Cross-Host Compatibility
 
@@ -93,7 +93,7 @@ super-chat artifact
         |
         +--> fixture host: clean install/build/test
         +--> Obsidian host: package + React + platform checks
-        +--> Arxivite host: package + AI SDK + provider checks
+        +--> historical Arxivite harness: retained compatibility evidence
         +--> standalone host: package + runtime checks
 ```
 

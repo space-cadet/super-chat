@@ -1,6 +1,22 @@
 # Active Context
 
-*Last Updated: 2026-09-07 21:02:51 IST*
+*Last Updated: 2026-09-08 03:42:12 IST*
+
+## Arxivite Direction Change — 2026-09-08
+
+Arxivite has decided not to continue the `super-chat` host migration. Its
+experience with the external integration was not good: the second runtime,
+adapter layers, package pin, nested build, and split persistence/session
+ownership added too much coordination cost. Arxivite will bring its existing
+native chatbot up to selected Obsidian AI capabilities directly, including
+agentic tool calling, multi-user and multi-agent behavior, and tabbed chats.
+
+Arxivite's T95/T101 integration work is historical and superseded. The
+`integrations/arxivite/` harness remains useful as historical compatibility
+evidence, but it is no longer a product adoption target. Super-chat should
+keep its shared runtime generic and continue with the fixture, Obsidian, and
+standalone workstreams. Arxivite-specific source, task, and acceptance records
+belong in the Arxivite repository.
 
 ## Final shared-package merge closeout — 2026-09-07
 
@@ -45,20 +61,21 @@ adoption.
 ## Current Program: INFRA-1 Unified super-chat Application Platform
 
 INFRA-1 is the global progress owner for the shared core, Obsidian extraction,
-Obsidian host migration, Arxivite harness migration, package compatibility,
-standalone desktop, and later mobile work. T22 is its current shared-core and
-host-platform workstream.
+Obsidian host migration, package compatibility, standalone desktop, and later
+mobile work. The Arxivite harness migration is superseded. T22 is its current
+shared-core and host-platform workstream.
 
 Global tracker: `tasks/INFRA-1.md`.
 
-## 2026-09-07 Harness-Neutral Inter-user Messaging Plan
+## 2026-09-07 Harness-Neutral Inter-user Messaging Plan — Historical
 
-The first product harness is Arxivite. Its Memory Bank shows that T95 already
-owns the merged `SuperChatApp`/`ArxiviteSuperChatHost` integration, while T78
+The planned first product harness was Arxivite. Its Memory Bank showed that T95
+owned the merged `SuperChatApp`/`ArxiviteSuperChatHost` integration, while T78
 provides participant and collaborative-session storage but explicitly leaves
 direct messaging out of scope. The shared package therefore needs only an
 optional messaging capability and generic inbound-message lifecycle; Arxivite
 must own membership, authorization, routing, transport, and Supabase storage.
+Arxivite has since retired this host migration.
 
 This work is documented under T22/T19 in super-chat and T101/T32/T78/T95 in
 Arxivite. The public interface catalog and Arxivite consumer mapping now make
@@ -142,9 +159,8 @@ adapters remain compatible.
 Verification passed: TypeScript, 16 Vitest files / 145 tests, package
 ESM/CJS/declaration build, Arxivite engine harness (3 tests), and
 `git diff --check`. The full 31-tool extraction, structured evidence, and live
-Obsidian/Arxivite host acceptance remain open. The Arxivite readiness check was
-not green because its external checkout currently contains unrelated dirty
-work; those files were preserved.
+Obsidian host acceptance remains open. Arxivite host acceptance is superseded;
+the external checkout's prior readiness result remains historical evidence.
 
 ## 2026-09-07 Message Context Plan
 

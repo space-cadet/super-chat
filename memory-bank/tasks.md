@@ -50,7 +50,7 @@ acceptance criteria, and Arxivite adoption remains a separate consumer step.
 | T15 | Extract obsidian-ai Agentic Capabilities | 🔄 | HIGH | T22 | [Details](tasks/T15.md) |
 | T16 | Shared Agentic RAG and Evidence Runtime | 🔄 | CRITICAL | T15, T22 | [Details](tasks/T16.md) |
 | T18 | Migrate obsidian-ai to Obsidian Host | ⬜ | HIGH | T15, T21, T22 | [Details](tasks/T18.md) |
-| T19 | Make Arxivite a super-chat Host Harness | 🔄 | HIGH | T16, T21, T22 | [Details](tasks/T19.md) |
+| T19 | Retired Arxivite super-chat Host Harness | ❌ | HIGH | T16, T21, T22 | [Details](tasks/T19.md) |
 | T25 | Shared Agentic Tool Runtime and Built-in Provider | ⬜ | CRITICAL | T15, T22 | [Details](tasks/T25.md) |
 | T26 | Three-Tier Memory and AI Pruning | ⬜ | HIGH | T15, T22 | [Details](tasks/T26.md) |
 | T27 | PDF, Image, and Markdown Attachments | ⬜ | HIGH | T15, T22 | [Details](tasks/T27.md) |
@@ -61,9 +61,9 @@ acceptance criteria, and Arxivite adoption remains a separate consumer step.
 ## Status Summary
 
 - **Completed**: 12 full task records (including T17 retired/superseded)
-- **In Progress**: 6 (INFRA-1 program; T15 extraction; T16 agentic RAG; T19 Arxivite host; T21 publishing; T22 core platform)
+- **In Progress**: 5 (INFRA-1 program; T15 extraction; T16 agentic RAG; T21 publishing; T22 core platform)
 - **Pending**: 10 (T6 Phase B, T7, T8, T18, T25, T26, T27, T28, T29, T30)
-- **Superseded**: 1 (T13)
+- **Superseded**: 2 (T13; T19 Arxivite host migration)
 - **Total**: 29 task records including INFRA-1
 
 ## Current Phase
@@ -80,10 +80,11 @@ tool-provider model; T16 turns that runtime into shared agentic RAG with
 structured evidence. An external Arxivite test area exercises the real
 chatbot tool registry through the current engine, but live provider, product
 host, and UI acceptance remain open. Package compatibility must be settled
-before product code is updated. The Arxivite-first inter-user messaging
-boundary is documented under T22/T19; Arxivite routing remains in its T32/T78
-records.
+before any active product code is updated. The Arxivite-first inter-user
+messaging boundary is historical; Arxivite routing and native chatbot parity
+now belong to its T32/T78/T102 records.
 
-T22 also owns the canonical public interface-component catalog. T19 tracks
-shared compatibility with Arxivite, while Arxivite T101 owns package-pin
-adoption, adapter work, and product acceptance.
+T22 also owns the canonical public interface-component catalog. T19 is
+retained as the historical record of the Arxivite host experiment and no
+longer tracks an active product migration. Arxivite T102/T102a now own its
+native chatbot parity work in the Arxivite repository.

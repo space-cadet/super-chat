@@ -114,9 +114,11 @@ is complete only after the consumer pins and verifies that exact revision. The
 current shared implementation commits are `b46731a` and `f9822cc`; no consumer
 pin was changed here.
 
-## Arxivite Mapping
+## Arxivite Mapping — Historical
 
 Arxivite-specific adapter names, Supabase mappings, current pins, and product
 acceptance belong in Arxivite's
 `memory-bank/implementation-details/super-chat-host-integration.md`. T19 tracks
-shared compatibility; Arxivite T101 owns product adoption.
+shared compatibility during the retired experiment. Arxivite T101's product
+adoption work is superseded; current Arxivite parity work belongs to its native
+T102/T102a records.

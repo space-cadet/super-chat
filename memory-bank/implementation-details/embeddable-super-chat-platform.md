@@ -1,7 +1,7 @@
 # Embeddable super-chat Application Platform
 
 *Created: 2026-08-31 22:25:18 IST*
-*Last Updated: 2026-09-07 15:45:36 IST*
+*Last Updated: 2026-09-08 03:42:12 IST*
 *Program Owner: INFRA-1*
 *Shared-Core Workstream: T22*
 
@@ -18,9 +18,16 @@ The first message-context decisions are recorded in
 ## 1. Decision
 
 `super-chat` will be the complete, embeddable chat application and reusable
-chat runtime for all products in this family.
+chat runtime for the fixture, `obsidian-ai`, and future standalone hosts.
 
-`arxivite`, `obsidian-ai`, and future standalone shells are hosts. A host
+Arxivite is no longer an active adoption target. Its attempted host migration
+was retired after the second runtime, adapter layers, package/build
+coordination, and split persistence/session ownership proved too complex in
+practice. Arxivite will implement selected Obsidian AI capabilities directly
+in its existing native chatbot. T95/T101 and the Arxivite harness remain
+historical records only.
+
+`obsidian-ai` and future standalone shells are active hosts. A host
 provides product data and platform capabilities; it does not implement chat
 mechanics around `ChatEngine`.
 
@@ -43,7 +50,6 @@ super-chat
   diagnostics, usage, and reusable settings UI
         |
         +-- Obsidian host: vault, editor, workspace, plugin services
-        +-- Arxivite host: papers, PDFs, tool provider, Supabase, navigation
         +-- Standalone host: files, database, keychain, operating-system shell
 ```
 
@@ -267,10 +273,11 @@ For every vertical slice:
 7. Perform manual Obsidian acceptance when platform behavior is involved.
 8. Only then remove the superseded Obsidian implementation.
 
-## 9. Arxivite End State
+## 9. Arxivite End State — Historical
 
-Arxivite supplies identity, authorization, papers, bookmarks, collections,
-notes, reading history, Supabase storage, paper/PDF tool providers, evidence
+The retired host proposal described Arxivite supplying identity, authorization,
+papers, bookmarks, collections, notes, reading history, Supabase storage,
+paper/PDF tool providers, evidence
 sources, risk metadata, navigation, and product-specific provider policy.
 
 Arxivite must not own in the final path:
@@ -294,6 +301,10 @@ Migration sequence:
 7. Make the host path the default only after acceptance.
 8. Remove legacy mechanics in a separate reversible change.
 
+This sequence is retained for historical context and is no longer an active
+INFRA-1 deliverable. Arxivite's current implementation plan is maintained in
+its native T102/T102a Memory Bank records.
+
 ## 10. Package Boundaries
 
 ```text
@@ -312,10 +323,11 @@ Arxivite adapter belongs in Arxivite; the Obsidian adapter belongs in
 1. Unit tests for shared state machines and helpers.
 2. Contract tests applied to every host capability implementation.
 3. Fixture-host browser integration tests for complete flows.
-4. Product tests in `obsidian-ai` and `arxivite`.
+4. Product tests in `obsidian-ai`; Arxivite host tests are historical.
 5. Clean-install/build tests for each dependency environment.
 6. Manual Obsidian acceptance for vault/editor/workspace behavior.
-7. Arxivite browser, Electron, Android, and iOS acceptance as applicable.
+7. Standalone and Obsidian acceptance as applicable; Arxivite host acceptance
+   is superseded.
 8. Standalone signing, updating, credential, storage, and recovery tests.
 
 ## 12. First Implementation Steps
@@ -371,6 +383,5 @@ Do not begin the broad Obsidian migration until these steps are green.
 ## 14. Completion Definition
 
 T22 is complete only when `super-chat` is demonstrably the chat application in
-the fixture, Obsidian, and Arxivite environments, with hosts restricted to
-data/platform capabilities and no duplicate chat mechanics in active product
-paths.
+the fixture and Obsidian environments, with hosts restricted to data/platform
+capabilities and no duplicate chat mechanics in active product paths.

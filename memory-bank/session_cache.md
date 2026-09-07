@@ -1,6 +1,17 @@
 # Session Cache — super-chat
 
-*Last Updated*: 2026-09-07 21:02:51 IST
+*Last Updated*: 2026-09-08 03:42:12 IST
+
+## Current Session: Record Arxivite Native-Parity Decision — 2026-09-08 03:42:12 IST
+
+- Recorded Arxivite's decision to stop pursuing the `SuperChatApp` host
+  migration after the second-runtime and adapter approach proved too complex.
+- Arxivite will implement selected Obsidian AI capabilities directly in its
+  native chatbot, LLM, tool, RAG, and persistence services.
+- Marked Arxivite host adoption as superseded in shared planning records while
+  retaining T95/T101 and the external harness as historical evidence.
+- Kept shared super-chat work focused on reusable runtime/UI behavior,
+  Obsidian integration, fixture acceptance, and standalone hosting.
 
 ## Current Session: INFRA-1, T19, T22, T25 — final shared-package merge closeout — 2026-09-07 21:02:51 IST
 
@@ -276,8 +287,8 @@ That checkpoint ended with the standalone work intentionally unpublished.
 
 The older open-item list below belongs to the June 2026 session and is
 superseded by the current continuation above. In particular, T17's proposal
-to make the old Arxivite path the default is retired; T19 owns the real host
-migration.
+to make the old Arxivite path the default is retired; the T19 host migration is
+now superseded and retained for history.
 
 *Session Started*: 2026-06-20 15:23 IST
 *Session Ended*: 2026-06-20 16:38 IST

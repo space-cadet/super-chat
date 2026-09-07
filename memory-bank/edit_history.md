@@ -1,6 +1,20 @@
 # Edit History
 *Created: 2026-05-19 11:15:00 IST*
-*Last Updated: 2026-09-07 21:02:51 IST*
+*Last Updated: 2026-09-08 03:42:12 IST*
+
+#### 03:42:12 IST - T19/T22/INFRA-1: Record Arxivite native-parity decision
+- Updated `memory-bank/activeContext.md` - Recorded Arxivite's decision to
+  retire the super-chat host migration and pursue native chatbot parity.
+- Updated `memory-bank/session_cache.md` - Recorded the decision and current
+  shared workstream.
+- Updated `memory-bank/tasks.md`, `memory-bank/tasks/T19.md`,
+  `memory-bank/tasks/T22.md`, and `memory-bank/tasks/INFRA-1.md` - Marked the
+  Arxivite migration historical/superseded and kept shared work active.
+- Updated `memory-bank/implementation-details/embeddable-super-chat-platform.md`
+  - Removed Arxivite from the active host target while preserving the retired
+  migration record.
+- Updated `src/react/components/ChatApp.tsx` - Kept sidebar opening local to
+  the UI and removed the redundant session reload on every open.
 
 #### 21:02:51 IST - INFRA-1, T19, T22, T25: Record final shared-package merge closeout
 - Updated `memory-bank/activeContext.md` - Recorded the final source commits,

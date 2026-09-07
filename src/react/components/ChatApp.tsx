@@ -57,7 +57,7 @@ export function ChatApp({
       <header className="bg-white border-b px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => { setSidebarOpen(true); loadSessions(); }}
+            onClick={() => setSidebarOpen(true)}
             className="p-2 hover:bg-gray-100 rounded-lg text-gray-600"
             title="Open sidebar"
           >

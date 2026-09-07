@@ -1,11 +1,21 @@
 # INFRA-1: Unified super-chat Application Platform Program
 
 *Created: 2026-08-31 22:44:08 IST*
-*Last Updated: 2026-09-07 17:32:30 IST*
+*Last Updated: 2026-09-08 03:42:12 IST*
 
 **Status**: 🔄 **IN PROGRESS**
 **Priority**: CRITICAL
 **Scope**: `super-chat`, `obsidian-ai`, `arxivite`, standalone desktop, mobile
+
+## Arxivite Decision — 2026-09-08
+
+Arxivite has retired the planned `SuperChatApp` host migration after the
+external integration proved too complex in practice. It will implement
+selected Obsidian AI capabilities directly in its existing native chatbot,
+including agentic tool calling, multi-user and multi-agent behavior, and
+tabbed chats. T19 and the Arxivite phases below remain historical and are
+superseded; INFRA-1 continues with shared core, fixture, Obsidian, package,
+and standalone work.
 
 ## Reconciliation Session — 2026-09-07
 
@@ -287,9 +297,9 @@ fixture and Obsidian hosts.
 **Exit criterion**: the active plugin path uses shared chat mechanics while
 vault, editor, workspace, plugin, sync, and updater behavior remain host-owned.
 
-### Phase 9: Arxivite host harness
+### Phase 9: Arxivite host harness — SUPERSEDED
 
-**Owner**: T19  
+**Owner**: T19 (historical)
 **Status**: ⬜ Pending; external test preparation complete; product host work
 remains
 
@@ -309,9 +319,9 @@ unmigrated.
 **Exit criterion**: Arxivite's new path contains no product-owned stream loop,
 assistant accumulation, tool workflow, or duplicate message persistence.
 
-### Phase 10: Arxivite acceptance and default switch
+### Phase 10: Arxivite acceptance and default switch — SUPERSEDED
 
-**Owner**: T19  
+**Owner**: T19 (historical)
 **Status**: ⬜ Pending
 
 - [ ] Verify sessions, reload, switching, streaming, and cancellation.
@@ -323,7 +333,7 @@ assistant accumulation, tool workflow, or duplicate message persistence.
 **Exit criterion**: recorded acceptance supports changing the default without
 relying on the intermediate engine path.
 
-### Phase 11: Legacy-mechanics removal
+### Phase 11: Legacy-mechanics removal — SUPERSEDED FOR ARXIVITE
 
 **Owners**: T18 and T19  
 **Status**: ⬜ Pending
@@ -369,7 +379,6 @@ INFRA-1
   -> T21 versioning and compatibility
   -> T15 first Obsidian extraction
   -> T18 Obsidian host migration
-  -> T19 Arxivite host and acceptance
   -> legacy removal
   -> standalone desktop
   -> mobile hosts

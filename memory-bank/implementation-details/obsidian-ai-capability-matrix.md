@@ -12,7 +12,7 @@ characterization tests
 neutral super-chat mechanism
           |
           +--> Obsidian host adapter
-          +--> Arxivite host adapter
+          +--> historical Arxivite host adapter experiment
           +--> fixture provider
 ```
 
