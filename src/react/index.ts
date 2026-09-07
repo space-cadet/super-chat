@@ -15,6 +15,7 @@ export {
   ChatInput,
   PendingToolCard,
   SessionSidebar,
+  SessionTabs,
   ToolResultCard,
   MarkdownRenderer,
 } from './components';

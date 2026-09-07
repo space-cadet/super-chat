@@ -30,6 +30,7 @@ import type { ChatEngine } from "../../core/ChatEngine";
 export interface UseChatState {
   messages: ChatMessage[];
   sessions: ChatSession[];
+  openSessionIds: string[];
   currentSession: ChatSession | null;
   isStreaming: boolean;
   error: string | null;
@@ -41,6 +42,8 @@ export interface UseChatActions {
   sendMessage: (text: string) => Promise<void>;
   createSession: (title?: string) => ChatSession;
   switchSession: (sessionId: string) => boolean;
+  openSession: (sessionId: string) => boolean;
+  closeSessionTab: (sessionId: string) => boolean;
   deleteSession: (sessionId: string) => Promise<void>;
   archiveSession: (sessionId: string) => Promise<void>;
   stopStreaming: () => void;
@@ -52,12 +55,17 @@ export interface UseChatActions {
 
 export type UseChatReturn = UseChatState & UseChatActions;
 
+function getOpenSessionIds(engine: ChatEngine): string[] {
+  return engine.getOpenSessionIds?.() ?? [];
+}
+
 export function useChat(
 	engine: ChatEngine,
 	options?: { initialSessionId?: string; loadSessionsOnMount?: boolean },
 ): UseChatReturn {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [openSessionIds, setOpenSessionIds] = useState<string[]>([]);
   const [currentSession, setCurrentSession] = useState<ChatSession | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,12 +84,15 @@ export function useChat(
       setCurrentSession(session);
       setMessages(session?.messages ?? []);
       setIsStreaming(engine.isStreaming);
+      setSessions(engine.getSessions());
+      setOpenSessionIds(getOpenSessionIds(engine));
     };
 
     sync();
     return engine.subscribe((snapshot) => {
       const session = engine.getActiveSession();
       setSessions(snapshot.sessions);
+      setOpenSessionIds(snapshot.openSessionIds);
       setCurrentSession(session);
       setIsStreaming(snapshot.isStreaming);
       setPendingTools(snapshot.pendingApprovals);
@@ -95,6 +106,7 @@ export function useChat(
   const loadSessions = useCallback(async () => {
     const loaded = await engine.loadSessions();
     setSessions(loaded);
+    setOpenSessionIds(getOpenSessionIds(engine));
   }, [engine]);
 
   // Load sessions on mount + optionally switch to initial session
@@ -144,6 +156,7 @@ export function useChat(
                     role: "assistant",
                     content: assistantText,
                     timestamp: Date.now(),
+                    sender: { id: "assistant", name: "Assistant", kind: "assistant" },
                   },
                 ];
               });
@@ -176,6 +189,7 @@ export function useChat(
     (title?: string) => {
       const session = engine.createSession(title);
       setSessions(engine.getSessions());
+      setOpenSessionIds(getOpenSessionIds(engine));
       setCurrentSession(session);
       setMessages([]);
       return session;
@@ -210,10 +224,39 @@ export function useChat(
         const session = engine.getActiveSession();
         setCurrentSession(session);
         setMessages(session?.messages ?? []);
+        setOpenSessionIds(getOpenSessionIds(engine));
       }
       return ok;
     },
     [engine]
+  );
+
+  const openSession = useCallback(
+    (sessionId: string) => {
+      const ok = engine.openSession?.(sessionId) ?? engine.switchSession(sessionId);
+      if (ok) {
+        const session = engine.getActiveSession();
+        setCurrentSession(session);
+        setMessages(session?.messages ?? []);
+        setOpenSessionIds(getOpenSessionIds(engine));
+      }
+      return ok;
+    },
+    [engine],
+  );
+
+  const closeSessionTab = useCallback(
+    (sessionId: string) => {
+      const ok = engine.closeSessionTab?.(sessionId) ?? false;
+      if (ok) {
+        const session = engine.getActiveSession();
+        setCurrentSession(session);
+        setMessages(session?.messages ?? []);
+        setOpenSessionIds(getOpenSessionIds(engine));
+      }
+      return ok;
+    },
+    [engine],
   );
 
   const deleteSession = useCallback(
@@ -253,6 +296,7 @@ export function useChat(
   return {
     messages,
     sessions,
+    openSessionIds,
     currentSession,
     isStreaming,
     error,
@@ -261,6 +305,8 @@ export function useChat(
     sendMessage,
     createSession,
     switchSession,
+    openSession,
+    closeSessionTab,
     deleteSession,
     archiveSession,
     stopStreaming,

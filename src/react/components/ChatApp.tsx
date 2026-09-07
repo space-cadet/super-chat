@@ -6,6 +6,7 @@ import { ChatInput } from './ChatInput';
 import { MessageBubble } from './MessageBubble';
 import { SessionSidebar } from './SessionSidebar';
 import { PendingToolCard } from './PendingToolCard';
+import { SessionTabs } from './SessionTabs';
 
 interface ChatAppProps {
 	engine: ChatEngine;
@@ -23,6 +24,7 @@ export function ChatApp({
   const {
     messages,
     sessions,
+    openSessionIds,
     currentSession,
     isStreaming,
     pendingTools,
@@ -30,6 +32,8 @@ export function ChatApp({
     sendMessage,
     createSession,
     switchSession,
+    openSession,
+    closeSessionTab,
     archiveSession,
     stopStreaming,
     approveTool,
@@ -72,6 +76,14 @@ export function ChatApp({
           + New Chat
         </button>
       </header>
+
+      <SessionTabs
+        sessions={sessions}
+        openSessionIds={openSessionIds}
+        activeSessionId={currentSessionId}
+        onSelectSession={openSession}
+        onCloseSession={closeSessionTab}
+      />
 
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
