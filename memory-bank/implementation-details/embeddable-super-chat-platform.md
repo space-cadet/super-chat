@@ -1,7 +1,7 @@
 # Embeddable super-chat Application Platform
 
 *Created: 2026-08-31 22:25:18 IST*
-*Last Updated: 2026-09-07 01:29:34 IST*
+*Last Updated: 2026-09-07 14:19:01 IST*
 *Program Owner: INFRA-1*
 *Shared-Core Workstream: T22*
 
@@ -73,6 +73,8 @@ function ProductChat() {
   and recording provenance for replay.
 - When sessions and messages are loaded, saved, archived, or deleted.
 - Reusable settings and diagnostics that do not depend on a product shell.
+- The generic lifecycle for host-delivered human messages, including sender
+  attribution, duplicate handling, ordering, and reconnect replay.
 
 ### A host owns
 
@@ -84,6 +86,8 @@ function ProductChat() {
 - Navigation into product screens/documents.
 - Secure credential storage and platform lifecycle primitives.
 - Notifications, file pickers, platform dialogs, and shell integration.
+- Conversation membership, authorization, and physical message routing between
+  product instances. The host chooses polling, realtime, or another transport.
 
 The host supplies operations. It does not decide the chat workflow around
 those operations.

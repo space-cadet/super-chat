@@ -1,7 +1,7 @@
 # Memory Bank — super-chat
 
 *Created: 2026-05-19 11:15:00 IST*
-*Last Updated: 2026-09-07 01:45:10 IST*
+*Last Updated: 2026-09-07 14:19:01 IST*
 
 ## Overview
 
@@ -70,4 +70,6 @@ tool-provider model; T16 turns that runtime into shared agentic RAG with
 structured evidence. An external Arxivite test area exercises the real
 chatbot tool registry through the current engine, but live provider, product
 host, and UI acceptance remain open. Package compatibility must be settled
-before product code is updated.
+before product code is updated. The Arxivite-first inter-user messaging
+boundary is documented under T22/T19; Arxivite routing remains in its T32/T78
+records.

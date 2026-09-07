@@ -15,6 +15,15 @@ when a session is continued after reload.
 
 ## Decisions
 
+### Preserve human sender identity
+
+When a host delivers a message from another user, super-chat keeps the
+conversation content in normal chronological context and preserves the host's
+sender ID and display metadata on the visible message. The shared runtime does
+not infer identity from message text, and it does not turn a remote human
+message into a new assistant or agent role. Product routing and membership
+remain host responsibilities.
+
 ### Keep every tool call
 
 One provider response may contain several tool calls. Super-chat must collect

@@ -1,4 +1,4 @@
-# T15, T16, T22, T25: Turn Output and Message Context — 2026-09-07
+# T19, T22, T32, T78, T95: Correct Arxivite Harness Source and Document Inter-user Messaging Boundaries — 2026-09-07
 
 ## Decision
 
@@ -52,3 +52,17 @@ Proposed commit title for this documentation work:
 
 Status: 100% complete for the planning record; implementation and the
 required `obsidian-ai` fix remain open.
+
+## Harness Correction and Messaging Boundary — 2026-09-07
+
+The earlier harness analysis referenced the wrong Memory Bank. The first
+product harness is Arxivite, so the relevant product records are Arxivite T95
+for the merged shared-host integration and T78/T32 for participant and social
+chat work.
+
+The corrected boundary is now recorded in T22/T19 and the shared host,
+persistence, model-context, and embeddable-platform implementation notes:
+super-chat owns generic message lifecycle, sender attribution, persistence
+integration, ordering, deduplication, and reconnect replay; Arxivite owns
+identity, membership, authorization, transport, routing, and Supabase storage.
+No new task or implementation-detail file was needed.

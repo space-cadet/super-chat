@@ -1,6 +1,17 @@
 # Session Cache — super-chat
 
-*Last Updated*: 2026-09-07 01:45:10 IST
+*Last Updated*: 2026-09-07 14:19:01 IST
+
+## Current Session: T22/T19/T32/T78/T95 Harness-Neutral Messaging Plan
+
+- Corrected the source-of-truth repository: Arxivite is the first harness, not
+  Obsidian.
+- Updated shared ownership notes so super-chat owns message lifecycle while
+  Arxivite owns user identity, membership, authorization, transport, routing,
+  and Supabase persistence.
+- Kept the plan KISS: no new task or implementation-detail file, and no
+  requirement for tabs, presence, typing indicators, read receipts, or a
+  multi-agent transport layer.
 
 ## Global Program Tracker
 

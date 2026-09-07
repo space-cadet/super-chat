@@ -1,6 +1,6 @@
 # Shared session persistence
 
-*Last Updated: 2026-09-06 13:13:22 IST*
+*Last Updated: 2026-09-07 14:19:01 IST*
 
 Phase 3 makes the `ChatEngine` the owner of session and turn state. A product
 or host supplies storage operations through `PersistenceAdapter`; it does not
@@ -12,6 +12,11 @@ Every session has a stable `ChatSession.id` owned by `super-chat`. A host may
 also provide `externalIdentity` with a namespace, product ID, and optional
 version. The external value is a mapping only; it is never used as the primary
 session key.
+
+For a shared conversation, the external identity identifies the host-owned
+conversation while the engine continues to own the local session lifecycle.
+Inbound human messages must enter through the same engine-owned persistence
+queue as local user messages. The host must not append a second copy directly.
 
 New sessions are written immediately. The engine also writes before provider
 work begins, so the submitted user message survives a reload even if the
@@ -61,6 +66,12 @@ back through the same owner with reason `migration`.
 The adapter receives a deep clone. This prevents a later in-memory mutation
 from changing an earlier queued snapshot. Deletion and archive operations are
 also serialized by the same engine queue.
+
+Remote delivery adds only the minimum additional guarantees needed for a
+second client: stable message IDs for deduplication, host-provided ordering or
+replay cursors for reconnect, and sender metadata preserved in the visible
+message and model context. Delivery acknowledgements, presence, and read
+receipts are deferred until a real host requires them.
 
 ## Reload, migration, and recovery
 

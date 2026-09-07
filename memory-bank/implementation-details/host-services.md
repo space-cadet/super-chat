@@ -1,7 +1,7 @@
 # Host Services for super-chat
 
 *Created: 2026-08-31 23:19:22 IST*
-*Last Updated: 2026-09-06 13:13:22 IST*
+*Last Updated: 2026-09-07 14:19:01 IST*
 *Program: INFRA-1 Phase 2*
 
 ## What This Is
@@ -68,6 +68,16 @@ checks require stable source provenance tied to the retrieval capability.
 | navigation | Open a paper, note, session, or settings page | Chooses when a chat action should navigate |
 | notifications | Show a product message | Chooses when to report chat state |
 | lifecycle | Start, stop, or report visibility | Stops active chat work safely |
+| messaging (planned) | Send/subscribe to a shared conversation and enforce host membership | Owns message envelopes, sender attribution, lifecycle, persistence integration, and replay |
+
+### Messaging capability (planned)
+
+Remote human conversation is an optional host service. The host supplies a
+conversation identity, authenticated participant facts, and a transport that
+can send and subscribe to messages. The shared package must not assume polling,
+WebSockets, Supabase Realtime, or any product user directory. A transport
+message needs a stable message ID, conversation ID, sender identity, creation
+time, and content; the host remains responsible for authorization and routing.
 
 ## Important Rules
 

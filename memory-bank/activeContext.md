@@ -1,6 +1,6 @@
 # Active Context
 
-*Last Updated: 2026-09-07 01:45:10 IST*
+*Last Updated: 2026-09-07 14:19:01 IST*
 
 ## Current Program: INFRA-1 Unified super-chat Application Platform
 
@@ -10,6 +10,22 @@ standalone desktop, and later mobile work. T22 is its current shared-core and
 host-platform workstream.
 
 Global tracker: `tasks/INFRA-1.md`.
+
+## 2026-09-07 Harness-Neutral Inter-user Messaging Plan
+
+The first product harness is Arxivite. Its Memory Bank shows that T95 already
+owns the merged `SuperChatApp`/`ArxiviteSuperChatHost` integration, while T78
+provides participant and collaborative-session storage but explicitly leaves
+direct messaging out of scope. The shared package therefore needs only an
+optional messaging capability and generic inbound-message lifecycle; Arxivite
+must own membership, authorization, routing, transport, and Supabase storage.
+
+This work is documented under T22/T19 in super-chat and T32/T78/T95 in
+Arxivite. No new task or implementation-detail file is needed. The first
+acceptance target is two authenticated Arxivite instances exchanging messages
+with stable IDs, sender attribution, reconnect replay, duplicate suppression,
+and membership rejection. Tabs, presence, typing indicators, read receipts,
+and multi-agent routing remain separate follow-ups.
 
 ## Current Workstream: T22 Embeddable Application Platform
 
