@@ -23,6 +23,8 @@ import type {
 	ChatEngineListener,
 	ChatEngineSnapshot,
 	ChatMessage,
+	ChatMessageEnvelope,
+	ChatParticipant,
 	ChatModelMessage,
 	ChatSession,
 	ChatSettings,
@@ -59,6 +61,7 @@ import { assembleRetrievedContext, normalizeRetrievalResult } from "./retrieval"
 interface InternalState {
 	sessions: ChatSession[];
 	activeSessionId: string | null;
+	openSessionIds: string[];
 	settings: ChatSettings;
 	isStreaming: boolean;
 	abortController: AbortController | null;
@@ -94,6 +97,44 @@ const defaultSettings: ChatSettings = {
 	autoApply: false,
 	showProviderIndicator: true,
 };
+
+function mergeParticipants(
+	existing: ChatParticipant[],
+	additions: ChatParticipant[],
+): ChatParticipant[] {
+	const merged = new Map(
+		existing.map((participant) => [participant.id, { ...participant }]),
+	);
+	for (const participant of additions) {
+		merged.set(participant.id, { ...participant });
+	}
+	return [...merged.values()];
+}
+
+function isValidParticipant(value: unknown): value is ChatParticipant {
+	if (!value || typeof value !== "object") return false;
+	const participant = value as Record<string, unknown>;
+	return (
+		typeof participant.id === "string" && participant.id.trim().length > 0 &&
+		typeof participant.name === "string" && participant.name.trim().length > 0 &&
+		(participant.kind === "human" || participant.kind === "agent" ||
+			participant.kind === "assistant" || participant.kind === "system") &&
+		(participant.color === undefined || typeof participant.color === "string")
+	);
+}
+
+function isValidMessageEnvelope(value: unknown): value is ChatMessageEnvelope {
+	if (!value || typeof value !== "object") return false;
+	const envelope = value as Record<string, unknown>;
+	return (
+		typeof envelope.id === "string" && envelope.id.trim().length > 0 &&
+		typeof envelope.conversationId === "string" &&
+			envelope.conversationId.trim().length > 0 &&
+		typeof envelope.content === "string" && envelope.content.trim().length > 0 &&
+		typeof envelope.createdAt === "number" && Number.isFinite(envelope.createdAt) &&
+		isValidParticipant(envelope.sender)
+	);
+}
 
 // ============================================================================
 // ChatEngine
@@ -136,6 +177,7 @@ export class ChatEngine {
 		this.state = {
 			sessions: [],
 			activeSessionId: null,
+			openSessionIds: [],
 			settings: { ...defaultSettings },
 			isStreaming: false,
 			abortController: null,
@@ -188,6 +230,12 @@ export class ChatEngine {
 			) {
 				this.state.activeSessionId = this.state.sessions[0]?.id ?? null;
 			}
+			this.state.openSessionIds = this.state.openSessionIds.filter((id) =>
+				this.state.sessions.some((session) => session.id === id),
+			);
+			if (this.state.openSessionIds.length === 0 && this.state.activeSessionId) {
+				this.state.openSessionIds = [this.state.activeSessionId];
+			}
 			for (const session of this.state.sessions) {
 				if (
 					report.migratedSessionIds.includes(session.id) ||
@@ -232,12 +280,19 @@ export class ChatEngine {
 			persistence: createSessionPersistenceMetadata(),
 			turns: [],
 			modelHistory: [],
+			...(this.opts.participant
+				? { participants: [{ ...this.opts.participant }] }
+				: {}),
 			...(externalIdentity ? { externalIdentity } : {}),
 			llmProvider: this.opts.llmAdapter.getProviders()[0]?.id,
 		};
 
 		this.state.sessions.unshift(session);
 		this.state.activeSessionId = session.id;
+		this.state.openSessionIds = [
+			session.id,
+			...this.state.openSessionIds.filter((id) => id !== session.id),
+		];
 		this.emitState();
 		void this.persistSession(session, {
 			owner: "chat-engine",
@@ -254,8 +309,37 @@ export class ChatEngine {
 		if (this.state.isStreaming) this.stopStreaming();
 		else this.cancelPendingApprovals();
 		this.state.activeSessionId = sessionId;
+		if (!this.state.openSessionIds.includes(sessionId)) {
+			this.state.openSessionIds.push(sessionId);
+		}
 		this.emitState();
 		return true;
+	}
+
+	/** Open a saved conversation as a tab and make it active. */
+	openSession(sessionId: string): boolean {
+		return this.switchSession(sessionId);
+	}
+
+	/** Close a tab without deleting the saved conversation. */
+	closeSessionTab(sessionId: string): boolean {
+		const index = this.state.openSessionIds.indexOf(sessionId);
+		if (index < 0) return false;
+		if (this.state.activeSessionId === sessionId) {
+			if (this.state.isStreaming) this.stopStreaming();
+			else this.cancelPendingApprovals();
+		}
+		this.state.openSessionIds.splice(index, 1);
+		if (this.state.activeSessionId === sessionId) {
+			const nextId = this.state.openSessionIds[index] ?? this.state.openSessionIds[index - 1] ?? null;
+			this.state.activeSessionId = nextId;
+		}
+		this.emitState();
+		return true;
+	}
+
+	getOpenSessionIds(): string[] {
+		return [...this.state.openSessionIds];
 	}
 
 	getActiveSession(): ChatSession | null {
@@ -275,9 +359,9 @@ export class ChatEngine {
 		this.state.sessions = this.state.sessions.filter(
 			(s) => s.id !== sessionId,
 		);
+		this.state.openSessionIds = this.state.openSessionIds.filter((id) => id !== sessionId);
 		if (this.state.activeSessionId === sessionId) {
-			this.state.activeSessionId =
-				this.state.sessions[0]?.id ?? null;
+			this.state.activeSessionId = this.state.openSessionIds[0] ?? null;
 		}
 		this.emitState();
 	}
@@ -298,6 +382,51 @@ export class ChatEngine {
 
 	getSessions(): ChatSession[] {
 		return [...this.state.sessions];
+	}
+
+	/**
+	 * Accept a host-delivered human or agent message. Hosts remain responsible
+	 * for authentication, membership, routing, and transport; this method only
+	 * applies the message to the engine-owned session lifecycle.
+	 */
+	async receiveMessage(
+		envelope: ChatMessageEnvelope,
+		sessionId?: string,
+	): Promise<boolean> {
+		if (this.disposed || !isValidMessageEnvelope(envelope)) return false;
+		const session = this.state.sessions.find((candidate) =>
+			candidate.id === (sessionId ?? this.state.activeSessionId),
+		);
+		if (!session || session.messages.some((message) => message.id === envelope.id)) {
+			return false;
+		}
+
+		const role = envelope.sender.kind === "system"
+			? "system"
+			: envelope.sender.kind === "human"
+				? "user"
+				: "assistant";
+		const message: ChatMessage = {
+			id: envelope.id,
+			role,
+			content: envelope.content,
+			timestamp: envelope.createdAt,
+			sender: { ...envelope.sender },
+			metadata: { conversationId: envelope.conversationId, remote: true },
+		};
+		session.messages.push(message);
+		session.modelHistory = [
+			...(session.modelHistory ?? []),
+			{ role, content: envelope.content },
+		];
+		session.participants = mergeParticipants(session.participants ?? [], [envelope.sender]);
+		session.updatedAt = Date.now();
+		await this.persistSession(session, {
+			owner: "chat-engine",
+			reason: "inbound-message",
+		});
+		this.emitState();
+		return true;
 	}
 
 	// --------------------------------------------------------------------------
@@ -421,6 +550,9 @@ export class ChatEngine {
 			role: "user",
 			content: text,
 			timestamp: Date.now(),
+			sender: this.opts.participant
+				? { ...this.opts.participant }
+				: { id: "local-user", name: "You", kind: "human" },
 		};
 		const userModelMessage: ChatModelMessage = {
 			role: "user",
@@ -458,6 +590,10 @@ export class ChatEngine {
 		// The engine is the only write owner. Persist the user input before
 		// retrieval or provider work starts so a reload cannot lose the turn.
 		session.messages.push(userMessage);
+		session.participants = mergeParticipants(
+			session.participants ?? [],
+			[userMessage.sender!],
+		);
 		try {
 			await this.persistSession(session, {
 				owner: "chat-engine",
@@ -724,6 +860,7 @@ export class ChatEngine {
 		return {
 			sessions: [...this.state.sessions],
 			activeSessionId: this.state.activeSessionId,
+			openSessionIds: [...this.state.openSessionIds],
 			isStreaming: this.state.isStreaming,
 			pendingApprovals: [...this.pendingApprovals.values()].map(
 				({ call }) => call,
@@ -1147,6 +1284,7 @@ export class ChatEngine {
 			role: "assistant",
 			content,
 			timestamp: Date.now(),
+			sender: { id: "assistant", name: "Assistant", kind: "assistant" },
 			status,
 			turnId: turn.id,
 			sources: turn.retrievedSources,

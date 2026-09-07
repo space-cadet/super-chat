@@ -11,6 +11,25 @@ export type MessageRole = 'user' | 'assistant' | 'system';
 
 export type SessionId = string;
 
+export type ChatParticipantKind = 'human' | 'agent' | 'assistant' | 'system';
+
+/** Stable identity shown next to a message in a shared conversation. */
+export interface ChatParticipant {
+  id: string;
+  name: string;
+  kind: ChatParticipantKind;
+  color?: string;
+}
+
+/** Transport-neutral message envelope for host-delivered conversation messages. */
+export interface ChatMessageEnvelope {
+  id: string;
+  conversationId: string;
+  sender: ChatParticipant;
+  content: string;
+  createdAt: number;
+}
+
 /** A product identity that can be mapped to a stable super-chat session. */
 export interface ExternalSessionIdentity {
   namespace: string;
@@ -110,6 +129,7 @@ export interface ChatMessage {
   role: MessageRole;
   content: string;
   timestamp: number;
+  sender?: ChatParticipant;
   status?: ChatTurnStatus;
   turnId?: string;
   sources?: ChatRetrievedSource[];
@@ -139,6 +159,8 @@ export interface ChatSession {
   turns?: ChatTurn[];
   /** Provider-neutral history used to continue a reloaded conversation. */
   modelHistory?: ChatModelMessage[];
+  /** Participants observed in this conversation, keyed by stable identity. */
+  participants?: ChatParticipant[];
   llmProvider?: string;
   llmModel?: string;
   archived?: boolean;
@@ -225,6 +247,8 @@ export type StreamEvent =
 export interface ChatEngineSnapshot {
   sessions: ChatSession[];
   activeSessionId: string | null;
+  /** Open UI tabs. This is view state and is intentionally not persisted. */
+  openSessionIds: string[];
   isStreaming: boolean;
   pendingApprovals: ToolCall[];
   retrieval: RetrievalSnapshot;
@@ -258,6 +282,8 @@ export interface AgentLoopOptions {
 
 export interface ChatEngineOptions {
   llmAdapter: LLMAdapter;
+  /** Optional identity used when this engine participates in a shared chat. */
+  participant?: ChatParticipant;
   persistenceAdapter?: PersistenceAdapter;
   ragAdapter?: RAGAdapter;
   toolAdapter?: ToolAdapter;
@@ -269,6 +295,7 @@ export interface ChatEngineOptions {
 export type SessionWriteReason =
   | 'create'
   | 'user-message'
+  | 'inbound-message'
   | 'partial-output'
   | 'tool-call'
   | 'tool-result'

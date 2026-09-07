@@ -92,6 +92,29 @@ describe("session persistence contract", () => {
 		]);
 	});
 
+	it("recovers participant records from sender metadata on reload", () => {
+		const normalized = normalizePersistedSession({
+			id: "shared-session",
+			title: "Shared",
+			createdAt: 1,
+			updatedAt: 2,
+			messages: [{
+				id: "remote-1",
+				role: "user",
+				content: "Hello from another participant",
+				timestamp: 2,
+				sender: { id: "person-1", name: "Reader", kind: "human" },
+			}],
+		});
+
+		expect(normalized.session?.participants).toEqual([
+			{ id: "person-1", name: "Reader", kind: "human" },
+		]);
+		expect(normalized.session?.messages[0].sender).toEqual(
+			{ id: "person-1", name: "Reader", kind: "human" },
+		);
+	});
+
 	it("serializes writes through one engine owner and records lifecycle reasons", async () => {
 		const writes: Array<SessionWriteContext | undefined> = [];
 		const persistence = new MemoryPersistenceAdapter();

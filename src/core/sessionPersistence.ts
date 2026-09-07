@@ -5,6 +5,7 @@ import type {
 	ChatTurn,
 	ExternalSessionIdentity,
 	ChatRetrievedSource,
+	ChatParticipant,
 	SessionPersistenceMetadata,
 	SessionWriteContext,
 } from "./types";
@@ -110,6 +111,11 @@ export function normalizePersistedSession(
 	const recovered = messages.length !== value.messages.length;
 	const turns = normalizeTurns(value.turns);
 	const modelHistory = normalizeModelHistory(value.modelHistory);
+	const storedParticipants = normalizeParticipants(value.participants) ?? [];
+	const messageParticipants = messages.flatMap((message) =>
+		message.sender ? [message.sender] : [],
+	);
+	const participants = mergeParticipants(storedParticipants, messageParticipants);
 
 	const session: ChatSession = {
 		id: value.id,
@@ -123,6 +129,7 @@ export function normalizePersistedSession(
 			: {}),
 		...(turns ? { turns } : {}),
 		...(modelHistory ? { modelHistory } : {}),
+		...(participants.length > 0 ? { participants } : {}),
 		...(typeof value.llmProvider === "string"
 			? { llmProvider: value.llmProvider }
 			: {}),
@@ -187,6 +194,27 @@ function normalizeModelHistory(value: unknown): ChatModelMessage[] | null {
 	return messages.length === value.length ? cloneModelMessages(messages) : null;
 }
 
+function normalizeParticipants(value: unknown): ChatParticipant[] | null {
+	if (!Array.isArray(value)) return null;
+	const participants = value.filter(isChatParticipant);
+	return participants.length === value.length
+		? participants.map((participant) => ({ ...participant }))
+		: null;
+}
+
+function mergeParticipants(
+	existing: ChatParticipant[],
+	additions: ChatParticipant[],
+): ChatParticipant[] {
+	const merged = new Map(
+		existing.map((participant) => [participant.id, { ...participant }]),
+	);
+	for (const participant of additions) {
+		merged.set(participant.id, { ...participant });
+	}
+	return [...merged.values()];
+}
+
 function isChatMessage(value: unknown): value is ChatMessage {
 	return (
 		isRecord(value) &&
@@ -196,6 +224,18 @@ function isChatMessage(value: unknown): value is ChatMessage {
 		typeof value.timestamp === "number" &&
 		(value.sources === undefined ||
 			(Array.isArray(value.sources) && value.sources.every(isRetrievedSource)))
+		&& (value.sender === undefined || isChatParticipant(value.sender))
+	);
+}
+
+function isChatParticipant(value: unknown): value is ChatParticipant {
+	return (
+		isRecord(value) &&
+		typeof value.id === "string" && value.id.length > 0 &&
+		typeof value.name === "string" && value.name.length > 0 &&
+		(value.kind === "human" || value.kind === "agent" ||
+			value.kind === "assistant" || value.kind === "system") &&
+		(value.color === undefined || typeof value.color === "string")
 	);
 }
 

@@ -858,6 +858,66 @@ describe("ChatEngine", () => {
 		});
 	});
 
+	describe("conversation tabs and participants", () => {
+		it("opens and closes tabs without deleting saved sessions", () => {
+			const engine = new ChatEngine({ llmAdapter: createMockLLMAdapter() });
+			const first = engine.createSession("First");
+			const second = engine.createSession("Second");
+
+			expect(engine.getOpenSessionIds()).toEqual([second.id, first.id]);
+			expect(engine.openSession(first.id)).toBe(true);
+			expect(engine.getActiveSession()?.id).toBe(first.id);
+			expect(engine.closeSessionTab(first.id)).toBe(true);
+			expect(engine.getOpenSessionIds()).toEqual([second.id]);
+			expect(engine.getActiveSession()?.id).toBe(second.id);
+			expect(engine.getSessions()).toHaveLength(2);
+		});
+
+		it("persists an inbound participant message once and suppresses duplicates", async () => {
+			const persistence = createMockPersistenceAdapter();
+			const engine = new ChatEngine({
+				llmAdapter: createMockLLMAdapter(),
+				persistenceAdapter: persistence,
+			});
+			const session = engine.createSession("Shared");
+			const envelope = {
+				id: "remote-message-1",
+				conversationId: "conversation-1",
+				sender: { id: "agent-1", name: "Researcher", kind: "agent" as const, color: "#9333ea" },
+				content: "I found a relevant paper.",
+				createdAt: 123,
+			};
+
+			expect(await engine.receiveMessage(envelope, session.id)).toBe(true);
+			expect(await engine.receiveMessage(envelope, session.id)).toBe(false);
+			expect(engine.getActiveSession()?.messages).toEqual([
+				expect.objectContaining({
+					id: envelope.id,
+					role: "assistant",
+					content: envelope.content,
+					sender: envelope.sender,
+				}),
+			]);
+			expect(engine.getActiveSession()?.participants).toContainEqual(envelope.sender);
+			expect(persistence.saveSession).toHaveBeenCalled();
+		});
+
+		it("rejects malformed inbound envelopes without changing the session", async () => {
+			const engine = new ChatEngine({ llmAdapter: createMockLLMAdapter() });
+			const session = engine.createSession("Shared");
+
+			expect(await engine.receiveMessage(null as never, session.id)).toBe(false);
+			expect(await engine.receiveMessage({
+				id: "remote-2",
+				conversationId: "conversation-1",
+				sender: { id: "person-1", name: "Reader", kind: "human" },
+				content: "   ",
+				createdAt: Number.NaN,
+			} as never, session.id)).toBe(false);
+			expect(session.messages).toEqual([]);
+		});
+	});
+
 	describe("settings", () => {
 		it("updates and retrieves settings", () => {
 			const adapter = createMockLLMAdapter();

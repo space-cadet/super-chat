@@ -5,6 +5,9 @@
 // Core types
 export type {
 	MessageRole,
+	ChatParticipantKind,
+	ChatParticipant,
+	ChatMessageEnvelope,
 	ChatMessage,
 	ChatContentPart,
 	ChatModelMessage,
