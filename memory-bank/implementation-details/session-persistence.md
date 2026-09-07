@@ -1,10 +1,16 @@
 # Shared session persistence
 
-*Last Updated: 2026-09-07 14:19:01 IST*
+*Last Updated: 2026-09-07 15:45:36 IST*
 
 Phase 3 makes the `ChatEngine` the owner of session and turn state. A product
 or host supplies storage operations through `PersistenceAdapter`; it does not
 append messages or maintain a second copy of the conversation.
+
+Loading, hydration, active-session selection, tab/session state, creation,
+switching, in-memory unloading, persistence scheduling, archive intent, and
+delete intent are shared lifecycle concerns. The host performs physical
+storage operations. Unloading an inactive session from client memory is not a
+durable delete operation.
 
 ## Identity
 
@@ -70,8 +76,9 @@ also serialized by the same engine queue.
 Remote delivery adds only the minimum additional guarantees needed for a
 second client: stable message IDs for deduplication, host-provided ordering or
 replay cursors for reconnect, and sender metadata preserved in the visible
-message and model context. Delivery acknowledgements, presence, and read
-receipts are deferred until a real host requires them.
+message while its content and role enter chronological model history.
+Delivery acknowledgements, presence, and read receipts are deferred until a
+real host requires them.
 
 ## Reload, migration, and recovery
 

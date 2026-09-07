@@ -1,6 +1,46 @@
 # Active Context
 
-*Last Updated: 2026-09-07 14:19:01 IST*
+*Last Updated: 2026-09-07 17:32:30 IST*
+
+## Reconciliation and implementation closeout — 2026-09-07
+
+The live checkout was verified before implementation: branch
+`fix/arxivite-package-build`, with `origin/fix/arxivite-package-build` three
+commits behind, all pre-existing tracked edits staged, and the tab/UI and
+public-interface records untracked. The preserved shared work is now split
+into package commits `b46731a` (agent/context/session behavior) and `f9822cc`
+(session tabs, sender UI, and tests).
+
+TypeScript, focused tests (56 tests), the full Vitest suite (152 tests), the
+package ESM/CJS/declaration build, and diff checks pass. The documentation
+commit is still being prepared in this checkout. These are package-level
+results only; no Arxivite source, submodule pointer, browser acceptance, or
+device acceptance was changed or claimed.
+
+## Prior synchronization checkpoint — 2026-09-07
+
+The remote synchronization work is complete. `fix/arxivite-package-build`
+contains local merge commit `1ce53d5`, with `origin/main` at `98fbfa2` as an
+ancestor. TypeScript, 18 Vitest files / 152 tests, the package build, and diff
+checks passed after the merge.
+
+Arxivite `main` is clean at `c3af4ad`, and its `packages/super-chat` submodule
+is clean and pinned to `98fbfa2`. The standalone tabbed-session,
+participant/message, and public-interface changes were preserved for the
+reconciliation session recorded above.
+
+## Public Interface and Arxivite Adoption Boundary (2026-09-07)
+
+T22 now owns the canonical public interface-component catalog, including
+React entry points, host capabilities, lifecycle ownership, stability labels,
+and cross-repository delivery rules. T19 tracks the shared package's Arxivite
+compatibility and conformance view.
+
+Arxivite T101 is the product-side adoption owner. A shared change is not
+accepted in Arxivite until its exact commit is pinned through the submodule and
+verified in the product. Package, integration, browser, and device evidence
+remain separate. The package commits above are not claimed as Arxivite
+adoption.
 
 ## Current Program: INFRA-1 Unified super-chat Application Platform
 
@@ -20,8 +60,9 @@ direct messaging out of scope. The shared package therefore needs only an
 optional messaging capability and generic inbound-message lifecycle; Arxivite
 must own membership, authorization, routing, transport, and Supabase storage.
 
-This work is documented under T22/T19 in super-chat and T32/T78/T95 in
-Arxivite. No new task or implementation-detail file is needed. The first
+This work is documented under T22/T19 in super-chat and T101/T32/T78/T95 in
+Arxivite. The public interface catalog and Arxivite consumer mapping now make
+the package boundary and paired delivery workflow explicit. The first
 acceptance target is two authenticated Arxivite instances exchanging messages
 with stable IDs, sender attribution, reconnect replay, duplicate suppression,
 and membership rejection. Tabs, presence, typing indicators, read receipts,

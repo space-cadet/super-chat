@@ -1,7 +1,7 @@
 # Host Services for super-chat
 
 *Created: 2026-08-31 23:19:22 IST*
-*Last Updated: 2026-09-07 14:19:01 IST*
+*Last Updated: 2026-09-07 15:45:36 IST*
 *Program: INFRA-1 Phase 2*
 
 ## What This Is
@@ -16,6 +16,11 @@ shared chat behavior.
 
 The public types are in `src/contracts/host.ts`. Consumers can import them
 from `super-chat/contracts` or from the main `super-chat` export.
+
+The complete public surface and stability labels are cataloged in
+[`public-interface-components.md`](public-interface-components.md). This guide
+explains host implementation; it does not authorize imports from internal
+`src/` modules.
 
 ## How to Build a Host
 
@@ -68,16 +73,18 @@ checks require stable source provenance tied to the retrieval capability.
 | navigation | Open a paper, note, session, or settings page | Chooses when a chat action should navigate |
 | notifications | Show a product message | Chooses when to report chat state |
 | lifecycle | Start, stop, or report visibility | Stops active chat work safely |
-| messaging (planned) | Send/subscribe to a shared conversation and enforce host membership | Owns message envelopes, sender attribution, lifecycle, persistence integration, and replay |
+| messaging (host capability planned; engine lifecycle implemented) | Send/subscribe to a shared conversation and enforce host membership | Owns message envelopes, sender attribution, lifecycle, persistence integration, duplicate handling, and replay |
 
-### Messaging capability (planned)
+### Messaging capability (host side planned)
 
-Remote human conversation is an optional host service. The host supplies a
-conversation identity, authenticated participant facts, and a transport that
-can send and subscribe to messages. The shared package must not assume polling,
-WebSockets, Supabase Realtime, or any product user directory. A transport
-message needs a stable message ID, conversation ID, sender identity, creation
-time, and content; the host remains responsible for authorization and routing.
+Remote human conversation is an optional host service that is not yet part of
+the public host contract. The shared engine already accepts a validated
+`ChatMessageEnvelope`, deduplicates it, preserves sender metadata, and routes
+it through the engine-owned persistence queue. A future host capability will
+supply conversation identity, authenticated participant facts, and a transport
+for send/subscribe. The shared package must not assume polling, WebSockets,
+Supabase Realtime, or any product user directory; the host remains responsible
+for authorization and routing.
 
 ## Important Rules
 

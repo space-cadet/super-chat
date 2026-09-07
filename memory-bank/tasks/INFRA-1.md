@@ -1,11 +1,19 @@
 # INFRA-1: Unified super-chat Application Platform Program
 
 *Created: 2026-08-31 22:44:08 IST*
-*Last Updated: 2026-09-07 01:29:34 IST*
+*Last Updated: 2026-09-07 17:32:30 IST*
 
 **Status**: 🔄 **IN PROGRESS**
 **Priority**: CRITICAL
 **Scope**: `super-chat`, `obsidian-ai`, `arxivite`, standalone desktop, mobile
+
+## Reconciliation Session — 2026-09-07
+
+The live standalone branch was verified before editing. Shared implementation
+is committed as `b46731a` and `f9822cc`; TypeScript, 152 Vitest tests, the
+package build, and diff checks pass. No INFRA-1 task is closed by this
+session. Package verification is separate from Arxivite pin adoption and
+product/browser/device acceptance, which remain out of scope here.
 
 ## Program Objective
 
@@ -29,6 +37,8 @@ return <SuperChatApp host={host} />;
 
 - Architecture, ownership, contracts, and migration method:
   [`implementation-details/embeddable-super-chat-platform.md`](../implementation-details/embeddable-super-chat-platform.md)
+- Public interface components, capability ownership, and compatibility rules:
+  [`implementation-details/public-interface-components.md`](../implementation-details/public-interface-components.md)
 - Shared-core execution workstream: [T22](T22.md)
 - Global task registry: [`tasks.md`](../tasks.md)
 

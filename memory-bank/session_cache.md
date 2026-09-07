@@ -1,6 +1,46 @@
 # Session Cache — super-chat
 
-*Last Updated*: 2026-09-07 14:19:01 IST
+*Last Updated*: 2026-09-07 17:32:30 IST
+
+## Current Session: Reconciliation and implementation closeout — 2026-09-07 17:32:30 IST
+
+- Verified the live branch and preserved all pre-existing staged and untracked
+  work before editing.
+- Committed package behavior as `b46731a` and shared session-tabs UI as
+  `f9822cc`.
+- Added runtime validation and reload coverage for participant/message data.
+- TypeScript, focused tests (56), full Vitest (152), package build, and diff
+  checks pass.
+- Documentation remains in the final task-scoped commit; Arxivite adoption,
+  submodule changes, browser acceptance, and device acceptance remain outside
+  this session.
+
+## Prior synchronization checkpoint — 2026-09-07 16:56:00 IST
+
+- Merged refreshed `origin/main` into `fix/arxivite-package-build` as
+  `1ce53d5`; `origin/main` is `98fbfa2` and is fully incorporated.
+- Resolved the Memory Bank and `useChat` restore conflicts without discarding
+  the saved feature work.
+- Verification passed: TypeScript, 18 Vitest files / 152 tests, package
+  ESM/CJS/declaration build, and diff checks.
+- Arxivite remains clean at `c3af4ad`; its `packages/super-chat` submodule is
+  clean and pinned to `98fbfa2`.
+- Tabbed-session, participant/message, and public-interface changes were
+  preserved for the reconciliation session above.
+- The temporary restore backup remains as `stash@{0}` for later review.
+
+That checkpoint ended with the standalone work intentionally unpublished.
+
+## Current Continuation: T22/T19 Public Interface and Arxivite Adoption Boundary
+
+- Added the canonical catalog of public React exports, host capabilities,
+  stability labels, session ownership, and consumer delivery rules.
+- Linked the catalog from INFRA-1, T22, T19, host services, persistence, and
+  the embeddable-platform architecture.
+- Assigned product-side pin adoption, adapter mapping, and acceptance to
+  Arxivite T101 while keeping shared compatibility under T19.
+- Preserved the feature branch's existing uncommitted source work; no source
+  commit or push was performed.
 
 ## Current Session: T22/T19/T32/T78/T95 Harness-Neutral Messaging Plan
 
@@ -9,9 +49,10 @@
 - Updated shared ownership notes so super-chat owns message lifecycle while
   Arxivite owns user identity, membership, authorization, transport, routing,
   and Supabase persistence.
-- Kept the plan KISS: no new task or implementation-detail file, and no
-  requirement for tabs, presence, typing indicators, read receipts, or a
-  multi-agent transport layer.
+- Kept the generic messaging plan under existing tasks; tabs, presence, typing
+  indicators, read receipts, and a multi-agent transport remain follow-ups.
+- Added the later-approved interface catalog as a focused implementation
+  record under T22 rather than creating another shared task.
 
 ## Global Program Tracker
 

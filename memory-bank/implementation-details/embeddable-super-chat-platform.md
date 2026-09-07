@@ -1,7 +1,7 @@
 # Embeddable super-chat Application Platform
 
 *Created: 2026-08-31 22:25:18 IST*
-*Last Updated: 2026-09-07 14:19:01 IST*
+*Last Updated: 2026-09-07 15:45:36 IST*
 *Program Owner: INFRA-1*
 *Shared-Core Workstream: T22*
 
@@ -9,6 +9,8 @@ Forward implementation detail:
 [`agentic-tool-runtime.md`](agentic-tool-runtime.md),
 [`agentic-rag-evidence.md`](agentic-rag-evidence.md), and
 [`host-tool-provider-contract.md`](host-tool-provider-contract.md).
+The canonical public React and host interface catalog is
+[`public-interface-components.md`](public-interface-components.md).
 
 The first message-context decisions are recorded in
 [`model-history-and-context.md`](model-history-and-context.md).
@@ -91,6 +93,10 @@ function ProductChat() {
 
 The host supplies operations. It does not decide the chat workflow around
 those operations.
+
+Product Memory Banks document only their adapter mapping, pinned revision, and
+acceptance evidence. They link to the public interface catalog rather than
+copying or redefining shared contract semantics.
 
 ## 4. Capability-Based Host Contract
 

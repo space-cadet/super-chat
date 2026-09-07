@@ -1,13 +1,21 @@
 # Memory Bank — super-chat
 
 *Created: 2026-05-19 11:15:00 IST*
-*Last Updated: 2026-09-07 14:19:01 IST*
+*Last Updated: 2026-09-07 17:32:30 IST*
 
 ## Overview
 
 A complete, embeddable chat application and reusable runtime. `super-chat`
 owns chat mechanics and UI; products such as `obsidian-ai` and `arxivite`
 provide data and platform capabilities through neutral host contracts.
+
+## Reconciliation Session — 2026-09-07
+
+The live feature branch was inspected before editing. The preserved shared
+implementation is committed as `b46731a` and `f9822cc`; the final documentation
+commit records the public-interface boundary and this verification separately.
+TypeScript, 152 tests, the package build, and diff checks passed. No task is
+closed by this session, and Arxivite adoption remains a separate consumer step.
 
 ## Completed Tasks
 
@@ -40,7 +48,7 @@ provide data and platform capabilities through neutral host contracts.
 | T15 | Extract obsidian-ai Agentic Capabilities | 🔄 | HIGH | T22 | [Details](tasks/T15.md) |
 | T16 | Shared Agentic RAG and Evidence Runtime | 🔄 | CRITICAL | T15, T22 | [Details](tasks/T16.md) |
 | T18 | Migrate obsidian-ai to Obsidian Host | ⬜ | HIGH | T15, T21, T22 | [Details](tasks/T18.md) |
-| T19 | Make Arxivite a super-chat Tool Host | ⬜ | HIGH | T16, T21, T22 | [Details](tasks/T19.md) |
+| T19 | Make Arxivite a super-chat Host Harness | 🔄 | HIGH | T16, T21, T22 | [Details](tasks/T19.md) |
 | T25 | Shared Agentic Tool Runtime and Built-in Provider | ⬜ | CRITICAL | T15, T22 | [Details](tasks/T25.md) |
 | T26 | Three-Tier Memory and AI Pruning | ⬜ | HIGH | T15, T22 | [Details](tasks/T26.md) |
 | T27 | PDF, Image, and Markdown Attachments | ⬜ | HIGH | T15, T22 | [Details](tasks/T27.md) |
@@ -51,8 +59,8 @@ provide data and platform capabilities through neutral host contracts.
 ## Status Summary
 
 - **Completed**: 12 full task records (including T17 retired/superseded)
-- **In Progress**: 5 (INFRA-1 program; T15 extraction; T16 agentic RAG; T21 publishing; T22 core platform)
-- **Pending**: 11 (T6 Phase B, T7, T8, T18, T19, T25, T26, T27, T28, T29, T30)
+- **In Progress**: 6 (INFRA-1 program; T15 extraction; T16 agentic RAG; T19 Arxivite host; T21 publishing; T22 core platform)
+- **Pending**: 10 (T6 Phase B, T7, T8, T18, T25, T26, T27, T28, T29, T30)
 - **Superseded**: 1 (T13)
 - **Total**: 29 task records including INFRA-1
 
@@ -73,3 +81,7 @@ host, and UI acceptance remain open. Package compatibility must be settled
 before product code is updated. The Arxivite-first inter-user messaging
 boundary is documented under T22/T19; Arxivite routing remains in its T32/T78
 records.
+
+T22 also owns the canonical public interface-component catalog. T19 tracks
+shared compatibility with Arxivite, while Arxivite T101 owns package-pin
+adoption, adapter work, and product acceptance.
