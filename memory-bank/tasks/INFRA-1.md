@@ -415,3 +415,15 @@ At the end of every related implementation session:
 4. Update `activeContext.md`, `session_cache.md`, the session record, and
    `edit_history.md`.
 5. Record remaining blockers and the next smallest executable slice.
+
+## Final Shared-Package Merge Closeout — 2026-09-07
+
+The T22 shared package slice is merged into `main` as `a4ded8d` after source,
+interface, CI, and inbound-context fixes in `b46731a`, `f9822cc`, `6054c69`,
+`81226f8`, and `1eee16a`. Verification passed with TypeScript, 18 Vitest files
+/ 156 tests, package and demo builds, `git diff --check`, and GitHub Build &
+Test.
+
+INFRA-1 remains in progress. The shared package is verified independently;
+Arxivite and Obsidian host adoption, product/browser/device acceptance, and
+remaining T15/T16/T25-T30 work are not closed by this merge.

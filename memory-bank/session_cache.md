@@ -1,19 +1,17 @@
 # Session Cache — super-chat
 
-*Last Updated*: 2026-09-07 17:32:30 IST
+*Last Updated*: 2026-09-07 21:02:51 IST
 
-## Current Session: Reconciliation and implementation closeout — 2026-09-07 17:32:30 IST
+## Current Session: INFRA-1, T19, T22, T25 — final shared-package merge closeout — 2026-09-07 21:02:51 IST
 
-- Verified the live branch and preserved all pre-existing staged and untracked
-  work before editing.
-- Committed package behavior as `b46731a` and shared session-tabs UI as
-  `f9822cc`.
-- Added runtime validation and reload coverage for participant/message data.
-- TypeScript, focused tests (56), full Vitest (152), package build, and diff
-  checks pass.
-- Documentation is committed as `6054c69` and the feature branch is pushed;
-  Arxivite adoption, submodule changes, browser acceptance, and device
-  acceptance remain outside this session.
+- Preserved and merged the shared runtime, message context, session tabs,
+  sender UI, public-interface documentation, and CI alignment.
+- Recorded review fixes in `1eee16a` for active-turn inbound history and
+  deterministic replay ordering; merged the branch as `a4ded8d`.
+- TypeScript, 18 Vitest files / 156 tests, package and demo builds,
+  `git diff --check`, and GitHub Build & Test passed.
+- `main` matches `origin/main`; Arxivite adoption, submodule changes, browser
+  acceptance, and device acceptance remain outside this shared-package work.
 
 ## Prior synchronization checkpoint — 2026-09-07 16:56:00 IST
 

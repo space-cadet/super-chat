@@ -1,6 +1,6 @@
-# T19, T22, T32, T78, T95: Correct Arxivite Harness Source and Document Inter-user Messaging Boundaries — 2026-09-07
+# INFRA-1, T19, T22, T25: Reconcile shared runtime, message context, session UI, and host boundary
 
-*Last Updated: 2026-09-07 17:32:30 IST*
+*Last Updated: 2026-09-07 21:02:51 IST*
 
 ## Decision
 
@@ -101,3 +101,16 @@ ownership and an Arxivite T101 adoption record.
 That synchronization checkpoint ended with the standalone work intentionally
 unpublished; the later reconciliation session completed the two package
 commits and the documentation closeout.
+
+## Final Merge Closeout — 2026-09-07 21:02:51 IST
+
+- Completed the shared-package reconciliation across runtime/context,
+  persistence, session tabs, sender UI, public interfaces, and CI.
+- Fixed the review findings by preserving inbound messages received during an
+  active turn and ordering replayed messages by `createdAt` plus message ID.
+- Source and documentation commits are `b46731a`, `f9822cc`, `6054c69`,
+  `81226f8`, and `1eee16a`; the branch was merged into `main` as `a4ded8d`.
+- Verification passed: TypeScript, 18 Vitest files / 156 tests, package and
+  demo builds, `git diff --check`, and GitHub Build & Test.
+- Arxivite adoption, submodule/package pin changes, browser/device acceptance,
+  and the remaining T19/T25 acceptance work stay separate and open.

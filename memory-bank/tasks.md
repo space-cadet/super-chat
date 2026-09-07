@@ -1,7 +1,7 @@
 # Memory Bank — super-chat
 
 *Created: 2026-05-19 11:15:00 IST*
-*Last Updated: 2026-09-07 17:32:30 IST*
+*Last Updated: 2026-09-07 21:02:51 IST*
 
 ## Overview
 
@@ -9,13 +9,15 @@ A complete, embeddable chat application and reusable runtime. `super-chat`
 owns chat mechanics and UI; products such as `obsidian-ai` and `arxivite`
 provide data and platform capabilities through neutral host contracts.
 
-## Reconciliation Session — 2026-09-07
+## Final Merge Reconciliation — 2026-09-07
 
-The live feature branch was inspected before editing. The preserved shared
-implementation is committed as `b46731a` and `f9822cc`; the final documentation
-commit records the public-interface boundary and this verification separately.
-TypeScript, 152 tests, the package build, and diff checks passed. No task is
-closed by this session, and Arxivite adoption remains a separate consumer step.
+The preserved shared implementation is committed as `b46731a` and `f9822cc`,
+with documentation/interface reconciliation in `6054c69`, CI alignment in
+`81226f8`, and inbound-context review fixes in `1eee16a`. The branch was merged
+into `main` as `a4ded8d`. TypeScript, 18 Vitest files / 156 tests, package and
+demo builds, `git diff --check`, and GitHub Build & Test passed. No task is
+closed by this session; T22/INFRA-1/T19/T25 remain open for their broader
+acceptance criteria, and Arxivite adoption remains a separate consumer step.
 
 ## Completed Tasks
 

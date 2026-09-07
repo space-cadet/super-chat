@@ -1,6 +1,6 @@
 # Shared session persistence
 
-*Last Updated: 2026-09-07 15:45:36 IST*
+*Last Updated: 2026-09-07 21:02:51 IST*
 
 Phase 3 makes the `ChatEngine` the owner of session and turn state. A product
 or host supplies storage operations through `PersistenceAdapter`; it does not
