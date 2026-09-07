@@ -15,6 +15,12 @@ export default defineConfig({
 	external: [
 		"react",
 		"react-dom",
+		// Resolve these in the consuming browser app so vfile uses its browser
+		// condition instead of bundling Node's path/url helpers.
+		"react-markdown",
+		"remark-math",
+		"remark-gfm",
+		"rehype-katex",
 		"ai",
 		"zod",
 		"@ai-sdk/openai",

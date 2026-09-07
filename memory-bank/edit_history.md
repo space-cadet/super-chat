@@ -1,6 +1,16 @@
 # Edit History
 *Created: 2026-05-19 11:15:00 IST*
-*Last Updated: 2026-09-07 14:25:26 IST*
+*Last Updated: 2026-09-07 16:11:58 IST*
+
+## 2026-09-07
+
+#### 16:11:58 IST - T19/T22: Make shared application initialization route-safe
+- Updated `memory-bank/tasks/T19.md` and `memory-bank/tasks/T22.md` with the
+  shared `SuperChatApp` cache-key and background-hydration behavior.
+- Added `memory-bank/edits/2026-09-07/161158-T19-T22-route-safe-initialization.md`
+  with the implementation and verification record.
+- The shared source change is ready for its repository commit; Arxivite
+  adoption requires a later gitlink update after that commit is pushed.
 
 #### 14:25:26 IST - T22, T19: Record Arxivite-first inter-user messaging boundary
 - Updated `memory-bank/tasks/T22.md` - Recorded the optional harness-neutral messaging capability and two-client acceptance boundary.
@@ -72,7 +82,6 @@
 - Created `memory-bank/implementation-details/session-export-import.md` - Documented session exchange.
 - Updated `memory-bank/activeContext.md` and `memory-bank/session_cache.md` - Recorded the approved architecture.
 - Created `memory-bank/sessions/2026-09-06-agentic-runtime-plan.md` - Recorded the decision and forward plan.
-
 ## 2026-09-01
 
 #### 11:11:59 IST - T19, T21, T16, T22, INFRA-1: Record Arxivite external integration readiness

@@ -242,7 +242,9 @@ export class ChatEngine {
 		void this.persistSession(session, {
 			owner: "chat-engine",
 			reason: "create",
-		}).catch(() => undefined);
+		}).catch((error) => {
+			console.error("[super-chat] new session persistence failed:", error);
+		});
 		return session;
 	}
 
