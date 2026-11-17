@@ -1,16 +1,18 @@
 # Session Cache — super-chat
 
-*Last Updated*: 2026-11-17 23:19:28 IST
+*Last Updated*: 2026-11-17 23:35:12 IST
 
-## Current Session: Standalone UI and Provider Wiring — 2026-11-17 23:19:28 IST
+## Current Session: Standalone UI and Provider Wiring — 2026-11-17 23:35:12 IST
 
 - Added the responsive UI plan at `apps/standalone/UI-STRUCTURE.md` and saved
   seven concept images under `memory-bank/assets/ui-mockups/standalone/`.
   The index is `memory-bank/implementation-details/standalone-ui-mockups.md`.
-- The current worktree also contains uncommitted standalone host/provider
-  wiring, IndexedDB storage, lifecycle handling, Android secure credentials,
-  and shared structured tool-call/interrupted-turn handling. These changes
-  have not been built or accepted in a running browser or device session.
+- Commit `f97c608` contains the standalone host/provider wiring, IndexedDB
+  storage, lifecycle handling, Android secure credentials, and shared
+  structured tool-call/interrupted-turn handling. The Android debug build
+  passed, the APK was installed on `.108`, and the Chat first-run route and
+  provider Settings screen were visually checked. No API key was entered, so
+  provider connectivity and credential saving remain untested.
 - Existing owners are T22 (shared UI/runtime), T31 (desktop), T32 (Android),
   with partial provider/tool groundwork tracked alongside T28/T25. Task
   completion status remains unchanged.
@@ -18,7 +20,8 @@
   desktop/browser protected credential support remains open. File/document
   access and platform acceptance are also still open.
 - See `sessions/2026-11-17-standalone-platform-hosts.md` for the session
-  record. No tests or builds were run for the mockup/Memory Bank update.
+  record. The mockup-only work had no runtime check; the later Android build
+  and visual screen check apply to the integrated source, not provider calls.
 
 ## Current Session: T31/T32 Standalone Platform Tasks — 2026-11-17 16:19:59 IST
 

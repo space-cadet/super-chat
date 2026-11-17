@@ -112,3 +112,17 @@ this task. New Memory Bank records remain uncommitted as well.
   Protected API-key storage is Android-only in the current host; desktop and
   browser credential support remains open. T31/T32 completion status is
   unchanged.
+
+## Android Provider UI Build and Device Check — 2026-11-17 23:35 IST
+
+- Built the final Android debug APK successfully with
+  `pnpm --filter @super-chat/standalone build:android:debug`; the script
+  completed the shared library build, standalone TypeScript check, Vite build,
+  Capacitor sync, and Android debug build.
+- Installed the APK on the OPPO CPH2661IN through ADB (`.108`). Visually
+  checked the first-run Chat route to Settings and the provider form at the
+  device's 360dp width, including its scroll behavior above the bottom tabs.
+- Save actions remain disabled until required provider fields are supplied.
+  No API key was entered, so credential persistence, live provider connection,
+  and LLM/tool-call round trips were not tested. T22/T32 remain open for their
+  broader acceptance criteria.

@@ -4,14 +4,15 @@
 
 The Android host runs the standalone React renderer in a Capacitor WebView and
 adds Android-specific system diagnostics through a registered Java plugin.
-The previous recorded baseline mounted `ChatApp` with a local response
-adapter and in-memory persistence. The current uncommitted tree now mounts
-`SuperChatApp` through `standaloneHost`, with IndexedDB session/settings
-storage, lifecycle callbacks, a provider adapter, local tools, and an Android
-secure-credential capability. `ProviderSettingsScreen` exposes provider
-setup; API keys use Android Keystore storage. These changes have not yet been
-built or accepted on-device, so T32 integration, recovery, and credential
-criteria remain open.
+The earlier baseline mounted `ChatApp` with a local response adapter and
+in-memory persistence. Commit `f97c608` now mounts `SuperChatApp` through
+`standaloneHost`, with IndexedDB session/settings storage, lifecycle callbacks,
+a provider adapter, local tools, and an Android secure-credential capability.
+`ProviderSettingsScreen` exposes provider setup; API keys use Android Keystore
+storage. The final Android debug build passed and was installed on the OPPO
+CPH2661IN. Chat's first-run route and the provider Settings layout were visually
+checked; no credential save or live provider request was tested. Full T32 host,
+recovery, and credential acceptance remains open.
 
 As of 2026-11-17, the app was installed and launched on the OPPO CPH2661IN, and
 the user confirms it works on mobile. Debug APK, unsigned release APK, and
@@ -80,8 +81,9 @@ The diagnostics screen refreshes on mount and on network status changes. The
 native diagnostics plugin reads system state and declared permission status;
 it does not request runtime permissions. `SecureCredentialsPlugin` stores
 provider secrets encrypted with an Android Keystore key. The provider and
-lifecycle integration above describes the current worktree; it does not
-replace build, device, or provider-connection acceptance. `AndroidManifest.xml`
+lifecycle integration is in commit `f97c608`; the build and screen check do not
+verify credential storage, persistence/recovery, or a live provider connection.
+`AndroidManifest.xml`
 declares Internet and network-state access.
 
 ## Build and Artifact Flow

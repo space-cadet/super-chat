@@ -5,8 +5,8 @@
 The desktop host reuses the standalone React renderer and packages it with
 Capacitor Electron. Platform diagnostics are provided by a small Electron
 plugin. The previous recorded baseline mounted `ChatApp` with a local response
-adapter and in-memory persistence. The current uncommitted tree routes the
-renderer through `SuperChatApp` and `standaloneHost`, with IndexedDB
+adapter and in-memory persistence. Commit `f97c608` routes the renderer through
+`SuperChatApp` and `standaloneHost`, with IndexedDB
 session/settings storage, lifecycle callbacks, local tools, and provider
 settings. The host exposes protected API-key storage only on Android, so
 desktop keychain support remains open. The current integration has not been

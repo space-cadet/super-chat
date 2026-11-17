@@ -1,6 +1,18 @@
 # Edit History
 *Created: 2026-05-19 11:15:00 IST*
-*Last Updated: 2026-11-17 23:19:28 IST*
+*Last Updated: 2026-11-17 23:35:12 IST*
+
+#### 23:35:12 IST - T32/T22: Record Android provider UI verification
+- Modified standalone task records and Android implementation details -
+  Replaced stale uncommitted/unbuilt status with commit `f97c608`, successful
+  Android debug build, `.108` installation, and visual screen check; retained
+  open provider, credential, recovery, and broader platform acceptance.
+- Modified `memory-bank/activeContext.md`, `session_cache.md`, and
+  `sessions/2026-11-17-standalone-platform-hosts.md` - Recorded the current
+  source commit and the distinction between UI/build evidence and untested
+  live provider/tool behavior.
+- Created `memory-bank/edits/2026-11-17/233512-T32-T22-android-provider-ui-verification.md` -
+  Recorded this verification update and its evidence.
 
 #### 23:19:28 IST - T22: Save standalone UI mockups and record host wiring
 - Created `apps/standalone/UI-STRUCTURE.md` and

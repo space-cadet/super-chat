@@ -1,6 +1,6 @@
 # Active Context
 
-*Last Updated: 2026-11-17 23:19:28 IST*
+*Last Updated: 2026-11-17 23:35:12 IST*
 
 ## Standalone UI and Host Wiring — 2026-11-17
 
@@ -10,14 +10,15 @@ concept images are indexed in
 `assets/ui-mockups/standalone/`. The plan keeps one React interface across
 browser, Android, and desktop, with platform-specific visual styling.
 
-The current uncommitted tree on `main` at `045c96f` routes the renderer through
-`SuperChatApp` and a standalone host, with provider settings, IndexedDB
-sessions/settings, lifecycle callbacks, local tools, and Android Keystore
-credentials. Shared changes also cover structured tool-call replay and
-interrupted-turn recovery. This source state has not been built or accepted in
-the browser or on device. Protected API-key storage is exposed for Android;
-desktop/browser credential support remains open. T22 owns shared UI/runtime
-changes; T31 and T32 retain their desktop and Android acceptance work.
+Commit `f97c608` routes the renderer through `SuperChatApp` and a standalone
+host, with provider settings, IndexedDB sessions/settings, lifecycle
+callbacks, local tools, and Android Keystore credentials. Shared changes also
+cover structured tool-call replay and interrupted-turn recovery. The Android
+debug build passed; it was installed on the OPPO CPH2661 and the first-run
+Chat and provider Settings screens were visually checked. No live provider
+request or credential save was tested. Protected API-key storage is exposed
+for Android; desktop/browser credential support remains open. T22 owns shared
+UI/runtime changes; T31 and T32 retain desktop and broader Android acceptance.
 
 ## Standalone Desktop and Android Hosts — 2026-11-17
 
@@ -37,13 +38,12 @@ builds and remote Actions results were not verified. TypeScript checking,
 frozen-lockfile installation, workflow YAML parsing, and `git diff --check`
 passed.
 
-The current app is a local preview: `App.tsx` mounts `ChatApp` directly with
-`MockTextLLMAdapter` and `MemoryPersistenceAdapter`, not the full
-`SuperChatApp`/neutral host-contract path. Provider/tool integration, durable
-data and recovery, protected credentials, signing, and broader platform
-acceptance remain open. Android baseline work proceeded before desktop
-acceptance; that does not close INFRA-1 Phase 12 or the full Android/iOS Phase
-13 criteria.
+At the 16:19 platform-task snapshot, the app still used `ChatApp`,
+`MockTextLLMAdapter`, and in-memory persistence. Commit `f97c608` supersedes
+that implementation snapshot. Android provider connectivity, credential-save
+behavior, persistence/recovery acceptance, signing, and broader platform
+acceptance remain open; this does not close INFRA-1 Phase 12 or the full
+Android/iOS Phase 13 criteria.
 
 The current worktree also removes the unused `loadSessions` binding from the
 shared `ChatApp` hook result; `loadSessionsOnMount` remains. T22 owns this small
