@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { ChatEngine } from "../../core/ChatEngine";
 import type { LLMAdapter } from "../../core/types";
 import { createExternalSessionIdentity } from "../../core/sessionPersistence";
-import type { SuperChatHost } from "../../contracts/host";
+import type { HostOperationContext, SuperChatHost } from "../../contracts/host";
 import { createChatEngineForHost } from "../../adapters/HostAdapters";
 import { ChatApp } from "./ChatApp";
 
@@ -164,6 +164,39 @@ export function SuperChatApp({
 		if (cacheKey) return undefined;
 		return () => engine?.dispose();
 	}, [cacheKey, engine]);
+
+	useEffect(() => {
+		const lifecycle = host.capabilities.lifecycle;
+		if (!engine || !lifecycle) return undefined;
+		let disposed = false;
+		const context: HostOperationContext = {
+			requestId: `super-chat-lifecycle-${Date.now()}`,
+		};
+		const unsubscribe = lifecycle.subscribeVisibility?.((visible) => {
+			if (visible) return;
+			void engine.saveSession().catch((cause) => {
+				const message = cause instanceof Error ? cause.message : String(cause);
+				console.error("[super-chat] background save failed:", message);
+			});
+		});
+		void Promise.resolve()
+			.then(() => disposed ? undefined : lifecycle.start?.(context))
+			.catch((cause) => {
+				const message = cause instanceof Error ? cause.message : String(cause);
+				console.error("[super-chat] host lifecycle start failed:", message);
+			});
+
+		return () => {
+			disposed = true;
+			unsubscribe?.();
+			void Promise.resolve()
+				.then(() => lifecycle.stop?.(context))
+				.catch((cause) => {
+					const message = cause instanceof Error ? cause.message : String(cause);
+					console.error("[super-chat] host lifecycle stop failed:", message);
+				});
+		};
+	}, [engine, host]);
 
   if (error) {
     return (

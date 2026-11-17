@@ -1,6 +1,26 @@
 # Edit History
 *Created: 2026-05-19 11:15:00 IST*
-*Last Updated: 2026-11-17 16:46:36 IST*
+*Last Updated: 2026-11-17 23:19:28 IST*
+
+#### 23:19:28 IST - T22: Save standalone UI mockups and record host wiring
+- Created `apps/standalone/UI-STRUCTURE.md` and
+  `memory-bank/implementation-details/standalone-ui-mockups.md` - Recorded the
+  shared responsive structure and indexed the concept screens/dialogs.
+- Created `memory-bank/assets/ui-mockups/standalone/` - Saved seven dated
+  concepts for empty chat, history, settings, diagnostics, navigation,
+  provider/export/archive/tool dialogs, and context/message actions.
+- Modified standalone host and shared chat code - Connected the current
+  worktree to `SuperChatApp`, provider settings, IndexedDB, lifecycle handling,
+  Android credentials, and structured tool-call/recovery behavior; runtime
+  acceptance remains open.
+- Modified `memory-bank/tasks/T22.md`, `T25.md`, `T28.md`, `T31.md`, and
+  `T32.md`, standalone implementation details, `activeContext.md`,
+  `session_cache.md`, and `sessions/2026-11-17-standalone-platform-hosts.md` -
+  Recorded ownership and unverified worktree state without changing task
+  completion status.
+- Created `memory-bank/edits/2026-11-17/231928-T22-standalone-ui-mockups-and-host-wiring.md` -
+  Recorded source branch, source commit, assets, code paths, and Memory Bank
+  updates.
 
 #### 16:46:36 IST - T22: Record the ChatApp hook-binding cleanup
 - Updated `memory-bank/tasks/T22.md` - Recorded removal of the unused

@@ -1,6 +1,24 @@
 # Session Cache — super-chat
 
-*Last Updated*: 2026-11-17 16:46:36 IST
+*Last Updated*: 2026-11-17 23:19:28 IST
+
+## Current Session: Standalone UI and Provider Wiring — 2026-11-17 23:19:28 IST
+
+- Added the responsive UI plan at `apps/standalone/UI-STRUCTURE.md` and saved
+  seven concept images under `memory-bank/assets/ui-mockups/standalone/`.
+  The index is `memory-bank/implementation-details/standalone-ui-mockups.md`.
+- The current worktree also contains uncommitted standalone host/provider
+  wiring, IndexedDB storage, lifecycle handling, Android secure credentials,
+  and shared structured tool-call/interrupted-turn handling. These changes
+  have not been built or accepted in a running browser or device session.
+- Existing owners are T22 (shared UI/runtime), T31 (desktop), T32 (Android),
+  with partial provider/tool groundwork tracked alongside T28/T25. Task
+  completion status remains unchanged.
+- Provider API keys are only available through the Android host today;
+  desktop/browser protected credential support remains open. File/document
+  access and platform acceptance are also still open.
+- See `sessions/2026-11-17-standalone-platform-hosts.md` for the session
+  record. No tests or builds were run for the mockup/Memory Bank update.
 
 ## Current Session: T31/T32 Standalone Platform Tasks — 2026-11-17 16:19:59 IST
 

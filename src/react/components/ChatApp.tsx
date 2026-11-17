@@ -27,6 +27,7 @@ export function ChatApp({
     openSessionIds,
     currentSession,
     isStreaming,
+    error,
     pendingTools,
     retrieval,
     sendMessage,
@@ -132,6 +133,12 @@ export function ChatApp({
           {(retrieval.status === 'failed' || retrieval.status === 'unavailable' || retrieval.status === 'unauthorized') &&
             (retrieval.error?.message || 'Source retrieval failed.')}
           {retrieval.status === 'cancelled' && 'Source retrieval cancelled.'}
+        </div>
+      )}
+
+      {error && (
+        <div role="alert" className="mx-4 mb-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
         </div>
       )}
 

@@ -82,3 +82,33 @@ this task. New Memory Bank records remain uncommitted as well.
   `loadSessionsOnMount` remains in use.
 - T22 owns this shared UI cleanup. It does not need a separate task and is
   separate from the platform-specific T31/T32 acceptance work.
+
+## UI Structure, Mockups, and Host-Wiring Worktree — 2026-11-17 23:19:28 IST
+
+### UI planning
+
+- Added `apps/standalone/UI-STRUCTURE.md` with one shared React interface,
+  responsive layouts, per-platform visual styling, and a broader screen and
+  dialog inventory informed by Obsidian-AI's Chat Component Capability Map.
+- Saved seven concept PNGs under
+  `memory-bank/assets/ui-mockups/standalone/`; the index is
+  `memory-bank/implementation-details/standalone-ui-mockups.md`.
+- The mockups are design concepts. Provider names and diagnostic readings are
+  illustrative; the set does not claim those flows have passed runtime checks.
+
+### Source state observed
+
+- At `main` / `045c96f`, the uncommitted worktree now mounts the standalone
+  renderer through `SuperChatApp` and `standaloneHost`; it adds provider
+  settings, a `VercelLLMAdapter` connection path, IndexedDB sessions/settings,
+  lifecycle callbacks, local calculator/time tools, and Android Keystore
+  credential storage.
+- Shared source changes add visible chat errors, preserve provider metadata in
+  tool calls, reconstruct structured tool calls/results for model history,
+  map provider tool errors, and recover interrupted streaming turns as
+  canceled.
+- This is a source-state record only. No build, test, browser check, device
+  check, or live provider-connection acceptance was run for these changes.
+  Protected API-key storage is Android-only in the current host; desktop and
+  browser credential support remains open. T31/T32 completion status is
+  unchanged.

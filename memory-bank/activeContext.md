@@ -1,6 +1,23 @@
 # Active Context
 
-*Last Updated: 2026-11-17 16:46:36 IST*
+*Last Updated: 2026-11-17 23:19:28 IST*
+
+## Standalone UI and Host Wiring — 2026-11-17
+
+The shared standalone UI plan is in `apps/standalone/UI-STRUCTURE.md`; saved
+concept images are indexed in
+`implementation-details/standalone-ui-mockups.md` and stored under
+`assets/ui-mockups/standalone/`. The plan keeps one React interface across
+browser, Android, and desktop, with platform-specific visual styling.
+
+The current uncommitted tree on `main` at `045c96f` routes the renderer through
+`SuperChatApp` and a standalone host, with provider settings, IndexedDB
+sessions/settings, lifecycle callbacks, local tools, and Android Keystore
+credentials. Shared changes also cover structured tool-call replay and
+interrupted-turn recovery. This source state has not been built or accepted in
+the browser or on device. Protected API-key storage is exposed for Android;
+desktop/browser credential support remains open. T22 owns shared UI/runtime
+changes; T31 and T32 retain their desktop and Android acceptance work.
 
 ## Standalone Desktop and Android Hosts — 2026-11-17
 

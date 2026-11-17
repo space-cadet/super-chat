@@ -304,6 +304,9 @@ export class AgentLoop {
 					toolCallId: call.id,
 					toolName: call.name,
 					input: call.args,
+					...(call.providerMetadata
+						? { providerMetadata: call.providerMetadata }
+						: {}),
 				});
 			}
 

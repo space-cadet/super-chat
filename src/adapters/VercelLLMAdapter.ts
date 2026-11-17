@@ -12,6 +12,8 @@ import {
 	stepCountIs,
 	tool,
 	type UIMessage,
+	type DynamicToolUIPart,
+	type ProviderMetadata,
 	type TextStreamPart,
 	type ToolSet,
 } from "ai";
@@ -42,11 +44,11 @@ const providerModules: Record<string, () => Promise<ProviderFactory>> = {
 	},
 	anthropic: async () => {
 		const { createAnthropic } = await import("@ai-sdk/anthropic");
-		return (apiKey) => createAnthropic({ apiKey });
+		return (apiKey, baseUrl) => createAnthropic({ apiKey, baseURL: baseUrl });
 	},
 	google: async () => {
 		const { createGoogleGenerativeAI } = await import("@ai-sdk/google");
-		return (apiKey) => createGoogleGenerativeAI({ apiKey });
+		return (apiKey, baseUrl) => createGoogleGenerativeAI({ apiKey, baseURL: baseUrl });
 	},
 	azure: async () => {
 		const { createAzure } = await import("@ai-sdk/azure");
@@ -63,7 +65,7 @@ const providerModules: Record<string, () => Promise<ProviderFactory>> = {
 	},
 	openrouter: async () => {
 		const { createOpenRouter } = await import("@openrouter/ai-sdk-provider");
-		return (apiKey) => createOpenRouter({ apiKey });
+		return (apiKey, baseUrl) => createOpenRouter({ apiKey, baseURL: baseUrl });
 	},
 	deepseek: async () => {
 		const { createDeepSeek } = await import("@ai-sdk/deepseek");
@@ -74,8 +76,12 @@ const providerModules: Record<string, () => Promise<ProviderFactory>> = {
 		return (apiKey, baseUrl) =>
 			createOpenAI({
 				apiKey,
-				baseURL: baseUrl ?? "https://api.moonshot.cn/v1",
+				baseURL: baseUrl ?? "https://api.moonshot.ai/v1",
 			});
+	},
+	custom: async () => {
+		const { createOpenAI } = await import("@ai-sdk/openai");
+		return (apiKey, baseUrl) => createOpenAI({ apiKey, baseURL: baseUrl });
 	},
 };
 
@@ -136,7 +142,9 @@ export class VercelLLMAdapter implements LLMAdapter {
 		const result = streamText({
 			model: model as any,
 			system: this.systemPrompt,
-			messages: await convertToModelMessages(uiMessages),
+			messages: await convertToModelMessages(uiMessages, {
+				ignoreIncompleteToolCalls: true,
+			}),
 			abortSignal: signal,
 		});
 
@@ -166,7 +174,10 @@ export class VercelLLMAdapter implements LLMAdapter {
 		const result = streamText({
 			model: model as any,
 			system: this.systemPrompt,
-			messages: await convertToModelMessages(uiMessages),
+			messages: await convertToModelMessages(uiMessages, {
+				tools: sdkTools,
+				ignoreIncompleteToolCalls: true,
+			}),
 			tools: sdkTools,
 			stopWhen: stepCountIs(1),
 			abortSignal: signal,
@@ -259,12 +270,133 @@ export class VercelLLMAdapter implements LLMAdapter {
 	private toUIMessages(
 		messages: Array<{ role: string; content: string }>,
 	): UIMessage[] {
-		return messages.map((m, i) => ({
-			id: `msg-${i}`,
-			role: m.role as "user" | "assistant" | "system",
-			parts: [{ type: "text" as const, text: m.content }],
-			createdAt: new Date(),
-		}));
+		const uiMessages: UIMessage[] = [];
+		const toolPartsById = new Map<string, {
+			message: UIMessage;
+			partIndex: number;
+		}>();
+
+		for (let index = 0; index < messages.length; index++) {
+			const message = messages[index];
+			const structuredParts = message.role === "assistant"
+				? this.parseStructuredParts(message.content)
+				: null;
+			const uiMessage: UIMessage = {
+				id: `msg-${index}`,
+				role: message.role as "user" | "assistant" | "system",
+				parts: [],
+			};
+
+			if (!structuredParts) {
+				uiMessage.parts.push({ type: "text", text: message.content });
+				uiMessages.push(uiMessage);
+				continue;
+			}
+
+			for (const part of structuredParts) {
+				if (part.type === "text" && typeof part.text === "string") {
+					uiMessage.parts.push({ type: "text", text: part.text });
+					continue;
+				}
+
+				if (
+					part.type === "tool-call" &&
+					typeof part.toolCallId === "string" &&
+					typeof part.toolName === "string" &&
+					part.toolName.length > 0
+				) {
+					const toolPart: DynamicToolUIPart = {
+						type: "dynamic-tool",
+						toolName: part.toolName,
+						toolCallId: part.toolCallId,
+						state: "input-available",
+						input: this.asRecord(part.input),
+						...(part.providerMetadata && typeof part.providerMetadata === "object"
+							? { callProviderMetadata: part.providerMetadata as ProviderMetadata }
+							: {}),
+					};
+					const partIndex = uiMessage.parts.push(toolPart) - 1;
+					toolPartsById.set(part.toolCallId, { message: uiMessage, partIndex });
+					continue;
+				}
+
+				if (
+					part.type === "tool-result" &&
+					typeof part.toolCallId === "string" &&
+					typeof part.toolName === "string"
+				) {
+					const storedCall = toolPartsById.get(part.toolCallId);
+					const storedPart = storedCall?.message.parts[storedCall.partIndex];
+					if (storedCall && storedPart?.type === "dynamic-tool") {
+						const completedPart: DynamicToolUIPart = {
+							type: "dynamic-tool",
+							toolName: storedPart.toolName,
+							toolCallId: storedPart.toolCallId,
+							state: "output-available",
+							input: storedPart.input,
+							output: this.getToolOutputText(part.output),
+							...(storedPart.callProviderMetadata
+								? { callProviderMetadata: storedPart.callProviderMetadata }
+								: {}),
+						};
+						storedCall.message.parts[storedCall.partIndex] = completedPart;
+					} else {
+						uiMessage.parts.push({
+							type: "text",
+							text: `Tool ${part.toolName} result: ${this.getToolOutputText(part.output)}`,
+						});
+					}
+				}
+			}
+
+			if (uiMessage.parts.length > 0) uiMessages.push(uiMessage);
+		}
+
+		return uiMessages;
+	}
+
+	private parseStructuredParts(content: string): Array<Record<string, unknown>> | null {
+		try {
+			const value: unknown = JSON.parse(content);
+			if (!Array.isArray(value) || value.length === 0) return null;
+			if (!value.every((part) =>
+				part !== null && typeof part === "object" && !Array.isArray(part) &&
+				["text", "tool-call", "tool-result"].includes((part as Record<string, unknown>).type as string),
+			)) return null;
+			return value as Array<Record<string, unknown>>;
+		} catch {
+			return null;
+		}
+	}
+
+	private asRecord(value: unknown): Record<string, unknown> {
+		if (value && typeof value === "object" && !Array.isArray(value)) {
+			return value as Record<string, unknown>;
+		}
+		if (typeof value === "string") {
+			try {
+				const parsed: unknown = JSON.parse(value);
+				if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+					return parsed as Record<string, unknown>;
+				}
+			} catch {
+				// Treat malformed or non-object tool input as empty input.
+			}
+		}
+		return {};
+	}
+
+	private getToolOutputText(value: unknown): string {
+		if (value && typeof value === "object" && !Array.isArray(value)) {
+			const output = value as Record<string, unknown>;
+			if (output.type === "text" && typeof output.value === "string") return output.value;
+		}
+		if (typeof value === "string") return value;
+		try {
+			return JSON.stringify(value) ?? "";
+		} catch {
+			return String(value);
+		}
 	}
 
 	private providerDisplayName(id: string): string {
@@ -277,6 +409,7 @@ export class VercelLLMAdapter implements LLMAdapter {
 			openrouter: "OpenRouter",
 			deepseek: "DeepSeek",
 			kimi: "Kimi (Moonshot)",
+			custom: "Custom OpenAI-compatible endpoint",
 		};
 		return names[id] ?? id;
 	}
@@ -362,12 +495,23 @@ export class VercelLLMAdapter implements LLMAdapter {
 					id: (chunk as any).toolCallId ?? (chunk as any).id ?? `call-${Date.now()}`,
 					name: (chunk as any).toolName ?? (chunk as any).name ?? "unknown",
 					args: (chunk as any).input ?? (chunk as any).args ?? {},
+					...((chunk as any).providerMetadata
+						? { providerMetadata: (chunk as any).providerMetadata }
+						: {}),
 				};
 				return { type: "tool-call", call };
 			}
 
 			case "tool-result":
 				return null;
+
+			case "tool-error":
+				return {
+					type: "error",
+					message: chunk.error instanceof Error
+						? chunk.error.message
+						: String(chunk.error),
+				};
 
 			case "error":
 				return {
@@ -419,6 +563,9 @@ export function createProviderProfile(
 		],
 		ollama: [
 			{ id: "llama3.1", name: "Llama 3.1", contextWindow: 128000 },
+		],
+		custom: [
+			{ id: "gpt-4o-mini", name: "GPT-4o Mini", contextWindow: 128000 },
 		],
 		openrouter: [
 			{ id: "anthropic/claude-sonnet-4", name: "Claude Sonnet 4 (via OpenRouter)", contextWindow: 200000 },

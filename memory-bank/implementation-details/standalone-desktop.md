@@ -4,11 +4,13 @@
 
 The desktop host reuses the standalone React renderer and packages it with
 Capacitor Electron. Platform diagnostics are provided by a small Electron
-plugin. The chat currently uses `MockTextLLMAdapter` and
-`MemoryPersistenceAdapter`; a production model provider, durable local storage,
-and host-OS tool calling are not connected. `App.tsx` mounts the lower-level
-`ChatApp` directly; integrating through `SuperChatApp` and neutral host
-contracts remains open under T31.
+plugin. The previous recorded baseline mounted `ChatApp` with a local response
+adapter and in-memory persistence. The current uncommitted tree routes the
+renderer through `SuperChatApp` and `standaloneHost`, with IndexedDB
+session/settings storage, lifecycle callbacks, local tools, and provider
+settings. The host exposes protected API-key storage only on Android, so
+desktop keychain support remains open. The current integration has not been
+built or accepted in the Electron app.
 
 As of 2026-11-17, an Apple Silicon DMG was built and passed `hdiutil verify`.
 The Windows/Linux build targets and CI matrix exist, but the handoff contains
@@ -20,10 +22,14 @@ no remote Actions result or Windows/Linux runtime acceptance.
 apps/standalone/
 ├── src/
 │   ├── main.tsx                         React entry point
-│   ├── App.tsx                           Chat and diagnostics navigation
-│   ├── MockTextLLMAdapter.ts              Local preview replies
-│   ├── diagnostics.ts                     Capacitor diagnostics facade
-│   └── screens/DiagnosticsScreen.tsx      Diagnostics UI
+│   ├── App.tsx                           Chat, diagnostics, and settings navigation
+│   ├── host.ts                           Neutral standalone host capabilities
+│   ├── llm.ts                            Provider configuration and adapter
+│   ├── persistence.ts                    IndexedDB sessions and settings
+│   ├── lifecycle.ts                      Capacitor visibility callbacks
+│   ├── tools.ts                          Local calculator and time tools
+│   ├── diagnostics.ts                    Capacitor diagnostics facade
+│   └── screens/                           Diagnostics and provider settings
 ├── scripts/build.mjs                     Build/sync/package orchestration
 ├── electron/
 │   ├── main.ts                           Capacitor Electron startup
@@ -47,10 +53,14 @@ Electron main process
   └── createCapacitorElectronApp(config)
        └── Capacitor bridge + packaged Vite renderer
             └── React App
-                 ├── ChatApp
-                 │    └── ChatEngine
-                 │         ├── MockTextLLMAdapter
-                 │         └── MemoryPersistenceAdapter
+                 ├── SuperChatApp
+                 │    ├── standaloneHost
+                 │    │    ├── IndexedDB sessions/settings
+                 │    │    ├── lifecycle callbacks
+                 │    │    └── calculator/time tools
+                 │    └── StandaloneLLMAdapter
+                 │         └── VercelLLMAdapter and configured provider
+                 ├── ProviderSettingsScreen
                  └── DiagnosticsScreen
                       └── loadDiagnostics()
                            ├── Capacitor Device / App / Network plugins

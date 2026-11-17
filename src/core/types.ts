@@ -179,6 +179,8 @@ export interface ToolCall {
   id: string;
   name: string;
   args: Record<string, unknown>;
+  /** Provider data that must travel with this call on the next model step. */
+  providerMetadata?: Record<string, unknown>;
 }
 
 export interface ToolResult {

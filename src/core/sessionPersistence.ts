@@ -105,11 +105,44 @@ export function normalizePersistedSession(
 
 	const rawVersion = getSchemaVersion(value.persistence);
 	const migrated = rawVersion !== CURRENT_SESSION_SCHEMA_VERSION;
-	const messages = value.messages.filter(isChatMessage).map((message) =>
+	const validMessages = value.messages.filter(isChatMessage).map((message) =>
 		structuredClone(message),
 	);
-	const recovered = messages.length !== value.messages.length;
-	const turns = normalizeTurns(value.turns);
+	const invalidMessagesRecovered = validMessages.length !== value.messages.length;
+	const normalizedTurns = normalizeTurns(value.turns);
+	const interruptedTurns = normalizedTurns?.filter((turn) => turn.status === "streaming") ?? [];
+	const interruptedTurnIds = new Set(interruptedTurns.map((turn) => turn.id));
+	const interruptedAssistantMessageIds = new Set(
+		interruptedTurns.flatMap((turn) => turn.assistantMessageId ? [turn.assistantMessageId] : []),
+	);
+	let interruptedVisibleMessage = false;
+	const messages = validMessages.map((message) => {
+		if (
+			message.role !== "assistant" ||
+			message.status !== "streaming"
+		) {
+			return message;
+		}
+
+		const belongsToInterruptedTurn =
+			(message.turnId !== undefined && interruptedTurnIds.has(message.turnId)) ||
+			interruptedAssistantMessageIds.has(message.id);
+		const hasNoTurnRecord = normalizedTurns === null ||
+			message.turnId === undefined ||
+			!normalizedTurns.some((turn) => turn.id === message.turnId);
+		if (!belongsToInterruptedTurn && !hasNoTurnRecord) return message;
+
+		interruptedVisibleMessage = true;
+		return { ...message, status: "cancelled" as const };
+	});
+	const recoveredInterruptedTurn = interruptedTurns.length > 0 || interruptedVisibleMessage;
+	const recovered = invalidMessagesRecovered || recoveredInterruptedTurn;
+	const recoveryTime = recoveredInterruptedTurn ? Date.now() : undefined;
+	const turns = normalizedTurns?.map((turn) =>
+		turn.status === "streaming"
+			? { ...turn, status: "cancelled" as const, updatedAt: recoveryTime! }
+			: turn,
+	);
 	const modelHistory = normalizeModelHistory(value.modelHistory);
 	const storedParticipants = normalizeParticipants(value.participants) ?? [];
 	const messageParticipants = messages.flatMap((message) =>

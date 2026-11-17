@@ -3,12 +3,15 @@
 ## Scope and Current State
 
 The Android host runs the standalone React renderer in a Capacitor WebView and
-adds Android-specific system diagnostics through a registered Java plugin. The
-chat currently uses `MockTextLLMAdapter` and `MemoryPersistenceAdapter`; a
-production provider, durable local storage, secure credential handling, and
-host-OS tool calling are not connected. `App.tsx` mounts the lower-level
-`ChatApp` directly; integrating through `SuperChatApp` and neutral host
-contracts remains open under T32.
+adds Android-specific system diagnostics through a registered Java plugin.
+The previous recorded baseline mounted `ChatApp` with a local response
+adapter and in-memory persistence. The current uncommitted tree now mounts
+`SuperChatApp` through `standaloneHost`, with IndexedDB session/settings
+storage, lifecycle callbacks, a provider adapter, local tools, and an Android
+secure-credential capability. `ProviderSettingsScreen` exposes provider
+setup; API keys use Android Keystore storage. These changes have not yet been
+built or accepted on-device, so T32 integration, recovery, and credential
+criteria remain open.
 
 As of 2026-11-17, the app was installed and launched on the OPPO CPH2661IN, and
 the user confirms it works on mobile. Debug APK, unsigned release APK, and
@@ -21,18 +24,26 @@ remain open.
 apps/standalone/
 ├── src/
 │   ├── main.tsx                            React entry point
-│   ├── App.tsx                              Chat and diagnostics navigation
-│   ├── MockTextLLMAdapter.ts                 Local preview replies
-│   ├── diagnostics.ts                        Capacitor diagnostics facade
-│   └── screens/DiagnosticsScreen.tsx         Diagnostics UI
+│   ├── App.tsx                              Chat, diagnostics, and settings navigation
+│   ├── host.ts                              Neutral standalone host capabilities
+│   ├── llm.ts                               Provider configuration and adapter
+│   ├── persistence.ts                       IndexedDB sessions and settings
+│   ├── lifecycle.ts                         Capacitor visibility callbacks
+│   ├── tools.ts                             Local calculator and time tools
+│   ├── androidCredentials.ts                Android secure credential bridge
+│   ├── diagnostics.ts                       Capacitor diagnostics facade
+│   └── screens/
+│       ├── DiagnosticsScreen.tsx             Diagnostics UI
+│       └── ProviderSettingsScreen.tsx        Provider setup UI
 ├── scripts/build.mjs                        Build/sync/Gradle orchestration
 ├── capacitor.config.ts                      Android application identity
 └── android/
     └── app/src/main/
         ├── AndroidManifest.xml               App declaration and permissions
         └── java/com/spacecadet/superchat/
-            ├── MainActivity.java              Registers the native plugin
-            └── SystemDiagnosticsPlugin.java   Read-only Android snapshot
+            ├── MainActivity.java              Registers native plugins
+            ├── SystemDiagnosticsPlugin.java   Read-only Android snapshot
+            └── SecureCredentialsPlugin.java   Android Keystore credentials
 ```
 
 ## Runtime Structure
@@ -43,10 +54,15 @@ Android launcher
        ├── register SystemDiagnosticsPlugin
        └── Capacitor WebView loads the Vite renderer
             └── React App
-                 ├── ChatApp
-                 │    └── ChatEngine
-                 │         ├── MockTextLLMAdapter
-                 │         └── MemoryPersistenceAdapter
+                 ├── SuperChatApp
+                 │    ├── standaloneHost
+                 │    │    ├── IndexedDB sessions/settings
+                 │    │    ├── Android Keystore credentials
+                 │    │    ├── lifecycle callbacks
+                 │    │    └── calculator/time tools
+                 │    └── StandaloneLLMAdapter
+                 │         └── VercelLLMAdapter and configured provider
+                 ├── ProviderSettingsScreen
                  └── DiagnosticsScreen
                       └── loadDiagnostics()
                            ├── Capacitor Device / App / Network plugins
@@ -61,9 +77,12 @@ Android launcher
 ```
 
 The diagnostics screen refreshes on mount and on network status changes. The
-native plugin reads system state and declared permission status; it does not
-request runtime permissions. `AndroidManifest.xml` declares Internet and
-network-state access.
+native diagnostics plugin reads system state and declared permission status;
+it does not request runtime permissions. `SecureCredentialsPlugin` stores
+provider secrets encrypted with an Android Keystore key. The provider and
+lifecycle integration above describes the current worktree; it does not
+replace build, device, or provider-connection acceptance. `AndroidManifest.xml`
+declares Internet and network-state access.
 
 ## Build and Artifact Flow
 
