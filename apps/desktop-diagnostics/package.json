@@ -1,0 +1,13 @@
+{
+  "name": "@super-chat/desktop-diagnostics",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./electron/dist/plugin.mjs",
+  "files": ["electron/dist/plugin.mjs"],
+  "capacitor": {
+    "electron": {
+      "src": "electron"
+    }
+  }
+}

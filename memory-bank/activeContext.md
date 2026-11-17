@@ -1,6 +1,36 @@
 # Active Context
 
-*Last Updated: 2026-09-08 03:42:12 IST*
+*Last Updated: 2026-11-17 16:46:36 IST*
+
+## Standalone Desktop and Android Hosts — 2026-11-17
+
+INFRA-1 now tracks standalone platforms with dedicated feature tasks: T31 owns
+the Electron desktop host, and T32 owns the Android host. Their implementation
+details are documented separately in
+`implementation-details/standalone-desktop.md` and
+`implementation-details/standalone-android.md`. T22 remains the shared app and
+host-contract owner; neither platform task creates children for individual
+fixes.
+
+The Android app works on mobile and was installed and launched on the OPPO
+CPH2661IN. Debug APK, unsigned release APK, and release AAB builds were
+verified; the GitHub Actions jobs are configured but were not run remotely.
+The Apple Silicon desktop DMG passed `hdiutil verify`; Windows/Linux package
+builds and remote Actions results were not verified. TypeScript checking,
+frozen-lockfile installation, workflow YAML parsing, and `git diff --check`
+passed.
+
+The current app is a local preview: `App.tsx` mounts `ChatApp` directly with
+`MockTextLLMAdapter` and `MemoryPersistenceAdapter`, not the full
+`SuperChatApp`/neutral host-contract path. Provider/tool integration, durable
+data and recovery, protected credentials, signing, and broader platform
+acceptance remain open. Android baseline work proceeded before desktop
+acceptance; that does not close INFRA-1 Phase 12 or the full Android/iOS Phase
+13 criteria.
+
+The current worktree also removes the unused `loadSessions` binding from the
+shared `ChatApp` hook result; `loadSessionsOnMount` remains. T22 owns this small
+UI cleanup, so it has no separate task.
 
 ## Arxivite Direction Change — 2026-09-08
 

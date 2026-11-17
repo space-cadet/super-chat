@@ -1,0 +1,139 @@
+name: Standalone app builds
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/standalone/**"
+      - "apps/desktop-diagnostics/**"
+      - "src/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/standalone-build.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/standalone/**"
+      - "apps/desktop-diagnostics/**"
+      - "src/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/standalone-build.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: standalone-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: Web build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.27.0
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm standalone:build:web
+      - uses: actions/upload-artifact@v4
+        with:
+          name: standalone-web
+          path: apps/standalone/dist/
+
+  android:
+    name: Android ${{ matrix.variant }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: debug-apk
+            script: standalone:build:android:debug
+            artifact: apps/standalone/android/app/build/outputs/apk/debug/*.apk
+          - variant: release-apk
+            script: standalone:build:android:release-apk
+            artifact: apps/standalone/android/app/build/outputs/apk/release/*.apk
+          - variant: release-aab
+            script: standalone:build:android:release-aab
+            artifact: apps/standalone/android/app/build/outputs/bundle/release/*.aab
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.27.0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+      - run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm ${{ matrix.script }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: standalone-android-${{ matrix.variant }}
+          path: ${{ matrix.artifact }}
+
+  desktop:
+    name: Desktop ${{ matrix.os }} ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: mac
+            target: dmg
+            runner: macos-26
+            script: standalone:build:desktop:mac:dmg
+            artifact: apps/standalone/electron/dist/*.dmg
+          - os: mac
+            target: zip
+            runner: macos-26
+            script: standalone:build:desktop:mac:zip
+            artifact: apps/standalone/electron/dist/*.zip
+          - os: windows
+            target: nsis
+            runner: windows-latest
+            script: standalone:build:desktop:windows:nsis
+            artifact: apps/standalone/electron/dist/*.exe
+          - os: windows
+            target: portable
+            runner: windows-latest
+            script: standalone:build:desktop:windows:portable
+            artifact: apps/standalone/electron/dist/*.exe
+          - os: linux
+            target: appimage
+            runner: ubuntu-latest
+            script: standalone:build:desktop:linux:appimage
+            artifact: apps/standalone/electron/dist/*.AppImage
+          - os: linux
+            target: deb
+            runner: ubuntu-latest
+            script: standalone:build:desktop:linux:deb
+            artifact: apps/standalone/electron/dist/*.deb
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.27.0
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm ${{ matrix.script }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: standalone-desktop-${{ matrix.os }}-${{ matrix.target }}
+          path: ${{ matrix.artifact }}

@@ -1,7 +1,7 @@
 # INFRA-1: Unified super-chat Application Platform Program
 
 *Created: 2026-08-31 22:44:08 IST*
-*Last Updated: 2026-09-08 03:42:12 IST*
+*Last Updated: 2026-11-17 16:19:59 IST*
 
 **Status**: 🔄 **IN PROGRESS**
 **Priority**: CRITICAL
@@ -347,24 +347,55 @@ relying on the intermediate engine path.
 
 ### Phase 12: Standalone desktop host
 
-**Owner**: To be created when Phase 8 or 10 reaches acceptance  
-**Status**: ⬜ Pending
+**Owner**: T31 — [Standalone Desktop App and Host](T31.md)
+**Status**: 🔄 Electron shell and macOS arm64 artifact baseline implemented;
+full desktop acceptance remains open.
 
-- [ ] Add local persistence, operating-system keychain, file/document access,
-      lifecycle, backup/recovery, signing, and updates.
-- [ ] Reuse the same `SuperChatApp` and contracts.
+- [x] Add the Capacitor Electron shell, shared React chat UI, read-only desktop
+      diagnostics, OS-specific build targets, and CI artifact matrix.
+- [x] Build the Apple Silicon DMG and verify its container with `hdiutil`.
+- [ ] Integrate the full standalone path through `SuperChatApp` and neutral host
+      contracts; replace the local preview and in-memory adapters for production.
+- [ ] Add durable local persistence, operating-system keychain, file/document
+      access, lifecycle handling, and backup/recovery.
+- [ ] Sign packages, implement update behavior, and verify runtime/install
+      acceptance on each supported desktop OS.
+
+**Evidence (2026-11-17)**: TypeScript checking, frozen-lockfile installation,
+workflow YAML parsing, and `git diff --check` passed. The Apple Silicon DMG
+passed `hdiutil verify`. Windows/Linux artifacts and remote Actions runs were
+not verified. The current chat uses local preview replies and in-memory
+persistence. See T31 and
+[`implementation-details/standalone-desktop.md`](../implementation-details/standalone-desktop.md).
 
 **Exit criterion**: a signed desktop application works without Obsidian or
 Arxivite-specific dependencies.
 
 ### Phase 13: Mobile hosts
 
-**Owner**: To be created after desktop acceptance  
-**Status**: ⬜ Pending
+**Owner**: T32 for Android; iOS ownership remains to be assigned if iOS is in
+scope.
+**Status**: 🔄 Android baseline works on the OPPO CPH2661IN; full Android and
+iOS host acceptance remains open.
 
-- [ ] Add mobile credential storage, background/interruption recovery,
-      file-provider access, offline behavior, sync/conflict policy, platform
-      permissions, packaging, and store acceptance.
+- [x] Implement the Capacitor Android shell and read-only native diagnostics.
+- [x] Build debug APK, unsigned release APK, and release AAB artifacts.
+- [x] Install and launch on the OPPO CPH2661IN; the user confirms the app works
+      on mobile. Diagnostics showed network, Android/WebView, processor,
+      memory, and battery readings.
+- [ ] Integrate the full standalone path through `SuperChatApp` and neutral host
+      contracts; replace the local preview and in-memory adapters for production.
+- [ ] Add durable storage, background/interruption recovery, secure
+      credentials, file/document access, offline behavior, and any required
+      sync/conflict policy.
+- [ ] Configure release signing and complete Android distribution/device
+      acceptance. Define and track iOS support separately if required.
+
+**Evidence (2026-11-17)**: TypeScript checking, frozen-lockfile installation,
+workflow YAML parsing, and `git diff --check` passed. Android debug, unsigned
+release APK, and AAB builds were verified. Release signing is not configured;
+remote Actions runs were not performed. See T32 and
+[`implementation-details/standalone-android.md`](../implementation-details/standalone-android.md).
 
 **Exit criterion**: credible Android and iOS support with platform-specific
 acceptance evidence.
@@ -380,9 +411,14 @@ INFRA-1
   -> T15 first Obsidian extraction
   -> T18 Obsidian host migration
   -> legacy removal
-  -> standalone desktop
-  -> mobile hosts
+  -> T31 standalone desktop host and release acceptance
+  -> T32 standalone Android host and release acceptance
+  -> iOS host task, if iOS remains in scope
 ```
+
+This is the planned release-acceptance order. The Android shell and device
+baseline were implemented early; that does not close the desktop or full mobile
+phase criteria.
 
 T21 may proceed in parallel with early T22 work, but product-default changes
 must wait for traceable package compatibility.

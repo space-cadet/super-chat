@@ -1,6 +1,27 @@
 # Session Cache — super-chat
 
-*Last Updated*: 2026-09-08 03:42:12 IST
+*Last Updated*: 2026-11-17 16:46:36 IST
+
+## Current Session: T31/T32 Standalone Platform Tasks — 2026-11-17 16:19:59 IST
+
+- Created dedicated general-feature tasks for the standalone Electron desktop
+  host (T31) and Android host (T32), each with platform implementation docs
+  containing code-structure and logic-flow ASCII diagrams.
+- Updated INFRA-1 Phase 12/13 and T22 ownership. Android is working on the
+  OPPO CPH2661IN; debug APK, unsigned release APK, and release AAB builds were
+  verified. The Apple Silicon DMG passed `hdiutil verify`.
+- Recorded the current integration boundary: the preview uses `ChatApp`, a
+  mock LLM, and in-memory persistence, not the full `SuperChatApp` host path.
+  Durable storage/recovery, protected credentials, signing, iOS, and broader
+  platform acceptance remain open.
+- TypeScript checking, frozen-lockfile installation, workflow YAML parsing,
+  and `git diff --check` passed in the implementation handoff. Unit tests and
+  remote GitHub Actions runs were not performed.
+- Source branch at Memory Bank update: `main`, HEAD `bf439d2`; app source
+  changes remain uncommitted. The Memory Bank update itself is also uncommitted.
+- The worktree also removes the unused `loadSessions` binding from the
+  `ChatApp` hook result while preserving `loadSessionsOnMount`. Recorded this
+  small shared-UI cleanup under T22; no fix-specific task was created.
 
 ## Current Session: Record Arxivite Native-Parity Decision — 2026-09-08 03:42:12 IST
 

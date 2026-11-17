@@ -38,7 +38,6 @@ export function ChatApp({
     stopStreaming,
     approveTool,
     rejectTool,
-    loadSessions,
     replayMessage,
 	} = useChat(engine, { initialSessionId, loadSessionsOnMount });
 

@@ -1,6 +1,34 @@
 # Edit History
 *Created: 2026-05-19 11:15:00 IST*
-*Last Updated: 2026-09-08 03:42:12 IST*
+*Last Updated: 2026-11-17 16:46:36 IST*
+
+#### 16:46:36 IST - T22: Record the ChatApp hook-binding cleanup
+- Updated `memory-bank/tasks/T22.md` - Recorded removal of the unused
+  `loadSessions` binding from the `ChatApp` hook result; retained
+  `loadSessionsOnMount` and did not create a fix-specific task.
+- Updated `memory-bank/activeContext.md`, `memory-bank/session_cache.md`, and
+  `memory-bank/sessions/2026-11-17-standalone-platform-hosts.md` - Added the
+  shared UI delta to the current project context and session record.
+- Created `memory-bank/edits/2026-11-17/164636-T22-chatapp-binding-cleanup.md` -
+  Recorded source branch, source commit, and file-level provenance.
+
+#### 16:19:59 IST - T31/T32: Define standalone desktop and Android workstreams
+- Created `memory-bank/tasks/T31.md` and `memory-bank/tasks/T32.md` - Assigned
+  desktop and Android host implementation, release work, and acceptance to
+  separate platform-feature tasks.
+- Created `memory-bank/implementation-details/standalone-desktop.md` and
+  `memory-bank/implementation-details/standalone-android.md` - Documented
+  code structure, runtime and diagnostics logic, and platform build flows with
+  ASCII diagrams.
+- Updated `memory-bank/tasks/INFRA-1.md`, `memory-bank/tasks/T22.md`, and
+  `memory-bank/tasks.md` - Assigned platform owners, recorded current build and
+  device evidence, and updated the task registry.
+- Updated `memory-bank/activeContext.md` and `memory-bank/session_cache.md` -
+  Recorded the Android working baseline, desktop artifact verification,
+  integration gap, and remaining release acceptance.
+- Created `memory-bank/sessions/2026-11-17-standalone-platform-hosts.md` and
+  `memory-bank/edits/2026-11-17/161959-T31-T32-standalone-platform-tasks.md` -
+  Preserved the session evidence and canonical edit record.
 
 #### 03:42:12 IST - T19/T22/INFRA-1: Record Arxivite native-parity decision
 - Updated `memory-bank/activeContext.md` - Recorded Arxivite's decision to

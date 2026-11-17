@@ -1,7 +1,7 @@
 # Memory Bank — super-chat
 
 *Created: 2026-05-19 11:15:00 IST*
-*Last Updated: 2026-09-07 21:02:51 IST*
+*Last Updated: 2026-11-17 16:19:59 IST*
 
 ## Overview
 
@@ -57,14 +57,16 @@ acceptance criteria, and Arxivite adoption remains a separate consumer step.
 | T28 | Provider Profiles and Fast Model Switching | ⬜ | HIGH | T15, T21, T22 | [Details](tasks/T28.md) |
 | T29 | Shared Diagnostics | ⬜ | HIGH | T15, T22 | [Details](tasks/T29.md) |
 | T30 | Session Export and Import | ⬜ | HIGH | T21, T22 | [Details](tasks/T30.md) |
+| T31 | Standalone Desktop App and Host | 🔄 | HIGH | INFRA-1, T22, T21 | [Details](tasks/T31.md) |
+| T32 | Standalone Android App and Host | 🔄 | HIGH | INFRA-1, T22, T21 | [Details](tasks/T32.md) |
 
 ## Status Summary
 
 - **Completed**: 12 full task records (including T17 retired/superseded)
-- **In Progress**: 5 (INFRA-1 program; T15 extraction; T16 agentic RAG; T21 publishing; T22 core platform)
+- **In Progress**: 7 (INFRA-1 program; T15 extraction; T16 agentic RAG; T21 publishing; T22 core platform; T31 desktop host; T32 Android host)
 - **Pending**: 10 (T6 Phase B, T7, T8, T18, T25, T26, T27, T28, T29, T30)
 - **Superseded**: 2 (T13; T19 Arxivite host migration)
-- **Total**: 29 task records including INFRA-1
+- **Total**: 31 task records including INFRA-1
 
 ## Current Phase
 
@@ -88,3 +90,8 @@ T22 also owns the canonical public interface-component catalog. T19 is
 retained as the historical record of the Arxivite host experiment and no
 longer tracks an active product migration. Arxivite T102/T102a now own its
 native chatbot parity work in the Arxivite repository.
+
+T31 and T32 own the standalone desktop and Android host features respectively.
+Their current shell/build baseline is implemented; host-contract integration,
+durability, release signing, and broader platform acceptance remain tracked in
+the platform tasks and INFRA-1 phases.
