@@ -9,6 +9,9 @@ export type {
 	ChatParticipant,
 	ChatMessageEnvelope,
 	ChatMessage,
+	Attachment,
+	ResolvedMessagePart,
+	ThinkingMode,
 	ChatContentPart,
 	ChatModelMessage,
 	ChatRetrievedSource,
@@ -18,6 +21,7 @@ export type {
 	RetrievalResult,
 	RetrievalSnapshot,
 	ChatSession,
+	ChatWorkspaceState,
 	ChatTurn,
 	ChatTurnStatus,
 	ExternalSessionIdentity,
@@ -171,3 +175,18 @@ export type {
 // export { Orchestrator } from './core/Orchestrator';
 // export { MentionParser } from './core/MentionParser';
 // export { MentionResolver } from './core/MentionResolver';
+
+export { createExternalAttachment, createAttachment, resolveAttachment, resolveAttachments } from "./context/AttachmentEngine";
+export type { AttachmentReader } from "./context/AttachmentEngine";
+
+export { parseSessionArchive, makeImportedSessionsUnique } from "./utils/importChat";
+export { serializeChatExport, generateFilename } from "./utils/exportChat";
+export type { ExportScope, ExportFormat, ChatExportRequest } from "./utils/exportChat";
+
+export { ThreeTierMemoryStore, DEFAULT_TIER_CONFIG, CORE_SIZE_LIMITS } from "./memory/ThreeTierMemoryStore";
+export type { MemoryTierConfig, ScoredMemoryEntry } from "./memory/ThreeTierMemoryStore";
+export { MemoryService } from "./memory/MemoryService";
+export { MemoryToolProvider } from "./memory/MemoryToolProvider";
+export type { MemoryToolSettings } from "./memory/MemoryToolProvider";
+export type { MemoryAuditRecord } from "./memory/MemoryHandlers";
+export type { MemoryEntry, MemoryCategory, MemoryStorage, MemorySnapshotStore } from "./memory/types";

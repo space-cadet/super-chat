@@ -118,10 +118,11 @@ const defaultFormatter: ToolResultFormatter = (toolName, result) => {
  */
 function toAdapterMessages(
 	messages: ChatMessage[],
-): Array<{ role: string; content: string }> {
+): ChatModelMessage[] {
 	return messages.map((m) => ({
 		role: m.role,
 		content: m.content,
+		...(m.attachments ? { attachments: structuredClone(m.attachments) } : {}),
 	}));
 }
 
@@ -159,13 +160,17 @@ export class AgentLoop {
 		messages: ChatMessage[],
 		tools: ToolDefinition[],
 		signal?: AbortSignal,
+		runtimeOptions?: { maxSteps?: number; maxRequestTokens?: number },
 	): AsyncGenerator<StreamEvent, AgentLoopResult> {
-		const { llmAdapter, toolExecutor, maxSteps = 5, autoApply = false } =
+		const { llmAdapter, toolExecutor, maxSteps: configuredMaxSteps = 5, autoApply = false } =
 			this.opts;
+		const maxSteps = runtimeOptions?.maxSteps ?? configuredMaxSteps;
 		const request: LLMRequestOptions = {
 			...(session.llmProfileId ? { providerProfileId: session.llmProfileId } : {}),
 			...(session.llmProvider ? { provider: session.llmProvider } : {}),
 			...(session.llmModel ? { model: session.llmModel } : {}),
+			...(session.thinkingMode ? { thinkingMode: session.thinkingMode } : {}),
+			...(runtimeOptions?.maxRequestTokens ? { maxRequestTokens: runtimeOptions.maxRequestTokens } : {}),
 		};
 
 		let fullText = "";
@@ -189,6 +194,9 @@ export class AgentLoop {
 				if (signal?.aborted) break;
 
 				switch (event.type) {
+					case "reasoning-delta":
+						yield event;
+						break;
 					case "text-delta":
 						stepText += event.text;
 						fullText += event.text;

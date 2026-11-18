@@ -187,6 +187,44 @@ button:focus-visible { outline: 3px solid #e6874e; outline-offset: 2px; }
 .settings-header { flex: 0 0 auto; padding: 20px 20px 16px; background: #f4f8f7; }
 .settings-header h1 { margin: 0; color: #153c38; font-size: 25px; line-height: 1.15; letter-spacing: -.035em; }
 .settings-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 0 16px 24px; }
+.settings-section-nav { flex: 0 0 auto; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; margin: 0 12px 12px; padding: 4px; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+.settings-section-nav button { min-width: 0; min-height: 40px; padding: 6px 3px; border: 0; border-radius: 10px; background: transparent; color: #60716f; font-size: 11px; font-weight: 700; cursor: pointer; }
+.settings-section-nav button.is-active { background: var(--teal-pale); color: var(--teal-dark); }
+.settings-embedded { min-height: 0; }
+.settings-scroll-embedded { flex: none; overflow: visible; padding: 0; }
+.settings-field textarea { width: 100%; min-width: 0; min-height: 112px; padding: 12px 13px; border: 1px solid #cbd9d5; border-radius: 12px; background: #fff; color: #183431; font: inherit; font-size: 14px; line-height: 1.5; resize: vertical; }
+.settings-field textarea:focus { border-color: #178f82; outline: 3px solid #bce7df; outline-offset: 1px; }
+.settings-field-spaced { margin-top: 16px; }
+.preference-list { padding-top: 4px; }
+.preference-toggle { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 64px; padding: 10px 0; border-bottom: 1px solid #edf1f0; cursor: pointer; }
+.preference-toggle:last-child { border-bottom: 0; }
+.preference-toggle > span { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.preference-toggle strong { color: #344642; font-size: 12px; }
+.preference-toggle small { color: #61726e; font-size: 11px; line-height: 1.45; }
+.preference-toggle input { width: 22px; height: 22px; flex: 0 0 22px; accent-color: var(--teal); }
+.memory-toolbar { display: flex; align-items: center; gap: 8px; padding-top: 14px; }
+.memory-toolbar input { min-width: 0; min-height: 46px; flex: 1 1 auto; padding: 9px 12px; border: 1px solid #cbd9d5; border-radius: 12px; font: inherit; font-size: 14px; }
+.memory-toolbar .settings-secondary-button { width: auto; min-height: 46px; flex: 0 0 auto; padding: 8px 12px; }
+.memory-tier-counts { margin: 10px 2px; color: #61726e; font-size: 11px; }
+.memory-empty { margin: 10px 2px; color: #61726e; font-size: 12px; }
+.memory-entry-list { display: flex; flex-direction: column; gap: 9px; }
+.memory-entry { padding: 12px; border: 1px solid #e0e9e6; border-radius: 13px; background: #fbfdfc; }
+.memory-entry-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; color: #60716c; font-size: 10px; }
+.memory-entry-heading time { margin-left: auto; }
+.memory-tier-badge { padding: 3px 7px; border-radius: 999px; background: #edf1f0; color: #50615d; font-weight: 800; text-transform: capitalize; }
+.memory-tier-badge.tier-core { background: #e0f3eb; color: #17624e; }
+.memory-tier-badge.tier-staged { background: #fff4d9; color: #755414; }
+.memory-tier-badge.tier-archive { background: #ecedf7; color: #4c5277; }
+.memory-entry > p { margin: 9px 0; color: #263d38; font-size: 12px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.memory-tags { display: flex; flex-wrap: wrap; gap: 5px; color: #176c67; font-size: 10px; }
+.memory-entry-actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 8px; border-top: 1px solid #edf1f0; }
+.memory-entry-actions button { min-width: 56px; min-height: 36px; padding: 5px 8px; border: 1px solid #cbd9d5; border-radius: 9px; background: #fff; color: var(--teal-dark); font-size: 11px; font-weight: 700; }
+.memory-entry-actions button:last-child { color: #993f29; }
+.memory-entry-actions button:disabled { opacity: .55; }
+.memory-curate-button { margin-top: 12px; }
+.memory-audit-list { display: flex; flex-direction: column; margin-top: 12px; border-top: 1px solid #edf1f0; }
+.memory-audit-row { display: flex; flex-direction: column; gap: 3px; padding: 9px 0; border-bottom: 1px solid #edf1f0; color: #344642; font-size: 11px; }
+.memory-audit-row time { color: #71807c; font-size: 10px; }
 .provider-status-card {
 	display: flex; align-items: center; gap: 12px; min-height: 78px; margin-bottom: 13px; padding: 15px 16px;
 	border: 1px solid #ead7aa; border-radius: 17px; background: #fff8e7;

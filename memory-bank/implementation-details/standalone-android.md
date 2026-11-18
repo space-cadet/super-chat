@@ -146,3 +146,15 @@ credential survival after restart, and tool execution still need checks.
 The screenshots also show truncated provider/model controls and a clipped
 composer placeholder. Remaining improvements and all reference feature groups
 are tracked in the [master plan](../master-plan.md).
+
+## Memory, Settings, Documents, and Final Install — 2026-11-18
+
+The standalone app now includes `appSettings.ts`, an expanded
+`SettingsScreen.tsx`, and an IndexedDB-backed `memory.ts` adapter. Settings has
+Providers, Chat, Tools, and Memory sections. Android `ChatDocumentsPlugin`
+provides native document output for exported chats. The final debug APK at
+`apps/standalone/android/app/build/outputs/apk/debug/app-debug.apk` has SHA-256
+`409f35e938ad3373969dc16bec1c7de4aaee454e236b5e41d9b27c0e83590005`; it
+installed with non-streaming ADB install and launched on the OPPO CPH2661IN.
+No live memory/tool round trip, credential save, restart recovery, or
+provider-specific file acceptance was performed.

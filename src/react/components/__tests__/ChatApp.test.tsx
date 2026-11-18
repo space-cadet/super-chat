@@ -15,6 +15,7 @@ function createMockEngine() {
     archiveSession: vi.fn(),
     sendMessage: vi.fn(),
     replayMessage: vi.fn(async function* () {}),
+    resendMessage: vi.fn(async function* () {}),
     stopStreaming: vi.fn(),
     subscribe: vi.fn(() => () => undefined),
     approveTool: vi.fn(),
@@ -30,6 +31,7 @@ function createMockEngine() {
     archiveSession: ReturnType<typeof vi.fn>;
     sendMessage: ReturnType<typeof vi.fn>;
     replayMessage: ReturnType<typeof vi.fn>;
+    resendMessage: ReturnType<typeof vi.fn>;
     stopStreaming: ReturnType<typeof vi.fn>;
     subscribe: ReturnType<typeof vi.fn>;
     approveTool: ReturnType<typeof vi.fn>;
@@ -43,7 +45,8 @@ describe('ChatApp', () => {
   beforeEach(() => {
     mockEngine = createMockEngine();
     mockEngine.getActiveSession.mockReturnValue(null);
-    mockEngine.getSessions.mockReturnValue([]);
+    mockEngine.getSessions.mockImplementation(() => { const active = mockEngine.getActiveSession(); return active ? [active] : []; });
+    mockEngine.getOpenSessionIds = vi.fn(() => { const active = mockEngine.getActiveSession(); return active ? [active.id] : []; });
     mockEngine.loadSessions.mockResolvedValue([]);
   });
 
@@ -77,7 +80,7 @@ describe('ChatApp', () => {
     const onNewChat = vi.fn();
     render(<ChatApp engine={mockEngine} onNewChat={onNewChat} />);
 
-    fireEvent.click(screen.getByText('+ New Chat'));
+    fireEvent.click(screen.getByRole('button', { name: 'New chat' }));
     expect(mockEngine.createSession).toHaveBeenCalled();
     expect(onNewChat).toHaveBeenCalled();
   });
@@ -115,13 +118,13 @@ describe('ChatApp', () => {
 
     fireEvent.click(screen.getByTitle('Retry'));
     await waitFor(() => {
-      expect(mockEngine.replayMessage).toHaveBeenCalledWith('msg-1');
+      expect(mockEngine.resendMessage).toHaveBeenCalledWith('msg-1', undefined);
     });
   });
 
   it('opens sidebar when menu button clicked', async () => {
     render(<ChatApp engine={mockEngine} />);
-    const menuButton = screen.getByTitle('Open sidebar');
+    const menuButton = screen.getByRole('button', { name: 'Open chat history' });
     fireEvent.click(menuButton);
 
     await waitFor(() => {

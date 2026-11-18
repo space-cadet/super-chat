@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { SuperChatApp } from "super-chat/react";
 import { DiagnosticsScreen } from "./screens/DiagnosticsScreen";
-import { ProviderSettingsScreen } from "./screens/ProviderSettingsScreen";
+import { SettingsScreen } from "./screens/SettingsScreen";
 import { standaloneHost } from "./host";
 import { StandaloneLLMAdapter } from "./llm";
+import { defaultStandaloneChatPreferences, loadStandaloneChatPreferences, toChatEngineSettings, type StandaloneChatPreferences } from "./appSettings";
 import { loadStandaloneProviderSettings } from "./providerSettings";
 
 const llmAdapter = new StandaloneLLMAdapter();
@@ -40,10 +41,16 @@ function SettingsIcon() {
 export default function App() {
 	const [screen, setScreen] = useState<Screen>("chat");
 	const [, setProviderConfigured] = useState<boolean | null>(null);
+	const [chatPreferences, setChatPreferences] = useState<StandaloneChatPreferences>(defaultStandaloneChatPreferences);
 	const handleConfigurationChange = useCallback((configured: boolean) => setProviderConfigured(configured), []);
 
 	useEffect(() => {
 		let active = true;
+		void loadStandaloneChatPreferences().then(settings => {
+			if (active) setChatPreferences(settings);
+		}).catch(error => {
+			console.error("[super-chat] chat settings load failed:", error instanceof Error ? error.message : error);
+		});
 		void loadStandaloneProviderSettings()
 			.then((settings) => {
 				if (active) setProviderConfigured(settings.profiles.length > 0);
@@ -54,20 +61,22 @@ export default function App() {
 		return () => { active = false; };
 	}, []);
 
+	const chatSettings = useMemo(() => toChatEngineSettings(chatPreferences), [chatPreferences]);
+
 	return (
 		<div className="app-shell">
 			<main className="screen-stack">
 				<section className="screen-panel chat-panel" hidden={screen !== "chat"} aria-label="Chat">
 					<div className="chat-screen-content">
 
-						<div className="chat-engine"><SuperChatApp host={standaloneHost} llmAdapter={llmAdapter} onOpenSettings={() => setScreen("settings")} /></div>
+						<div className="chat-engine"><SuperChatApp host={standaloneHost} llmAdapter={llmAdapter} chatSettings={chatSettings} onOpenSettings={() => setScreen("settings")} /></div>
 					</div>
 				</section>
 				<section className="screen-panel" hidden={screen !== "diagnostics"} aria-label="Diagnostics">
 					<DiagnosticsScreen />
 				</section>
 				<section className="screen-panel" hidden={screen !== "settings"} aria-label="Settings">
-					<ProviderSettingsScreen onConfigurationChange={handleConfigurationChange} />
+					<SettingsScreen chatPreferences={chatPreferences} onChatPreferencesChange={setChatPreferences} onProviderConfigurationChange={handleConfigurationChange} />
 				</section>
 			</main>
 

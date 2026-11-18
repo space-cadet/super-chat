@@ -1,4 +1,5 @@
 import type {
+	ChatWorkspaceState,
 	ChatSession,
 	ToolCall,
 	ToolDefinition,
@@ -64,6 +65,8 @@ export interface ProviderProfilesCapability extends HostCapabilityBase {
 export interface ChatPersistenceCapability extends HostCapabilityBase {
 	kind: "persistence";
 	schemaVersion: number;
+	loadWorkspace?(context: HostOperationContext): Promise<ChatWorkspaceState | null>;
+	saveWorkspace?(workspace: ChatWorkspaceState, context: HostOperationContext): Promise<void>;
 	loadSessions(context: HostOperationContext): Promise<ChatSession[]>;
 	saveSession(
 		session: ChatSession,

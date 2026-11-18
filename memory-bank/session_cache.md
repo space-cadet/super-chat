@@ -1,6 +1,29 @@
 # Session Cache — super-chat
 
-*Last Updated*: 2026-11-18 11:19:12 IST
+*Last Updated*: 2026-11-18 14:25:11 IST
+
+## Current Session: INFRA-1/T22/T15 Feature Reuse, Memory, and Settings — 2026-11-18 14:25:11 IST
+
+- Reused complete Obsidian-AI feature code groups in shared chat and the
+  standalone host: search, tabs/drafts, message selection/edit/resend/replay,
+  thinking controls, provider conversion, attachments, and archive exchange.
+- Added three-tier memory storage/tools and standalone IndexedDB persistence;
+  injection is opt-in and staged memories require promotion to core.
+- Added Settings sections for Providers, Chat, Tools, and Memory, including
+  send behavior, timestamps/token estimates, assistant instructions, tool
+  access/round limits, request budget, and memory controls.
+- Shared and standalone typechecks, shared package build, and Android debug
+  build passed. No full test suite ran after final memory/Settings changes; an
+  earlier 23-file/187-test run and an intermediate 13 memory-store test run are
+  recorded in the session log.
+- Final APK SHA-256 is
+  `409f35e938ad3373969dc16bec1c7de4aaee454e236b5e41d9b27c0e83590005`; it
+  installed and launched on the OPPO CPH2661IN. Live memory/tool round trips,
+  credentials, restart recovery, and full archive/file acceptance remain open.
+- Next build focus: remaining Settings options, especially tab restoration,
+  naming/tags/retention, and outstanding thinking/usage behavior. Layout issues
+  are handled as the user reports them.
+- Session record: `sessions/2026-11-18-provider-profile-switching.md`.
 
 ## Current Session: INFRA-1/T22/T15 Master Delivery Plan — 2026-11-18 10:51:45 IST
 
@@ -13,13 +36,11 @@
   reconciled T6 Phase A history with its open later work.
 - Recorded user-supplied Android screenshots of actual OpenRouter replies,
   known toolbar/composer clipping and the installed connection-test fix.
-- Current work is Stage 1 mobile workspace completion. The source and Memory
-  Bank updates are recorded in the current commit on `main`; screenshot
-  attachments and local package cache remain outside it.
-- The plan now has eight Markdown stage checkboxes, sixty feature checkboxes,
-  and five immediate actions; incomplete items remain unchecked. The session
-  Memory Bank scan confirmed existing owners cover the work, so no new task is
-  needed.
+- Next build item is saved-conversation search (SE03/SE04), followed by
+  independent per-chat drafts and tab restoration (SE02). Verify features as
+  they land and address layout issues as the user reports them.
+- The plan tracks eight delivery stages, sixty feature entries, and immediate
+  build items. Existing task IDs cover the work.
 - This consolidation changes documentation only; no new build/install or test
   run. Earlier source changes and unrelated untracked files are preserved.
 - Session record: `sessions/2026-11-18-provider-profile-switching.md`.

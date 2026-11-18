@@ -38,9 +38,9 @@ describe('MessageBubble', () => {
     expect(screen.getByTitle('Copy')).toBeInTheDocument();
   });
 
-  it('does not show copy button for user messages', () => {
+  it('shows copy button for user messages', () => {
     render(<MessageBubble message={userMessage} />);
-    expect(screen.queryByTitle('Copy')).not.toBeInTheDocument();
+    expect(screen.getByTitle('Copy')).toBeInTheDocument();
   });
 
   it('calls onEdit when edit is saved', async () => {

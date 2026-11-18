@@ -1,27 +1,31 @@
 # Active Context
 
-*Last Updated: 2026-11-18 11:06:57 IST*
+*Last Updated: 2026-11-18 14:25:11 IST*
 
-## Current Delivery: One Master Plan — 2026-11-18
+## Current Delivery: Feature Build and Settings — 2026-11-18
 
 Use [Super Chat Master Delivery Plan](master-plan.md) for current delivery
 order, feature coverage, task ownership, evidence and next work. INFRA-1 owns
 the program, T22 the application, T15 the reference comparison. Existing tasks
 remain implementation owners; no new task tree was created.
 
-Start with Stage 1: toolbar readability and visible unavailable actions,
-provider/model identity, composer clipping and multiline/keyboard behavior,
-message actions/rendering and transcript scrolling. Never hide controls.
+The shared worktree now includes direct reuse of Obsidian-AI feature code for
+saved-chat search, tabs/drafts, message selection/edit/resend/replay, thinking
+controls, attachments, archive exchange, and provider conversion. The standalone
+Settings screen now has Providers, Chat, Tools, and Memory sections. Memory uses
+three tiers; prompt injection is opt-in and new memories require promotion to
+core.
 
-The master plan now presents eight delivery stages, sixty feature entries and
-five immediate actions as Markdown checkboxes. Incomplete acceptance remains
-unchecked.
+Shared and standalone typechecks, the shared package build, and Android debug
+build passed. The final APK installed and launched on the OPPO CPH2661IN; its
+SHA-256 and remaining acceptance are recorded in T32 and the session log. No
+full suite ran after the final memory/Settings changes, and live memory/tool
+round trips remain open.
 
-User screenshots now confirm basic OpenRouter chat on Android `.108`. The
-connection-test fix and toolbar updates built and installed successfully.
-This supersedes the earlier initial-snapshot statements below that no live
-request had been demonstrated. Model identity is clipped in the screenshot;
-provider switching, restart recovery and live tool execution remain open.
+Continue building the remaining Settings options from the master plan, including
+tab restoration, naming/tags/retention, and outstanding thinking/usage behavior.
+Layout issues are handled when the user reports them. Existing incomplete
+acceptance remains open; no new task IDs were created.
 
 
 ## Per-chat Provider and Model Switching — 2026-11-18

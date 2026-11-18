@@ -1,6 +1,6 @@
 # Super Chat Master Delivery Plan
 
-*Updated: 2026-11-18 10:59:33 IST*
+*Updated: 2026-11-18 14:25:11 IST*
 *Program owner: INFRA-1 · shared application: T22 · reference comparison: T15*
 
 ## Start here
@@ -42,15 +42,24 @@ fixture, Android, desktop, and Obsidian remain the active targets.
 
 ## Current baseline and evidence
 
-The worktree is on `main`. The provider/profile, toolbar, connection-test,
-Android backup and master-plan changes are recorded in the current session
-commit; broader acceptance remains open.
+The worktree is on `main`. It now contains source for reused chat feature
+groups, expanded Settings, three-tier memory, attachment and archive handling,
+and native Android document export. The final Android debug build passed,
+installed, and launched; broader feature acceptance remains open.
 
 - Shared session/turn storage, model history, cancellation/replay foundations,
   host contracts, and local tool integration already have implementation records.
 - Named provider profiles, a default for new chats, per-chat profile/model fields,
   and request routing are present. Model discovery and a full model picker still
   need work.
+- Reused source now covers saved-chat search, tabs/drafts, message selection and
+  edit/resend, replay, thinking controls, provider message conversion,
+  attachments, and archive import/export. Settings now has Providers, Chat,
+  Tools, and Memory sections with send behavior, message metadata, assistant
+  instructions, tool access/round limits, request budget, and memory controls.
+- Three-tier memory and its standalone IndexedDB adapter are present. Prompt
+  injection is opt-in; new items stay staged until promoted. AI pruning and a
+  live memory-tool round trip remain open.
 - Android debug builds and repeated ADB updates to the OPPO CPH2661IN at `.108`
   succeeded during this session. The connection test now reads SDK error events
   and allows bounded reasoning/output with a timeout.
@@ -59,20 +68,19 @@ commit; broader acceptance remains open.
   basic live chat on Android. The truncated model field does not establish the
   exact effective model. Profile switching across chats, restart recovery, and
   live tool execution still require their own checks.
-- Those screenshots also show cramped provider/model controls and a clipped
-  composer placeholder. The toolbar includes disabled unfinished actions. The
-  green setup banner and redundant title row were removed.
+- Layout observations are retained in the session record. Address layout issues
+  as the user reports them; current build work focuses on missing features.
 
 ## Delivery sequence
 
 Each stage ends with its listed user-visible behavior working, focused automated
 checks where meaningful, and Android interaction checks on `.108`. Keep completed
-foundations; extend the existing paths. Release work must not block ordinary
-local UI fixes, and later stages can reuse dependencies already implemented.
+foundations and extend the existing paths. Order work by feature dependencies
+and gaps in working behavior. Address layout issues as the user reports them.
 
-- [ ] **Stage 1 — Usable workspace** — Toolbar, profile/model identity, composer sizing, visible message actions, readable transcript and scrolling.
+- [ ] **Stage 1 — Core chat workflow** — Configure a provider, choose a model, send and stop replies, recover from errors, and use basic message actions.
   **Owners:** T22, T8, T28; Android T32.
-  **Complete when:** Controls fit mobile widths; model identity is readable; no banner displaces chat; typing, multiline, Send/Stop and touch actions work without clipping.
+  **Complete when:** A user can start a chat from first run, send a multiline prompt, receive or stop a streamed reply, retry after a failure, and copy a message. The chat shows the selected provider and model, and unavailable actions stay visible with an explanation.
 
 - [ ] **Stage 2 — Reliable conversations** — Independent drafts, tab/view restoration, history/search, rename/delete, edit/resend and replay.
   **Owners:** T22, T15, T8; T30 for copy/export.
@@ -105,22 +113,21 @@ local UI fixes, and later stages can reuse dependencies already implemented.
 
 ### Next executable work
 
-Start Stage 1 with the defects visible in the supplied Android screenshots:
+Continue building the missing Settings options from the reference. The current
+screen already has Providers, Chat, Tools, and Memory sections; expand actual
+behavior for tab restoration, naming/tags/retention, and the remaining thinking
+and usage controls. Keep feature work ahead of a broad layout review; the user
+will report layout issues.
 
-- [ ] Keep the full action row visible with consistent SVG icons, readable labels or
-   accessible descriptions, touch targets, and clear disabled explanations.
-- [ ] Replace the cramped provider/model fields with a compact picker and readable
-   active identity; keep manual model entry accessible and profile-specific.
-- [ ] Fix composer height, placeholder clipping, multiline growth, keyboard insets,
-   and visible Send/Stop state; preserve text while changing chats.
-- [ ] Verify message actions and Markdown/code/math/table sizing, transcript follow,
-   scroll-up reading, and the visible return-to-latest control.
-- [ ] Build, install, and interact with both unconfigured and configured states on
-   `.108`; record outcomes against the checklist below.
-
-Before changing each area, inspect its current source against the reference and
-replace “Compare” below with implemented, partial, or missing plus exact evidence.
-This is a targeted part of implementation, not a prerequisite full rewrite.
+- [ ] **Build the remaining Settings options (OP01).** Add the missing settings
+  and connect each option to persisted app behavior, including tab restoration,
+  naming/tags/retention, and remaining thinking/usage preferences.
+- [ ] **Finish search and conversation continuity (SE02–SE04).** Continue from
+  the implemented search, tab, and draft source; add the remaining matched-
+  message navigation and saved-state behavior as feature slices.
+- [ ] **Complete attachment and archive behavior (CX05/CX06, SE05/SE06).** Extend
+  the existing paths for supported files, provider conversion, and import/export
+  recovery rather than replacing them.
 
 ## Feature checklist
 
@@ -140,7 +147,7 @@ not new task IDs.
 
 - [ ] **UI01 — Full visible toolbar: New, History, Search, Models, Agents, Sync, Zen, Settings and session actions; clear unavailable states**
   **Owner:** T22/T8. **Reference:** 3.1, 12.
-  **Current state:** Partial; current toolbar wraps, uses mixed icons, and has unfinished disabled controls.
+  **Current state:** Partial; Search and Settings are wired, while several unfinished actions remain unavailable. Layout changes wait for user-reported issues.
 
 - [ ] **UI02 — Compact model picker plus readable profile/provider/model identity; all actions reachable at narrow widths**
   **Owner:** T28/T22. **Reference:** 3.1, 6.1.
@@ -148,7 +155,7 @@ not new task IDs.
 
 - [ ] **UI03 — Attributed user, assistant, agent, human and diagnostic messages; timestamp, model, duration, real usage or labelled estimates**
   **Owner:** T22/T8/T29. **Reference:** 3.2.
-  **Current state:** Partial; user/assistant messages and token display seen; full metadata comparison needed.
+  **Current state:** Partial; message timestamps and token estimates are configurable; model, duration, and actual-usage coverage remain open.
 
 - [ ] **UI04 — Markdown, links, code, tables, equations, files and references render; wide content scrolls within its block**
   **Owner:** T22/T8. **Reference:** 3.2.
@@ -156,7 +163,7 @@ not new task IDs.
 
 - [ ] **UI05 — Honest generation/tool/approval/error/cancel states and generating-tab markers; separate reasoning display with a visible control**
   **Owner:** T22/T25/T28. **Reference:** 3.2, 5.
-  **Current state:** Partial; live reply works; remaining state/display comparison needed.
+  **Current state:** Partial; thinking controls and streamed replies exist; full tool/approval/cancel state behavior remains open.
 
 - [ ] **UI06 — Follow latest and late layout changes; preserve position when reading up; visible return-to-latest control**
   **Owner:** T22/T8. **Reference:** 3.2, 12.
@@ -164,7 +171,7 @@ not new task IDs.
 
 - [ ] **UI07 — Multiline auto-growing composer, caret/input correctness, placeholder, keyboard/safe areas and configurable send shortcuts**
   **Owner:** T22/T8/T32. **Reference:** 3.3.
-  **Current state:** Partial; placeholder clipping observed.
+  **Current state:** Partial; Enter-to-send is configurable; input, keyboard, and remaining shortcut behavior are open.
 
 - [ ] **UI08 — Visible Send and Stop controls with correct enabled state; stopping settles approval, tools and model continuation**
   **Owner:** T22/T25. **Reference:** 3.3, 5.
@@ -172,11 +179,11 @@ not new task IDs.
 
 - [ ] **UI09 — Copy, edit/resubmit/cancel-edit, retry on selected message/history; no draft leakage**
   **Owner:** T22/T8. **Reference:** 3.3, 3.5.
-  **Current state:** Partial; replay foundation exists; action behavior needs comparison.
+  **Current state:** Partial; selection, edit/resend, and replay source exists; full action behavior remains open.
 
 - [ ] **UI10 — Touch/keyboard multi-message selection, copy as Markdown, cancel and reset on session switch**
   **Owner:** T22/T8/T30. **Reference:** 3.5.
-  **Current state:** Compare.
+  **Current state:** Partial; shared selection and export controls exist; touch/keyboard acceptance remains open.
 
 - [ ] **UI11 — Visible host actions for create/update/append/review/insert, source target retained, permissions explained**
   **Owner:** T22/T8/T25. **Reference:** 3.5, 8.1.
@@ -191,27 +198,27 @@ not new task IDs.
 
 - [ ] **SE01 — New unsent draft stays out of saved history; duplicate opens avoided; tab close differs from confirmed deletion**
   **Owner:** T22. **Reference:** 2, 4.1.
-  **Current state:** Partial; existing session/tab foundation.
+  **Current state:** Partial; tab and draft source exists; saved-state acceptance remains open.
 
 - [ ] **SE02 — Per-chat text draft, attachments, context, profile/models, participants, thinking, tabs and scroll restored; closing last tab gives clean new chat**
   **Owner:** T22/T27/T28. **Reference:** 2, 4.1, 11.
-  **Current state:** Partial; profile/model persistence present; full restoration comparison needed.
+  **Current state:** Partial; per-chat drafts/tabs and profile/model restoration are implemented; restart and full-state restoration remain open.
 
 - [ ] **SE03 — Searchable recent-history list: title, count, excerpt, date, usage; load, manual rename, delete and configurable auto-name with fallback**
   **Owner:** T22/T8. **Reference:** 4.2.
-  **Current state:** Partial; basic sidebar exists; history feature comparison needed.
+  **Current state:** Partial; saved-chat search and results exist; history metadata, rename/delete, and naming options remain incomplete.
 
 - [ ] **SE04 — Full saved-message search; open/highlight matching message; past-session tool excludes current session**
   **Owner:** T22/T25. **Reference:** 4.3.
-  **Current state:** Compare; search UI currently disabled.
+  **Current state:** Partial; saved-chat search exists; matched-message navigation/highlight and past-session tool behavior remain open.
 
 - [ ] **SE05 — Single message/selection/session/bulk copy and export in Markdown, JSON and JSONL as applicable**
   **Owner:** T30/T22. **Reference:** 4.2.
-  **Current state:** Planned; exact formats must be reconciled with reference.
+  **Current state:** Partial; message selection and archive export source exist; full format and Android document acceptance remain open.
 
 - [ ] **SE06 — Validated JSON/JSONL archive import, schema migration, ID collisions create copies; imports never run tools**
   **Owner:** T30. **Reference:** 4.2, 11.
-  **Current state:** Planned.
+  **Current state:** Partial; archive import source exists; round-trip, migration, conflict, and no-tool-execution acceptance remain open.
 
 - [ ] **SE07 — Session tags: manual/model-assisted tags, filter/count, manage/search/create/remove; persistence and archive inclusion**
   **Owner:** T22/T30/T25. **Reference:** 4.2.
@@ -246,7 +253,7 @@ not new task IDs.
 
 - [ ] **PR05 — Thinking menu/request mapping calibrated by model/provider; display choice separate; image/file/tools/usage/cancel support represented honestly**
   **Owner:** T28/T27. **Reference:** 3.3, 6.1.
-  **Current state:** Compare.
+  **Current state:** Partial; thinking controls exist; model/provider calibration and file/tool/usage capability reporting remain open.
 
 - [ ] **PR06 — Stream response, preserve usage and resolved identity, cancel/time out/retry with actionable provider errors**
   **Owner:** T22/T28/T29. **Reference:** 5, 6.1.
@@ -277,11 +284,11 @@ not new task IDs.
 
 - [ ] **CX05 — Pick/drop supported text/Markdown, PDF, image and external files; visible removable per-draft chips and submitted references**
   **Owner:** T27/T32/T31. **Reference:** 3.3, 7.2.
-  **Current state:** Planned.
+  **Current state:** Partial; attachment UI and shared resolution exist; host file selection and media coverage need completion.
 
 - [ ] **CX06 — Provider-compatible parts, page/resize/size/type limits, preserved captured content for replay; same captured input for group requests**
   **Owner:** T27/T28. **Reference:** 5, 7.2.
-  **Current state:** Planned.
+  **Current state:** Partial; provider message conversion exists; PDF/image limits and persisted captured-content replay remain open.
 
 - [ ] **CX07 — Persona, memory, context, history and tools within budgets/reserves; keep pairs valid and complete local transcript intact**
   **Owner:** T15/T16/T25/T26. **Reference:** 7.1, 9.
@@ -293,7 +300,7 @@ not new task IDs.
 
 - [ ] **CX09 — Memory tiers, CRUD/search/audit/promotion/archive, relevant prompt injection, reversible AI pruning**
   **Owner:** T26. **Reference:** 7.1, 8.2.
-  **Current state:** Planned.
+  **Current state:** Partial; three-tier storage, tools, review/restore, and opt-in injection exist; AI pruning remains open.
 
 - [ ] **CX10 — Request token estimate includes tools and attachments, image estimate labelled, actual usage distinguished**
   **Owner:** T29/T27/T28. **Reference:** 3.3, 9.
@@ -316,7 +323,7 @@ not new task IDs.
 
 - [ ] **TL04 — Memory tools, past-session search, tag tools and full stored-result retrieval**
   **Owner:** T26/T25/T22. **Reference:** 8.2.
-  **Current state:** Planned/compare.
+  **Current state:** Partial; memory tools exist; live tool round trip, past-session search, tags, and full-result retrieval remain open.
 
 - [ ] **TL05 — Sanitized read-settings, allow-listed setting changes and capability/identity reporting for this app**
   **Owner:** T25/T29. **Reference:** 8.2.
@@ -370,11 +377,11 @@ not new task IDs.
 
 - [ ] **OP01 — Visible configurable persona, send behavior, tab restoration, naming/tags/retention, tools/approval/steps, budgets, thinking and usage options**
   **Owner:** T22 plus feature owners. **Reference:** 9.
-  **Current state:** Partial provider settings; full settings comparison open.
+  **Current state:** Partial; Providers/Chat/Tools/Memory settings exist for send behavior, timestamps/token estimates, instructions, tool access/rounds, budget, and memory. Tab restoration, naming/tags/retention, and remaining thinking/usage options are open.
 
 - [ ] **OP02 — Durable sessions, drafts, parts, index/transcript hydration, no empty overwrite of unloaded data, migration and corruption recovery**
   **Owner:** T22/T30/T32/T31. **Reference:** 10–11.
-  **Current state:** Partial IndexedDB/turn foundation; lazy loading and restart cases open.
+  **Current state:** Partial; IndexedDB, draft/session persistence, and replay source exist; lazy loading and restart/recovery cases remain open.
 
 - [ ] **OP03 — Android lifecycle/process death/offline/backup, protected-key failure and permission-aware file/share behavior**
   **Owner:** T32. **Reference:** 11.
@@ -382,7 +389,7 @@ not new task IDs.
 
 - [ ] **OP04 — Keyboard, touch/long-press, accessible labels, focus, status announcements, cancellation and narrow layouts**
   **Owner:** T22/T8/T32/T31. **Reference:** 12.
-  **Current state:** Partial; current clipping defects listed in Stage 1.
+  **Current state:** Partial; Android layout observations are recorded in the session.
 
 - [ ] **OP05 — Correlated/redacted provider/tool/context/storage diagnostics, opt-in telemetry fields and safe export**
   **Owner:** T29. **Reference:** 9, 12.

@@ -39,3 +39,13 @@ MemoryStore --> candidate selection --> AI optimizer
 ```
 
 AI pruning must be explicit, auditable, bounded, and reversible.
+
+## Implemented Standalone Slice — 2026-11-18
+
+`src/memory/` now contains the shared three-tier store, service, tool provider,
+handlers, and tool definitions. `apps/standalone/src/memory.ts` persists the
+store in IndexedDB and connects it to the host. Memory Settings expose the
+controls; prompt injection starts disabled, and newly captured items stay
+staged until explicitly promoted to core. Activity review and snapshot restore
+are available in the current source. AI pruning/deduplication and a live
+provider tool round trip remain unaccepted.

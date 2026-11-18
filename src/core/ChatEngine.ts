@@ -1,3 +1,5 @@
+import { makeImportedSessionsUnique } from "../utils/importChat";
+import { normalizeSessionTags } from "./sessionTags";
 /**
  * ChatEngine — High-level API for super-chat.
  *
@@ -113,6 +115,7 @@ const defaultSettings: ChatSettings = {
 	maxAgentSteps: 5,
 	autoApply: false,
 	showProviderIndicator: true,
+	pressEnterToSend: true,
 };
 
 function mergeParticipants(
@@ -166,6 +169,7 @@ export class ChatEngine {
 	private listeners = new Set<ChatEngineListener>();
 	private pendingApprovals = new Map<string, PendingApproval>();
 	private persistenceQueue: Promise<void> = Promise.resolve();
+	private deletingSessionIds = new Set<string>();
 	private defaultModelSelection: LLMRequestOptions | undefined;
 	private lastLoadReport: SessionLoadReport = {
 		migratedSessionIds: [],
@@ -254,6 +258,15 @@ export class ChatEngine {
 			if (this.state.openSessionIds.length === 0 && this.state.activeSessionId) {
 				this.state.openSessionIds = [this.state.activeSessionId];
 			}
+			const workspace = await this.opts.persistenceAdapter.loadWorkspace?.();
+			if (workspace && Array.isArray(workspace.openSessionIds)) {
+				const known = new Set(this.state.sessions.map(session => session.id));
+				this.state.openSessionIds = [...new Set(workspace.openSessionIds)].filter(id => known.has(id));
+				this.state.activeSessionId = this.state.openSessionIds.includes(workspace.activeSessionId ?? "")
+					? workspace.activeSessionId
+					: this.state.openSessionIds[0] ?? null;
+			}
+
 			for (const session of this.state.sessions) {
 				if (
 					report.migratedSessionIds.includes(session.id) ||
@@ -276,6 +289,28 @@ export class ChatEngine {
 			recoveredSessionIds: [...this.lastLoadReport.recoveredSessionIds],
 			skippedSessionIds: [...this.lastLoadReport.skippedSessionIds],
 		};
+	}
+
+	/** Import archives as saved conversations, without invoking providers or tools. */
+	async importSessions(values: ChatSession[]): Promise<ChatSession[]> {
+		const normalized = values.map(value => {
+			const result = normalizePersistedSession(value);
+			if (!result.session) throw new Error("The archive contains an invalid chat session.");
+			return result.session;
+		});
+		return this.enqueuePersistence(async () => {
+			const imported = makeImportedSessionsUnique(normalized, new Set(this.state.sessions.map(session => session.id))).sessions;
+			const saved: ChatSession[] = [];
+			for (const session of imported) {
+				if (this.opts.persistenceAdapter) {
+					await this.opts.persistenceAdapter.saveSession(cloneSession(session), { owner: "chat-engine", reason: "manual" });
+				}
+				this.state.sessions.unshift(session);
+				saved.push(session);
+				this.emitState();
+			}
+			return saved;
+		});
 	}
 
 	async saveSession(session?: ChatSession): Promise<void> {
@@ -317,6 +352,7 @@ export class ChatEngine {
 			session.id,
 			...this.state.openSessionIds.filter((id) => id !== session.id),
 		];
+		this.persistWorkspace();
 		this.emitState();
 		void this.persistSession(session, {
 			owner: "chat-engine",
@@ -336,6 +372,7 @@ export class ChatEngine {
 		if (!this.state.openSessionIds.includes(sessionId)) {
 			this.state.openSessionIds.push(sessionId);
 		}
+		this.persistWorkspace();
 		this.emitState();
 		return true;
 	}
@@ -358,8 +395,21 @@ export class ChatEngine {
 			const nextId = this.state.openSessionIds[index] ?? this.state.openSessionIds[index - 1] ?? null;
 			this.state.activeSessionId = nextId;
 		}
+		this.persistWorkspace();
 		this.emitState();
 		return true;
+	}
+
+	private persistWorkspace(): void {
+		const adapter = this.opts.persistenceAdapter;
+		if (!adapter?.saveWorkspace) return;
+		const workspace = {
+			openSessionIds: [...this.state.openSessionIds],
+			activeSessionId: this.state.activeSessionId,
+		};
+		void this.enqueuePersistence(() => adapter.saveWorkspace!(workspace)).catch(error => {
+			console.error("[super-chat] workspace save failed:", error);
+		});
 	}
 
 	getOpenSessionIds(): string[] {
@@ -382,13 +432,13 @@ export class ChatEngine {
 	/** Save a profile/model choice on one chat; it applies to that chat's next turn. */
 	async setSessionModelSelection(
 		sessionId: string,
-		selection: Required<LLMRequestOptions>,
+		selection: Required<Pick<LLMRequestOptions, "providerProfileId" | "provider" | "model">>,
 	): Promise<void> {
 		if (this.state.isStreaming) {
 			throw new Error("Wait for the current reply to finish before changing its model.");
 		}
 		const session = this.state.sessions.find((candidate) => candidate.id === sessionId);
-		if (!session) throw new Error("This chat is no longer available.");
+		if (!session || this.deletingSessionIds.has(sessionId)) throw new Error("This chat is no longer available.");
 		if (!selection.providerProfileId.trim() || selection.providerProfileId.length > 160 || !selection.provider.trim() || selection.provider.length > 80 || !selection.model.trim() || selection.model.length > 160) {
 			throw new Error("Choose a provider profile and model.");
 		}
@@ -406,20 +456,44 @@ export class ChatEngine {
 		});
 	}
 
-	async deleteSession(sessionId: string): Promise<void> {
-		if (this.opts.persistenceAdapter) {
-			await this.enqueuePersistence(() =>
-				this.opts.persistenceAdapter!.deleteSession(sessionId),
-			);
-		}
-		this.state.sessions = this.state.sessions.filter(
-			(s) => s.id !== sessionId,
-		);
-		this.state.openSessionIds = this.state.openSessionIds.filter((id) => id !== sessionId);
-		if (this.state.activeSessionId === sessionId) {
-			this.state.activeSessionId = this.state.openSessionIds[0] ?? null;
-		}
+	/** Update workspace fields without replacing live turn/message state. */
+	async updateSessionMetadata(
+		sessionId: string,
+		patch: Pick<Partial<ChatSession>, "title" | "draft" | "tags" | "draftAttachments" | "thinkingMode">,
+	): Promise<void> {
+		const session = this.state.sessions.find((item) => item.id === sessionId);
+		if (!session || this.deletingSessionIds.has(sessionId)) throw new Error("This chat is no longer available.");
+		if (patch.title !== undefined) session.title = patch.title.trim() || "New Chat";
+		if (patch.draft !== undefined) session.draft = patch.draft;
+		if (patch.draftAttachments !== undefined) session.draftAttachments = structuredClone(patch.draftAttachments);
+		if (patch.thinkingMode !== undefined) session.thinkingMode = patch.thinkingMode;
+		if (patch.tags !== undefined) session.tags = normalizeSessionTags(patch.tags);
 		this.emitState();
+		await this.saveSession(session);
+	}
+
+	async deleteSession(sessionId: string): Promise<void> {
+		if (this.deletingSessionIds.has(sessionId)) return;
+		if (this.state.isStreaming && this.state.activeSessionId === sessionId) {
+			throw new Error("Stop the current reply before deleting this chat.");
+		}
+		this.deletingSessionIds.add(sessionId);
+		try {
+			if (this.opts.persistenceAdapter) {
+				await this.enqueuePersistence(() =>
+					this.opts.persistenceAdapter!.deleteSession(sessionId),
+				);
+			}
+			this.state.sessions = this.state.sessions.filter(session => session.id !== sessionId);
+			this.state.openSessionIds = this.state.openSessionIds.filter(id => id !== sessionId);
+			if (this.state.activeSessionId === sessionId) {
+				this.state.activeSessionId = this.state.openSessionIds[0] ?? null;
+			}
+			this.persistWorkspace();
+			this.emitState();
+		} finally {
+			this.deletingSessionIds.delete(sessionId);
+		}
 	}
 
 	async archiveSession(sessionId: string): Promise<void> {
@@ -546,7 +620,36 @@ export class ChatEngine {
 			: replayContext
 				? { ...options, enableRAG: false }
 				: options;
-		yield* this.runMessage(userMessage.content, replayOptions, replayContext);
+		yield* this.runMessage(userMessage.content, { ...replayOptions, attachments: structuredClone(userMessage.attachments ?? []) }, replayContext);
+	}
+
+	/** Resubmit a selected user turn, replacing its subsequent conversation. */
+	async *resendMessage(messageId: string, editedText?: string): AsyncIterable<StreamEvent> {
+		const session = this.getActiveSession();
+		if (!session || this.disposed || this.state.isStreaming) {
+			yield { type: "error", message: "Wait for the current reply to finish before resubmitting." };
+			return;
+		}
+		let index = session.messages.findIndex(message => message.id === messageId);
+		while (index >= 0 && session.messages[index].role !== "user") index--;
+		if (index < 0) {
+			yield { type: "error", message: "The original user message was not found." };
+			return;
+		}
+		const original = session.messages[index];
+		const history = this.getModelHistory(session);
+		const userOrdinal = session.messages.slice(0, index).filter(message => message.role === "user").length;
+		const historyIndex = history.flatMap((message, position) => message.role === "user" ? [position] : [])[userOrdinal];
+		if (historyIndex === undefined) {
+			yield { type: "error", message: "The original model history could not be restored." };
+			return;
+		}
+		const preceding = session.messages.slice(0, index);
+		const retainedIds = new Set(preceding.map(message => message.id));
+		session.messages = preceding;
+		session.turns = session.turns?.filter(turn => retainedIds.has(turn.userMessageId));
+		session.modelHistory = history.slice(0, historyIndex);
+		yield* this.runMessage(editedText ?? original.content, { attachments: structuredClone(original.attachments ?? []) });
 	}
 
 	/** Replay a turn addressed by either its user or assistant message ID. */
@@ -585,6 +688,10 @@ export class ChatEngine {
 			return;
 		}
 		const session = this.getActiveSession();
+		if (session && this.deletingSessionIds.has(session.id)) {
+			yield { type: "error", message: "This chat is being deleted." };
+			return;
+		}
 		if (!session) {
 			yield { type: "error", message: "No active session" };
 			return;
@@ -611,9 +718,10 @@ export class ChatEngine {
 				.map((message) => message.id),
 		);
 		const userMessage: ChatMessage = {
-			id: `msg-${Date.now()}`,
+			id: `msg-${crypto.randomUUID()}`,
 			role: "user",
 			content: text,
+			...(options?.attachments?.length ? { attachments: structuredClone(options.attachments) } : {}),
 			timestamp: Date.now(),
 			sender: this.opts.participant
 				? { ...this.opts.participant }
@@ -622,6 +730,7 @@ export class ChatEngine {
 		const userModelMessage: ChatModelMessage = {
 			role: "user",
 			content: text,
+			...(userMessage.attachments ? { attachments: structuredClone(userMessage.attachments) } : {}),
 		};
 		const turn = createTurn(userMessage, [userModelMessage]);
 		turn.assistantMessageId = `assistant-${turn.id}`;
@@ -853,6 +962,7 @@ export class ChatEngine {
 					id: `history-${session.id}-${index}`,
 					role: message.role as ChatMessage["role"],
 					content: message.content,
+			...(message.attachments ? { attachments: structuredClone(message.attachments) } : {}),
 					timestamp: 0,
 				})),
 				...(turn.retrievedSources?.length
@@ -868,6 +978,10 @@ export class ChatEngine {
 
 			// Get tools only after retrieval has completed, keeping all turn work
 			// behind the same engine-owned lock.
+			if (this.opts.toolAdapter?.refreshTools) {
+				await this.awaitWithAbort(this.opts.toolAdapter.refreshTools(), signal);
+				this.registerAdapterTools(this.opts.toolAdapter);
+			}
 			const tools = this.getAvailableTools();
 			const enableTools = options?.enableTools ?? this.state.settings.enableTools;
 			if (enableTools && tools.length > 0) {
@@ -1041,7 +1155,10 @@ export class ChatEngine {
 		const startTime = performance.now();
 		let firstChunkTime: number | null = null;
 
-		const generator = this.agentLoop.run(session, messages, tools, signal);
+		const generator = this.agentLoop.run(session, messages, tools, signal, {
+			maxSteps: this.state.settings.maxAgentSteps,
+			maxRequestTokens: this.state.settings.maxContextTokens,
+		});
 		let result: AgentLoopResult | undefined;
 
 		try {
@@ -1066,6 +1183,11 @@ export class ChatEngine {
 						reason: "partial-output",
 						turnId: turn.id,
 					});
+				} else if (value.type === "reasoning-delta") {
+					this.updateAssistantMessage(session, turn, assistantMessageId, assistantText, "streaming");
+					const assistant = session.messages.find(message => message.id === assistantMessageId)!;
+					assistant.reasoning = (assistant.reasoning ?? "") + value.text;
+					await this.persistSession(session, { owner: "chat-engine", reason: "partial-output", turnId: turn.id });
 				} else if (value.type === "tool-call") {
 					turn.toolCalls.push({ ...value.call, args: { ...value.call.args } });
 					turn.updatedAt = Date.now();
@@ -1181,6 +1303,16 @@ export class ChatEngine {
 		}
 	}
 
+	private async *streamReplyEvents(messages: ChatModelMessage[], signal: AbortSignal, request: LLMRequestOptions): AsyncIterable<StreamEvent> {
+		if (this.opts.llmAdapter.streamChatEvents) {
+			yield* this.opts.llmAdapter.streamChatEvents(messages, signal, request);
+			return;
+		}
+		for await (const text of this.opts.llmAdapter.streamChat(messages, signal, request)) {
+			yield { type: "text-delta", text };
+		}
+	}
+
 	private async *runTextOnly(
 		session: ChatSession,
 		messages: ChatMessage[],
@@ -1194,6 +1326,7 @@ export class ChatEngine {
 		const adapterMessages = messages.map((m) => ({
 			role: m.role,
 			content: m.content,
+			...(m.attachments ? { attachments: structuredClone(m.attachments) } : {}),
 		}));
 
 		let assistantText = "";
@@ -1203,16 +1336,29 @@ export class ChatEngine {
 		let chunkCount = 0;
 
 		try {
-			for await (const chunk of this.opts.llmAdapter.streamChat(
+			for await (const event of this.streamReplyEvents(
 				adapterMessages,
 				signal,
 				{
 					...(session.llmProfileId ? { providerProfileId: session.llmProfileId } : {}),
 					...(session.llmProvider ? { provider: session.llmProvider } : {}),
 					...(session.llmModel ? { model: session.llmModel } : {}),
+					...(session.thinkingMode ? { thinkingMode: session.thinkingMode } : {}),
+					...(this.state.settings.maxContextTokens > 0 ? { maxRequestTokens: this.state.settings.maxContextTokens } : {}),
 				},
 			)) {
 				if (signal.aborted) break;
+				if (event.type === "error") throw new Error(event.message);
+				if (event.type === "reasoning-delta") {
+					this.updateAssistantMessage(session, turn, assistantMessageId, assistantText, "streaming");
+					const assistant = session.messages.find(message => message.id === assistantMessageId)!;
+					assistant.reasoning = (assistant.reasoning ?? "") + event.text;
+					await this.persistSession(session, { owner: "chat-engine", reason: "partial-output", turnId: turn.id });
+					yield event;
+					continue;
+				}
+				if (event.type !== "text-delta") continue;
+				const chunk = event.text;
 				if (chunkCount === 0) {
 					firstChunkTime = performance.now();
 				}
@@ -1335,7 +1481,7 @@ export class ChatEngine {
 		}
 		return session.messages
 			.filter((message) => message.role !== "system")
-			.map(({ role, content }) => ({ role, content }));
+			.map(({ role, content, attachments }) => ({ role, content, ...(attachments ? { attachments: structuredClone(attachments) } : {}) }));
 	}
 
 	private withoutSystemMessages(
@@ -1353,6 +1499,7 @@ export class ChatEngine {
 		const inboundMessage: ChatModelMessage = {
 			role: message.role,
 			content: message.content,
+			...(message.attachments ? { attachments: structuredClone(message.attachments) } : {}),
 			messageId: message.id,
 			timestamp: message.timestamp,
 		};
@@ -1393,6 +1540,7 @@ export class ChatEngine {
 			.map((message) => ({
 				role: message.role,
 				content: message.content,
+			...(message.attachments ? { attachments: structuredClone(message.attachments) } : {}),
 				messageId: message.id,
 				timestamp: message.timestamp,
 			}));
@@ -1562,9 +1710,9 @@ export class ChatEngine {
 		this.emitState();
 	}
 
-	private enqueuePersistence(work: () => Promise<void>): Promise<void> {
+	private enqueuePersistence<T>(work: () => Promise<T>): Promise<T> {
 		const next = this.persistenceQueue.then(work, work);
-		this.persistenceQueue = next.catch(() => undefined);
+		this.persistenceQueue = next.then(() => undefined, () => undefined);
 		return next;
 	}
 

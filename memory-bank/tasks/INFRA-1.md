@@ -5,7 +5,7 @@ It defines the feature checklist, current delivery order, owners, and completion
 The numbered phases below retain historical progress; use the master plan for next work.
 
 *Created: 2026-08-31 22:44:08 IST*
-*Last Updated: 2026-11-18 10:51:45 IST*
+*Last Updated: 2026-11-18 14:25:11 IST*
 
 **Status**: 🔄 **IN PROGRESS**
 **Priority**: CRITICAL
@@ -422,8 +422,8 @@ Obsidian migration or unrelated desktop release work.
 - Hosts supply capabilities; they do not coordinate the chat workflow.
 - Missing approval must never cause tool execution.
 - Exactly one component owns message/session persistence per active path.
-- Extract from `obsidian-ai` through characterized, behavior-preserving steps,
-  not bulk copying.
+- Reuse complete `obsidian-ai` feature code groups when they fit; preserve
+  behavior and adapt shared contracts and host-specific operations.
 - Keep product-specific adapters in their product repositories.
 - Keep old paths until the replacement passes recorded acceptance.
 - Separate unit, contract, product, clean-build, platform, and manual evidence.
@@ -466,3 +466,14 @@ Test.
 INFRA-1 remains in progress. The shared package is verified independently;
 Arxivite and Obsidian host adoption, product/browser/device acceptance, and
 remaining T15/T16/T25-T30 work are not closed by this merge.
+
+## Feature Implementation and Android Install — 2026-11-18
+
+The shared worktree now contains reused chat feature code for search,
+tabs/drafts, message actions, attachments, provider conversion, archive
+exchange, three-tier memory, and expanded Settings. Existing T15/T22/T25–T30
+owners cover these slices; no task was created. The final shared/standalone
+typechecks, package build, and Android debug build passed. The APK installed
+and launched on the OPPO CPH2661IN. Remaining Settings parity, feature-specific
+runtime acceptance, Obsidian host adoption, and full Android recovery remain
+open.

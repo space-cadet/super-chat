@@ -73,13 +73,17 @@ describe('ChatInput', () => {
     expect(screen.getByTitle('Toggle LaTeX preview')).toBeInTheDocument();
   });
 
-  it('shows mention autocomplete when @ is typed', () => {
-    render(<ChatInput onSend={vi.fn()} onStop={vi.fn()} isStreaming={false} />);
-
-    const textarea = screen.getByPlaceholderText(/Type a message/);
-    fireEvent.change(textarea, { target: { value: '@' } });
-
-    expect(screen.getByText(/Type to search mentions/)).toBeInTheDocument();
+  it('preserves composition input when Enter confirms an IME candidate', () => {
+    const onSend = vi.fn();
+    render(<ChatInput onSend={onSend} onStop={vi.fn()} isStreaming={false} />);
+    const textarea = screen.getByRole('textbox', { name: 'Message' });
+    fireEvent.compositionStart(textarea);
+    fireEvent.change(textarea, { target: { value: '你好' } });
+    fireEvent.keyDown(textarea, { key: 'Enter', keyCode: 229, isComposing: true });
+    expect(onSend).not.toHaveBeenCalled();
+    fireEvent.compositionEnd(textarea);
+    fireEvent.keyDown(textarea, { key: 'Enter' });
+    expect(onSend).toHaveBeenCalledWith('你好');
   });
 
   it('disables send button when input is empty', () => {

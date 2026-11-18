@@ -1,3 +1,7 @@
+import { buildBudgetedHistory } from "../context/contextBudget";
+import { estimateStructuredTokens } from "../core/tokenEstimator";
+import { resolveAttachments } from "../context/AttachmentEngine";
+import { getThinkingProviderOptions } from "../api/thinkingProviderOptions";
 /**
  * VercelLLMAdapter — Bridges super-chat's LLMAdapter interface to Vercel AI SDK v6.
  *
@@ -20,6 +24,8 @@ import {
 import { z } from "zod";
 import type {
 	LLMAdapter,
+	ChatModelMessage,
+	LLMRequestOptions,
 	ToolDefinition,
 	StreamEvent,
 	ProviderInfo,
@@ -127,25 +133,26 @@ export class VercelLLMAdapter implements LLMAdapter {
 	// Simple text streaming (no tools)
 	// --------------------------------------------------------------------------
 
+	async *streamChatEvents(messages: ChatModelMessage[], signal?: AbortSignal, request?: LLMRequestOptions): AsyncIterable<StreamEvent> {
+		yield* this.streamChatWithTools(messages, [], signal, request);
+	}
+
 	async *streamChat(
-		messages: Array<{ role: string; content: string }>,
+		messages: ChatModelMessage[],
 		signal?: AbortSignal,
+		request?: LLMRequestOptions,
 	): AsyncIterable<string> {
 		const provider = await this.getProvider();
 		const model = provider.chat(this.profile.model);
 
-		// Convert simple {role, content} messages to UIMessage format
-		// Filter out system messages — the system prompt is passed via the `system` option
-		const nonSystemMessages = messages.filter((m) => m.role !== "system");
-		const uiMessages = this.toUIMessages(nonSystemMessages);
+		const prepared = await this.prepareRequest(messages, undefined, request);
 
 		const result = streamText({
 			model: model as any,
-			system: this.systemPrompt,
-			messages: await convertToModelMessages(uiMessages, {
-				ignoreIncompleteToolCalls: true,
-			}),
+			system: prepared.system,
+			messages: prepared.messages,
 			abortSignal: signal,
+			providerOptions: getThinkingProviderOptions(this.profile, request?.thinkingMode),
 		});
 
 		for await (const chunk of result.textStream) {
@@ -159,28 +166,25 @@ export class VercelLLMAdapter implements LLMAdapter {
 	// --------------------------------------------------------------------------
 
 	async *streamChatWithTools(
-		messages: Array<{ role: string; content: string }>,
+		messages: ChatModelMessage[],
 		tools: ToolDefinition[],
 		signal?: AbortSignal,
+		request?: LLMRequestOptions,
 	): AsyncIterable<StreamEvent> {
 		const provider = await this.getProvider();
 		const model = provider.chat(this.profile.model);
 
 		const sdkTools = this.buildSdkTools(tools);
-		// Filter out system messages — the system prompt is passed via the `system` option
-		const nonSystemMessages = messages.filter((m) => m.role !== "system");
-		const uiMessages = this.toUIMessages(nonSystemMessages);
+		const prepared = await this.prepareRequest(messages, sdkTools, request);
 
 		const result = streamText({
 			model: model as any,
-			system: this.systemPrompt,
-			messages: await convertToModelMessages(uiMessages, {
-				tools: sdkTools,
-				ignoreIncompleteToolCalls: true,
-			}),
+			system: prepared.system,
+			messages: prepared.messages,
 			tools: sdkTools,
 			stopWhen: stepCountIs(1),
 			abortSignal: signal,
+			providerOptions: getThinkingProviderOptions(this.profile, request?.thinkingMode),
 		});
 
 		let accumulatedText = "";
@@ -279,9 +283,32 @@ export class VercelLLMAdapter implements LLMAdapter {
 	/**
 	 * Convert simple {role, content} messages to UIMessage format for v6 SDK.
 	 */
-	private toUIMessages(
-		messages: Array<{ role: string; content: string }>,
-	): UIMessage[] {
+	private async prepareRequest(messages: ChatModelMessage[], tools?: ToolSet, request?: LLMRequestOptions) {
+		const system = [this.systemPrompt, ...messages.filter(message => message.role === "system").map(message => message.content)]
+			.filter(Boolean).join("\n\n") || undefined;
+		const uiMessages = await this.toUIMessages(messages.filter(message => message.role !== "system"));
+		const modelMessages = await convertToModelMessages(uiMessages, { tools, ignoreIncompleteToolCalls: true });
+		const modelContextWindow = this.profile.models.find(model => model.id === this.profile.model)?.contextWindow ?? 128000;
+		const contextWindow = Math.min(modelContextWindow, request?.maxRequestTokens ?? modelContextWindow);
+		const budget = buildBudgetedHistory({
+			systemPrompt: system,
+			currentMessage: null,
+			history: modelMessages,
+			options: {
+				maxRequestTokens: contextWindow,
+				maxMessages: modelMessages.length,
+				preserveRecentMessages: 2,
+				responseReserveTokens: Math.min(4096, Math.floor(contextWindow / 4)),
+				additionalTokens: estimateStructuredTokens(tools),
+			},
+		});
+		if (budget.overBudget) throw new Error("The latest message and its attachments exceed this model's context budget. Remove an attachment or shorten the message.");
+		return { system, messages: budget.history };
+	}
+
+	private async toUIMessages(
+		messages: ChatModelMessage[],
+	): Promise<UIMessage[]> {
 		const uiMessages: UIMessage[] = [];
 		const toolPartsById = new Map<string, {
 			message: UIMessage;
@@ -301,6 +328,14 @@ export class VercelLLMAdapter implements LLMAdapter {
 
 			if (!structuredParts) {
 				uiMessage.parts.push({ type: "text", text: message.content });
+				if (message.attachments?.length) {
+					const attachmentParts = await resolveAttachments(message.attachments, undefined, this.profile.provider);
+					for (const part of attachmentParts) {
+						if (part.type === "text") uiMessage.parts.push(part);
+						else if (part.type === "image") uiMessage.parts.push({ type: "file", mediaType: part.image.slice(5, part.image.indexOf(";")), url: part.image });
+						else uiMessage.parts.push({ type: "file", mediaType: part.mediaType, url: "data:" + part.mediaType + ";base64," + part.data });
+					}
+				}
 				uiMessages.push(uiMessage);
 				continue;
 			}
@@ -501,6 +536,8 @@ export class VercelLLMAdapter implements LLMAdapter {
 		switch (chunk.type) {
 			case "text-delta":
 				return { type: "text-delta", text: chunk.text };
+			case "reasoning-delta":
+				return { type: "reasoning-delta", text: chunk.text };
 
 			case "tool-call": {
 				const call: ToolCall = {

@@ -1,3 +1,35 @@
+export type ThinkingMode =
+	| "provider-default"
+	| "none"
+	| "minimal"
+	| "low"
+	| "medium"
+	| "high"
+	| "xhigh"
+	| "max"
+	| "enabled";
+
+/** Attachment to a chat message — vault file or external file the LLM should consume */
+export interface Attachment {
+	id: string;
+	/** For vault files: "markdown" | "image" | "pdf". For external files: "image" | "pdf" | "file". */
+	type: "markdown" | "image" | "pdf" | "file";
+	/** Vault path (for vault files) or original filename (for external files) */
+	path: string;
+	name: string;
+	/** Optional inline base64 data for external files (bypasses vault read) */
+	data?: string;
+	/** Optional MIME type for external files */
+	mimeType?: string;
+}
+
+/** Persisted multimodal payload for replaying prior message attachments. */
+export type ResolvedMessagePart =
+	| { type: "text"; text: string }
+	| { type: "image"; image: string }
+	| { type: "file"; data: string; mediaType: string };
+
+
 /**
  * Core types for super-chat
  * Framework-agnostic type definitions used throughout the library
@@ -51,6 +83,7 @@ export type ChatTurnStatus =
   | 'failed';
 
 export interface ChatModelMessage {
+  attachments?: Attachment[];
   role: string;
   content: string;
   /** Stable visible-message identity when this model entry came from a host. */
@@ -129,6 +162,8 @@ export interface ChatTurn {
 }
 
 export interface ChatMessage {
+  reasoning?: string;
+  attachments?: Attachment[];
   id: string;
   role: MessageRole;
   content: string;
@@ -169,6 +204,11 @@ export interface ChatSession {
   llmProfileId?: string;
   llmProvider?: string;
   llmModel?: string;
+  /** Saved composer text and history tags. */
+  draft?: string;
+  draftAttachments?: Attachment[];
+  thinkingMode?: ThinkingMode;
+  tags?: string[];
   archived?: boolean;
   metadata?: Record<string, unknown>;
 }
@@ -239,6 +279,7 @@ export interface ContextItem {
 
 export type StreamEvent =
   | { type: 'text-delta'; text: string }
+  | { type: 'reasoning-delta'; text: string }
   | { type: 'tool-call'; call: ToolCall }
   | { type: 'tool-result'; callId: string; result: ToolResult }
   | { type: 'tool-error'; callId: string; error: string }
@@ -269,6 +310,7 @@ export type ChatEngineListener = (snapshot: ChatEngineSnapshot) => void;
 // ============================================================================
 
 export interface SendOptions {
+  attachments?: Attachment[];
   provider?: string;
   model?: string;
   enableRAG?: boolean;
@@ -381,6 +423,8 @@ export interface ChatSettings {
   maxAgentSteps: number;
   autoApply: boolean;
   showProviderIndicator: boolean;
+  /** Enter submits the composer; Shift+Enter still inserts a line. */
+  pressEnterToSend: boolean;
 }
 
 // ============================================================================
@@ -388,14 +432,15 @@ export interface ChatSettings {
 // ============================================================================
 
 export interface LLMAdapter {
+  streamChatEvents?(messages: ChatModelMessage[], signal?: AbortSignal, request?: LLMRequestOptions): AsyncIterable<StreamEvent>;
   streamChat(
-    messages: { role: string; content: string }[],
+    messages: ChatModelMessage[],
     signal?: AbortSignal,
     request?: LLMRequestOptions,
   ): AsyncIterable<string>;
 
   streamChatWithTools(
-    messages: { role: string; content: string }[],
+    messages: ChatModelMessage[],
     tools: ToolDefinition[],
     signal?: AbortSignal,
     request?: LLMRequestOptions,
@@ -408,12 +453,22 @@ export interface LLMAdapter {
 
 /** Non-secret selection passed to a host adapter for one conversation turn. */
 export interface LLMRequestOptions {
+  thinkingMode?: ThinkingMode;
   providerProfileId?: string;
   provider?: string;
   model?: string;
+  /** Optional host preference that caps history sent to the provider. */
+  maxRequestTokens?: number;
+}
+
+export interface ChatWorkspaceState {
+  openSessionIds: string[];
+  activeSessionId: string | null;
 }
 
 export interface PersistenceAdapter {
+  loadWorkspace?(): Promise<ChatWorkspaceState | null>;
+  saveWorkspace?(workspace: ChatWorkspaceState): Promise<void>;
   loadSessions(): Promise<ChatSession[]>;
   saveSession(session: ChatSession, context?: SessionWriteContext): Promise<void>;
   deleteSession(sessionId: string): Promise<void>;
@@ -444,6 +499,7 @@ export interface ContextAdapter {
 }
 
 export interface ToolAdapter {
+  refreshTools?(): Promise<void>;
   executeTool(call: ToolCall, signal?: AbortSignal): Promise<ToolResult>;
   getAvailableTools(): ToolDefinition[];
 }

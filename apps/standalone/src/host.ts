@@ -1,3 +1,5 @@
+import { standaloneMemoryTools } from "./memory";
+import { standaloneDocuments } from "./documents";
 import type { SuperChatHost } from "super-chat/contracts";
 import { androidCredentialCapability, hasAndroidSecureCredentials } from "./androidCredentials";
 import { standaloneLifecycle } from "./lifecycle";
@@ -18,7 +20,8 @@ export const standaloneHost: SuperChatHost = {
 			subscribe: subscribeStandaloneProviderSettings,
 		},
 		persistence: standalonePersistence,
-		tools: standaloneTools,
+		documents: standaloneDocuments,
+		tools: [standaloneTools, standaloneMemoryTools],
 		...(hasAndroidSecureCredentials ? { credentials: androidCredentialCapability } : {}),
 	},
 };

@@ -77,3 +77,52 @@ Converted the master plan to actual Markdown task checkboxes: eight stages,
 sixty feature entries and five immediate actions. Preserved each feature ID,
 owner, reference and current state. Full acceptance is still open, so items
 remain unchecked. Documentation formatting only; no application changes.
+
+## Shared Feature Reuse, Memory, Settings, and Final Install — 2026-11-18 14:25:11 IST
+
+*Source branch: `main`*
+*Source commit at Memory Bank update: `4222fc5ce7bfaa6bffe052fe03cd0f65741d7770`*
+
+### Source work
+
+- Reused Obsidian-AI feature source directly in shared Super Chat: saved-chat
+  search, tabs and drafts, message selection/edit/resend/replay, thinking
+  controls, provider message conversion, attachment handling, and archive
+  import/export. Reuse includes components/hooks/helpers/styles where suitable;
+  imports and host-specific storage/document calls are adapted at boundaries.
+- Added the shared three-tier memory store/service and tools, standalone
+  IndexedDB storage, memory Settings, activity review, and snapshot restore.
+  Memory injection starts disabled; newly captured memories remain staged until
+  promoted to core.
+- Added Settings sections for Providers, Chat, Tools, and Memory. Current
+  options include Enter-to-send, message timestamps/token estimates, assistant
+  instructions, tool access and round limits, request budget, and memory
+  controls.
+- Added Android native document output for chat export through
+  `ChatDocumentsPlugin`; attachment selection and provider-specific media
+  behavior still need broader host acceptance.
+
+### Verification and installation
+
+- Shared and standalone TypeScript checks, `pnpm build`, and the Android debug
+  build passed.
+- Before the final memory/Settings changes, 23 test files / 187 tests passed;
+  13 copied memory-store tests passed in an earlier intermediate run. No full
+  test suite was run after the final memory/Settings changes.
+- Final APK:
+  `apps/standalone/android/app/build/outputs/apk/debug/app-debug.apk`
+- SHA-256:
+  `409f35e938ad3373969dc16bec1c7de4aaee454e236b5e41d9b27c0e83590005`
+- `adb install --no-streaming -r` succeeded and the app launched on the OPPO
+  CPH2661IN. No live memory/tool call, credential save, restart recovery, or
+  final-build visual review was performed. Earlier user screenshots confirm
+  basic OpenRouter replies, but not the latest memory/tool behavior.
+
+### Remaining work
+
+T8/T15/T22/T25/T26/T27/T28/T30/T32 remain active. Implement the remaining Settings
+options next, especially tab restoration, naming/tags/retention, and outstanding
+thinking/usage behavior. Search, draft persistence, provider-specific file
+handling, archive round trips, live memory/tool calls, and broader Android
+recovery still need their feature behavior completed or accepted. Layout issues
+are handled when the user reports them. No new task IDs were created.

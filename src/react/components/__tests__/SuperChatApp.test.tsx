@@ -10,7 +10,7 @@ describe("SuperChatApp", () => {
     render(<SuperChatApp host={host} />);
 
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "Fixture User's Chat" })).toBeInTheDocument();
+      expect(screen.getByRole("tab", { name: "Fixture User's Chat" })).toBeInTheDocument();
     });
     expect(screen.getByText("Start a new conversation")).toBeInTheDocument();
   });

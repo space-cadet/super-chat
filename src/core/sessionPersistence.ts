@@ -1,3 +1,4 @@
+import { normalizeSessionTags } from "./sessionTags";
 import type {
 	ChatMessage,
 	ChatModelMessage,
@@ -63,7 +64,7 @@ export function cloneSession(session: ChatSession): ChatSession {
 export function cloneModelMessages(
 	messages: ChatModelMessage[],
 ): ChatModelMessage[] {
-	return messages.map((message) => ({ ...message }));
+	return structuredClone(messages);
 }
 
 export function createTurn(
@@ -106,7 +107,7 @@ export function normalizePersistedSession(
 	const rawVersion = getSchemaVersion(value.persistence);
 	const migrated = rawVersion !== CURRENT_SESSION_SCHEMA_VERSION;
 	const validMessages = value.messages.filter(isChatMessage).map((message) =>
-		structuredClone(message),
+		({ ...structuredClone(message), ...(message.attachments ? { attachments: normalizeAttachments(message.attachments) } : {}) }),
 	);
 	const invalidMessagesRecovered = validMessages.length !== value.messages.length;
 	const normalizedTurns = normalizeTurns(value.turns);
@@ -170,6 +171,10 @@ export function normalizePersistedSession(
 			? { llmProvider: value.llmProvider }
 			: {}),
 		...(typeof value.llmModel === "string" ? { llmModel: value.llmModel } : {}),
+		...(typeof value.draft === "string" ? { draft: value.draft } : {}),
+		...(Array.isArray(value.draftAttachments) ? { draftAttachments: normalizeAttachments(value.draftAttachments) } : {}),
+		...(typeof value.thinkingMode === "string" && THINKING_MODES.includes(value.thinkingMode) ? { thinkingMode: value.thinkingMode as ChatSession["thinkingMode"] } : {}),
+		...(Array.isArray(value.tags) ? { tags: normalizeSessionTags(value.tags) } : {}),
 		...(typeof value.archived === "boolean" ? { archived: value.archived } : {}),
 		...(isRecord(value.metadata) ? { metadata: value.metadata } : {}),
 	};
@@ -178,7 +183,7 @@ export function normalizePersistedSession(
 	// model-history field existed. This preserves continuation without inventing
 	// provider-specific tool messages.
 	if (!session.modelHistory) {
-		session.modelHistory = messages.map(({ role, content }) => ({ role, content }));
+		session.modelHistory = messages.map(({ role, content, attachments }) => ({ role, content, ...(attachments ? { attachments } : {}) }));
 	}
 
 	return { session, migrated, recovered };
@@ -372,4 +377,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 export function isEngineWrite(context: SessionWriteContext | undefined): boolean {
 	return context?.owner === "chat-engine";
+}
+
+const THINKING_MODES = ["provider-default", "none", "minimal", "low", "medium", "high", "xhigh", "max", "enabled"];
+
+function normalizeAttachments(value: unknown): import("./types").Attachment[] {
+ if (!Array.isArray(value)) return [];
+ return value.filter((item): item is import("./types").Attachment =>
+  isRecord(item) && typeof item.id === "string" && typeof item.path === "string" &&
+  typeof item.name === "string" && ["markdown", "image", "pdf", "file"].includes(item.type as string) &&
+  (item.data === undefined || typeof item.data === "string") &&
+  (item.mimeType === undefined || typeof item.mimeType === "string")
+ ).map(item => ({ ...item }));
 }

@@ -4,7 +4,7 @@
 full feature checklist, existing task owners, evidence, and next work.
 
 *Created: 2026-05-19 11:15:00 IST*
-*Last Updated: 2026-11-18 10:51:45 IST*
+*Last Updated: 2026-11-18 14:25:11 IST*
 
 ## Overview
 
@@ -49,25 +49,25 @@ acceptance criteria, and Arxivite adoption remains a separate consumer step.
 | T13 | Tool Result Formatting (Superseded) | ❌ | MEDIUM | T25, T16 | [Details](tasks/T13.md) |
 | T6 | Multi-Agent Orchestrator — Many-Body Agent System | 🔄 **PHASE A COMPLETE** | **HIGH** | T3, T5 | [Details](tasks/T6.md) |
 | T7 | Mention Parser & Routing | ⬜ | MEDIUM | T6 | [Details](tasks/T7.md) |
-| T8 | React UI Components (PendingToolCard, ToolResultCard) | ⬜ | MEDIUM | T4 | [Details](tasks/T8.md) |
+| T8 | React UI Components (PendingToolCard, ToolResultCard) | 🔄 | MEDIUM | T4 | [Details](tasks/T8.md) |
 | T15 | Extract obsidian-ai Agentic Capabilities | 🔄 | HIGH | T22 | [Details](tasks/T15.md) |
 | T16 | Shared Agentic RAG and Evidence Runtime | 🔄 | CRITICAL | T15, T22 | [Details](tasks/T16.md) |
 | T18 | Migrate obsidian-ai to Obsidian Host | ⬜ | HIGH | T15, T21, T22 | [Details](tasks/T18.md) |
 | T19 | Retired Arxivite super-chat Host Harness | ❌ | HIGH | T16, T21, T22 | [Details](tasks/T19.md) |
-| T25 | Shared Agentic Tool Runtime and Built-in Provider | ⬜ | CRITICAL | T15, T22 | [Details](tasks/T25.md) |
-| T26 | Three-Tier Memory and AI Pruning | ⬜ | HIGH | T15, T22 | [Details](tasks/T26.md) |
-| T27 | PDF, Image, and Markdown Attachments | ⬜ | HIGH | T15, T22 | [Details](tasks/T27.md) |
+| T25 | Shared Agentic Tool Runtime and Built-in Provider | 🔄 | CRITICAL | T15, T22 | [Details](tasks/T25.md) |
+| T26 | Three-Tier Memory and AI Pruning | 🔄 | HIGH | T15, T22 | [Details](tasks/T26.md) |
+| T27 | PDF, Image, and Markdown Attachments | 🔄 | HIGH | T15, T22 | [Details](tasks/T27.md) |
 | T28 | Provider Profiles and Fast Model Switching | 🔄 | HIGH | T15, T21, T22 | [Details](tasks/T28.md) |
 | T29 | Shared Diagnostics | ⬜ | HIGH | T15, T22 | [Details](tasks/T29.md) |
-| T30 | Session Export and Import | ⬜ | HIGH | T21, T22 | [Details](tasks/T30.md) |
+| T30 | Session Export and Import | 🔄 | HIGH | T21, T22 | [Details](tasks/T30.md) |
 | T31 | Standalone Desktop App and Host | 🔄 | HIGH | INFRA-1, T22, T21 | [Details](tasks/T31.md) |
 | T32 | Standalone Android App and Host | 🔄 | HIGH | INFRA-1, T22, T21 | [Details](tasks/T32.md) |
 
 ## Status Summary
 
 - **Completed**: 12 full task records (including T17 retired/superseded)
-- **In Progress**: 9 (T6 later phases; INFRA-1 program; T15 extraction; T16 agentic RAG; T21 publishing; T22 core platform; T28 provider profiles; T31 desktop host; T32 Android host)
-- **Pending**: 8 (T7, T8, T18, T25, T26, T27, T29, T30)
+- **In Progress**: 14 (T6 later phases; INFRA-1 program; T8 React UI; T15 extraction; T16 agentic RAG; T21 publishing; T22 core platform; T25 tools; T26 memory; T27 attachments; T28 provider profiles; T30 archive exchange; T31 desktop host; T32 Android host)
+- **Pending**: 3 (T7, T18, T29)
 - **Superseded**: 2 (T13; T19 Arxivite host migration)
 - **Total**: 31 task records including INFRA-1
 

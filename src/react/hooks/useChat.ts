@@ -21,6 +21,7 @@
 import { useState, useCallback, useEffect } from "react";
 import type {
   ChatMessage,
+  Attachment,
   ChatSession,
   RetrievalSnapshot,
   ToolCall,
@@ -39,7 +40,7 @@ export interface UseChatState {
 }
 
 export interface UseChatActions {
-  sendMessage: (text: string) => Promise<void>;
+  sendMessage: (text: string, attachments?: Attachment[]) => Promise<void>;
   createSession: (title?: string) => ChatSession;
   switchSession: (sessionId: string) => boolean;
   openSession: (sessionId: string) => boolean;
@@ -51,6 +52,7 @@ export interface UseChatActions {
   rejectTool: (callId: string, reason?: string) => void;
   loadSessions: () => Promise<void>;
   replayMessage: (messageId: string) => Promise<void>;
+  resendMessage: (messageId: string, text?: string) => Promise<void>;
 }
 
 export type UseChatReturn = UseChatState & UseChatActions;
@@ -60,13 +62,15 @@ function getOpenSessionIds(engine: ChatEngine): string[] {
 }
 
 export function useChat(
-	engine: ChatEngine,
-	options?: { initialSessionId?: string; loadSessionsOnMount?: boolean },
+  engine: ChatEngine,
+  options?: { initialSessionId?: string; loadSessionsOnMount?: boolean },
 ): UseChatReturn {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [openSessionIds, setOpenSessionIds] = useState<string[]>([]);
-  const [currentSession, setCurrentSession] = useState<ChatSession | null>(null);
+  const [currentSession, setCurrentSession] = useState<ChatSession | null>(
+    null,
+  );
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pendingTools, setPendingTools] = useState<ToolCall[]>([]);
@@ -97,9 +101,7 @@ export function useChat(
       setIsStreaming(snapshot.isStreaming);
       setPendingTools(snapshot.pendingApprovals);
       if (snapshot.retrieval) setRetrieval(snapshot.retrieval);
-      if (!snapshot.isStreaming) {
-        setMessages(session?.messages ?? []);
-      }
+      setMessages([...(session?.messages ?? [])]);
     });
   }, [engine]);
 
@@ -110,56 +112,42 @@ export function useChat(
   }, [engine]);
 
   // Load sessions on mount + optionally switch to initial session
-	useEffect(() => {
-		if (options?.loadSessionsOnMount === false) return;
+  useEffect(() => {
+    if (options?.loadSessionsOnMount === false) return;
 
-		void loadSessions().then(() => {
-			if (options?.initialSessionId) {
-				engine.switchSession(options.initialSessionId);
-				const session = engine.getActiveSession();
-				setCurrentSession(session);
-				setMessages(session?.messages ?? []);
-			}
-		}).catch((err) => {
-			const message = err instanceof Error ? err.message : String(err);
-			setError(message);
-			console.error("[super-chat] session load failed:", message);
-		});
-	}, [engine, loadSessions, options?.initialSessionId, options?.loadSessionsOnMount]);
+    void loadSessions()
+      .then(() => {
+        if (options?.initialSessionId) {
+          engine.switchSession(options.initialSessionId);
+          const session = engine.getActiveSession();
+          setCurrentSession(session);
+          setMessages(session?.messages ?? []);
+        }
+      })
+      .catch((err) => {
+        const message = err instanceof Error ? err.message : String(err);
+        setError(message);
+        console.error("[super-chat] session load failed:", message);
+      });
+  }, [
+    engine,
+    loadSessions,
+    options?.initialSessionId,
+    options?.loadSessionsOnMount,
+  ]);
 
   const sendMessage = useCallback(
-    async (text: string) => {
+    async (text: string, attachments?: Attachment[]) => {
       setError(null);
       setIsStreaming(true);
 
       try {
-        const stream = engine.sendMessage(text);
-        let assistantText = "";
+        const stream = engine.sendMessage(text, { attachments });
 
         for await (const event of stream) {
           switch (event.type) {
             case "text-delta":
-              assistantText += event.text;
-              // Update messages with streaming text
-              setMessages((prev) => {
-                const last = prev[prev.length - 1];
-                if (last?.role === "assistant") {
-                  return [
-                    ...prev.slice(0, -1),
-                    { ...last, content: assistantText },
-                  ];
-                }
-                return [
-                  ...prev,
-                  {
-                    id: "streaming-assistant",
-                    role: "assistant",
-                    content: assistantText,
-                    timestamp: Date.now(),
-                    sender: { id: "assistant", name: "Assistant", kind: "assistant" },
-                  },
-                ];
-              });
+              setMessages([...(engine.getActiveSession()?.messages ?? [])]);
               break;
 
             case "error":
@@ -182,7 +170,7 @@ export function useChat(
         setIsStreaming(false);
       }
     },
-    [engine]
+    [engine],
   );
 
   const createSession = useCallback(
@@ -194,7 +182,7 @@ export function useChat(
       setMessages([]);
       return session;
     },
-    [engine]
+    [engine],
   );
 
   const replayMessage = useCallback(
@@ -217,6 +205,25 @@ export function useChat(
     [engine],
   );
 
+  const resendMessage = useCallback(
+    async (messageId: string, text?: string) => {
+      setError(null);
+      try {
+        for await (const event of engine.resendMessage(messageId, text)) {
+          if (event.type === "error") setError(event.message);
+        }
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : String(cause));
+      } finally {
+        setIsStreaming(engine.isStreaming);
+        const session = engine.getActiveSession();
+        setCurrentSession(session);
+        setMessages([...(session?.messages ?? [])]);
+      }
+    },
+    [engine],
+  );
+
   const switchSession = useCallback(
     (sessionId: string) => {
       const ok = engine.switchSession(sessionId);
@@ -228,12 +235,13 @@ export function useChat(
       }
       return ok;
     },
-    [engine]
+    [engine],
   );
 
   const openSession = useCallback(
     (sessionId: string) => {
-      const ok = engine.openSession?.(sessionId) ?? engine.switchSession(sessionId);
+      const ok =
+        engine.openSession?.(sessionId) ?? engine.switchSession(sessionId);
       if (ok) {
         const session = engine.getActiveSession();
         setCurrentSession(session);
@@ -267,7 +275,7 @@ export function useChat(
       setCurrentSession(session);
       setMessages(session?.messages ?? []);
     },
-    [engine]
+    [engine],
   );
 
   const archiveSession = useCallback(
@@ -275,7 +283,7 @@ export function useChat(
       await engine.archiveSession(sessionId);
       setSessions(engine.getSessions());
     },
-    [engine]
+    [engine],
   );
 
   const stopStreaming = useCallback(() => {
@@ -285,13 +293,16 @@ export function useChat(
 
   const approveTool = useCallback(
     (callId: string) => engine.approveTool(callId),
-    [engine]
+    [engine],
   );
 
-  const rejectTool = useCallback((callId: string, reason?: string) => {
-    void reason;
-    engine.rejectTool(callId);
-  }, [engine]);
+  const rejectTool = useCallback(
+    (callId: string, reason?: string) => {
+      void reason;
+      engine.rejectTool(callId);
+    },
+    [engine],
+  );
 
   return {
     messages,
@@ -314,5 +325,6 @@ export function useChat(
     rejectTool,
     loadSessions,
     replayMessage,
+    resendMessage,
   };
 }

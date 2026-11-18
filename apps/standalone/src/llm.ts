@@ -1,3 +1,5 @@
+import { getMemoryContext } from "./memory";
+import { loadStandaloneChatPreferences } from "./appSettings";
 import {
 	createProviderProfile,
 	VercelLLMAdapter,
@@ -23,7 +25,6 @@ import {
 export { getStandaloneModels, getStandaloneProviders };
 export type { StandaloneProvider };
 
-const SYSTEM_PROMPT = "You are Super Chat, a helpful assistant. Use available tools for arithmetic and the device's current local time when they help answer the user.";
 
 interface CachedAdapter {
 	configurationKey: string;
@@ -147,7 +148,7 @@ async function createAdapter(profile: StandaloneProviderProfile, modelOverride?:
 	const adapterProfile = createProviderProfile(profile.provider, model, apiKey, {
 		baseUrl: profile.baseUrl,
 	});
-	const adapter = new VercelLLMAdapter({ profile: adapterProfile, systemPrompt: SYSTEM_PROMPT });
+	const adapter = new VercelLLMAdapter({ profile: adapterProfile });
 	cachedAdapters.set(configurationKey, { configurationKey, adapter });
 	return adapter;
 }
@@ -168,14 +169,25 @@ async function configuredAdapter(request?: LLMRequestOptions): Promise<VercelLLM
 	return createAdapter(profile, request?.model);
 }
 
+async function withMemoryContext(messages: import("super-chat").ChatModelMessage[]) {
+ const [preferences, memory] = await Promise.all([loadStandaloneChatPreferences(), getMemoryContext()]);
+ const systemContext = [preferences.systemPrompt.trim(), memory].filter(Boolean).join("\n\n");
+ return systemContext ? [{ role: "system", content: systemContext }, ...messages] : messages;
+}
+
 export class StandaloneLLMAdapter implements LLMAdapter {
+ async *streamChatEvents(messages: import("super-chat").ChatModelMessage[], signal?: AbortSignal, request?: LLMRequestOptions): AsyncIterable<StreamEvent> {
+  const adapter = await configuredAdapter(request);
+  yield* adapter.streamChatEvents(await withMemoryContext(messages), signal, request);
+ }
+
 	async *streamChat(
 		messages: Array<{ role: string; content: string }>,
 		signal?: AbortSignal,
 		request?: LLMRequestOptions,
 	): AsyncIterable<string> {
 		const adapter = await configuredAdapter(request);
-		yield* adapter.streamChat(messages, signal);
+		yield* adapter.streamChat(await withMemoryContext(messages), signal, request);
 	}
 
 	async *streamChatWithTools(
@@ -185,7 +197,7 @@ export class StandaloneLLMAdapter implements LLMAdapter {
 		request?: LLMRequestOptions,
 	): AsyncIterable<StreamEvent> {
 		const adapter = await configuredAdapter(request);
-		yield* adapter.streamChatWithTools(messages, tools, signal);
+		yield* adapter.streamChatWithTools(await withMemoryContext(messages), tools, signal, request);
 	}
 
 	getProviders(): ProviderInfo[] {

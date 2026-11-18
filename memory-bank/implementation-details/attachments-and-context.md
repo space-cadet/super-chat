@@ -40,3 +40,11 @@ not add a new tokenizer or a new context manager.
 
 See [`model-history-and-context.md`](model-history-and-context.md) for the
 shared rules on message order, provider conversion, and large content.
+
+## Implemented Attachment Slice — 2026-11-18
+
+The shared source now includes attachment resolution and budget helpers, an
+attachment composer, and provider message-part conversion. The standalone
+Android host adds document integration. Provider-specific PDF/image handling,
+cross-host type/size limits, and persisted captured-content replay remain open;
+the installed debug APK does not establish those behaviors.

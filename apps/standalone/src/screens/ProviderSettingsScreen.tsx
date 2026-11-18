@@ -48,8 +48,10 @@ function draftFromProfile(profile: StandaloneProviderProfile): ProfileDraft {
 
 export function ProviderSettingsScreen({
 	onConfigurationChange,
+	embedded = false,
 }: {
 	onConfigurationChange: (configured: boolean) => void;
+	embedded?: boolean;
 }) {
 	const [settings, setSettings] = useState<StandaloneProviderSettings>({ profiles: [], defaultProfileId: null });
 	const [draft, setDraft] = useState<ProfileDraft>(() => createDraft());
@@ -204,14 +206,14 @@ export function ProviderSettingsScreen({
 	}
 
 	return (
-		<div className="settings-page">
-			<header className="settings-header">
+		<div className={embedded ? "settings-embedded" : "settings-page"}>
+			{!embedded && <header className="settings-header">
 				<p className="eyebrow">SUPER CHAT</p>
 				<h1>Settings</h1>
 				<p className="page-subtitle">Save provider profiles, then choose one for each chat.</p>
-			</header>
+			</header>}
 
-			<div className="settings-scroll">
+			<div className={`settings-scroll ${embedded ? "settings-scroll-embedded" : ""}`}>
 				<section className={`provider-status-card ${settings.profiles.length ? "provider-is-configured" : "provider-needs-setup"}`} aria-live="polite">
 					<span className="provider-status-mark" aria-hidden="true">{settings.profiles.length ? "✓" : "•"}</span>
 					<div>

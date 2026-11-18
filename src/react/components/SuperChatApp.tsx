@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { ChatEngine } from "../../core/ChatEngine";
-import type { LLMAdapter } from "../../core/types";
+import type { ChatSettings, LLMAdapter } from "../../core/types";
 import { createExternalSessionIdentity } from "../../core/sessionPersistence";
 import type { HostOperationContext, ProviderProfileSnapshot, SuperChatHost } from "../../contracts/host";
 import { createChatEngineForHost } from "../../adapters/HostAdapters";
@@ -15,6 +15,7 @@ export interface SuperChatAppProps {
 	initialSessionId?: string;
 	onNewChat?: () => void;
  onOpenSettings?: () => void;
+	chatSettings?: Partial<ChatSettings>;
 }
 
 type HostWithLLMAdapter = SuperChatHost & { llmAdapter?: LLMAdapter };
@@ -120,6 +121,7 @@ export function SuperChatApp({
 	initialSessionId,
 	onNewChat,
  onOpenSettings,
+ chatSettings,
 }: SuperChatAppProps) {
 	const [engine, setEngine] = useState<ChatEngine | null>(null);
 	const [providerProfiles, setProviderProfiles] = useState<ProviderProfileSnapshot | null>(null);
@@ -227,6 +229,11 @@ export function SuperChatApp({
 	}, [engine, host]);
 
 	useEffect(() => {
+		if (!engine || !chatSettings) return;
+		engine.updateSettings(chatSettings);
+	}, [engine, chatSettings]);
+
+	useEffect(() => {
 		if (cacheKey) return undefined;
 		return () => engine?.dispose();
 	}, [cacheKey, engine]);
@@ -280,10 +287,14 @@ export function SuperChatApp({
 		<ChatApp
 			engine={engine}
 			providerProfiles={providerProfiles}
+					chatSettings={chatSettings}
 			initialSessionId={initialSessionId}
 			onNewChat={onNewChat}
  onOpenSettings={onOpenSettings}
 			loadSessionsOnMount={false}
+      onSaveExport={host.capabilities.documents?.createDocument ? async (filename, content) => {
+        await host.capabilities.documents!.createDocument!({ id: filename, title: filename, content }, { requestId: crypto.randomUUID() });
+      } : undefined}
 		/>
 	);
 }

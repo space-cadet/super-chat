@@ -5,7 +5,7 @@ This document defines architecture; its historical sequence is superseded by the
 master plan for current delivery.
 
 *Created: 2026-08-31 22:25:18 IST*
-*Last Updated: 2026-09-08 03:42:12 IST*
+*Last Updated: 2026-11-18 14:25:11 IST*
 *Program Owner: INFRA-1*
 *Shared-Core Workstream: T22*
 
@@ -30,6 +30,16 @@ coordination, and split persistence/session ownership proved too complex in
 practice. Arxivite will implement selected Obsidian AI capabilities directly
 in its existing native chatbot. T95/T101 and the Arxivite harness remain
 historical records only.
+
+### Reuse the Reference Source
+
+For matching chat behavior, carry over the complete Obsidian-AI feature code
+where it fits: components, hooks, styles, helpers, and focused tests. Port
+related files together, changing imports, shared contracts, persistence, or
+platform calls only where the host boundary requires it. Keep vault, editor,
+workspace, plugin lifecycle, and other Obsidian-specific operations in the
+Obsidian host. Avoid rebuilding an existing feature from its description when
+its source can be adapted directly.
 
 `obsidian-ai` and future standalone shells are active hosts. A host
 provides product data and platform capabilities; it does not implement chat

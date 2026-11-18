@@ -1,4 +1,5 @@
 import type {
+	ChatWorkspaceState,
 	ChatEngineOptions,
 	PersistenceAdapter,
 	RAGAdapter,
@@ -30,6 +31,14 @@ function createOperationContext(signal?: AbortSignal): HostOperationContext {
 export class HostPersistenceAdapter implements PersistenceAdapter {
 	constructor(private readonly capability: ChatPersistenceCapability) {}
 
+	loadWorkspace() {
+		return this.capability.loadWorkspace?.(createOperationContext()) ?? Promise.resolve(null);
+	}
+
+	saveWorkspace(workspace: ChatWorkspaceState) {
+		return this.capability.saveWorkspace?.(workspace, createOperationContext()) ?? Promise.resolve();
+	}
+
 	loadSessions() {
 		return this.capability.loadSessions(createOperationContext());
 	}
@@ -49,10 +58,11 @@ export class HostPersistenceAdapter implements PersistenceAdapter {
 
 export class HostToolAdapter implements ToolAdapter {
 	private constructor(
-		private readonly routes: Map<
+		private routes: Map<
 			string,
 			{ capability: ToolCapability; descriptor: HostToolDescriptor }
 		>,
+		private readonly capabilities: readonly ToolCapability[],
 	) {}
 
 	static async create(
@@ -72,7 +82,12 @@ export class HostToolAdapter implements ToolAdapter {
 				routes.set(descriptor.name, { capability: provider, descriptor });
 			}
 		}
-		return new HostToolAdapter(routes);
+		return new HostToolAdapter(routes, capabilities);
+	}
+
+	async refreshTools(): Promise<void> {
+		const refreshed = await HostToolAdapter.create(this.capabilities);
+		this.routes = refreshed.routes;
 	}
 
 	getAvailableTools(): ToolDefinition[] {

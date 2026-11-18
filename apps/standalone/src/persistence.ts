@@ -114,6 +114,12 @@ export const standalonePersistence: ChatPersistenceCapability = {
 	id: "standalone-indexeddb-persistence",
 	kind: "persistence",
 	schemaVersion: DATABASE_VERSION,
+	loadWorkspace() {
+		return standaloneSettingsStore.load("chat-workspace");
+	},
+	saveWorkspace(workspace) {
+		return standaloneSettingsStore.save("chat-workspace", workspace);
+	},
 	async loadSessions() {
 		const sessions = await runRequest<ChatSession[]>(SESSIONS_STORE, "readonly", (store) => store.getAll());
 		return sessions.sort((left, right) => right.updatedAt - left.updatedAt);
