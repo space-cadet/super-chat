@@ -1,6 +1,56 @@
 # Edit History
 *Created: 2026-05-19 11:15:00 IST*
-*Last Updated: 2026-11-17 23:35:12 IST*
+*Last Updated: 2026-11-18 11:19:12 IST*
+
+#### 11:19:12 IST - INFRA-1/T28/T32: Record committed delivery state
+- Updated `memory-bank/master-plan.md` - Replaced the planning-time uncommitted note with the current committed source and plan status.
+- Updated `memory-bank/session_cache.md` - Recorded the commit state for master-plan and provider-switching work while keeping open Android and cross-host acceptance explicit.
+
+#### 11:06:57 IST - INFRA-1/T22/T15: Reconcile session delivery records
+- Updated `memory-bank/activeContext.md` - Kept the master-plan checklist format and current Android evidence prominent; refreshed the context timestamp.
+- Updated `memory-bank/session_cache.md` - Recorded the eight stage checkboxes, sixty feature checkboxes, five immediate actions and the ownership-scan result.
+- Confirmed `memory-bank/master-plan.md` and existing task owners cover the source changes, Android evidence and open acceptance work; no new task was created.
+
+#### 10:59:33 IST - INFRA-1/T22/T15: Make the master plan a tickable checklist
+- Updated `memory-bank/master-plan.md` - Converted eight delivery stages, sixty feature entries and five next actions from status tables/numbered prose to Markdown task checkboxes, preserving owner, reference and baseline detail.
+- Updated `memory-bank/sessions/2026-11-18-provider-profile-switching.md` - Recorded the checklist formatting correction; incomplete acceptance remains unchecked.
+
+#### 10:51:45 IST - INFRA-1/T22/T15: Consolidate the master feature delivery plan
+- Created `memory-bank/master-plan.md` - Defined one delivery sequence, complete reference feature-group checklist, existing owners, completion checks, current evidence, visibility rules and next executable work.
+- Updated `memory-bank/tasks/INFRA-1.md` and `memory-bank/tasks.md` - Made the master plan the common entry point, reconciled execution order and retired Arxivite acceptance criteria, and aligned T6 status counts.
+- Updated `memory-bank/tasks/T6.md`, `memory-bank/tasks/T7.md`, `memory-bank/tasks/T8.md`, `memory-bank/tasks/T15.md`, `memory-bank/tasks/T16.md`, `memory-bank/tasks/T18.md`, `memory-bank/tasks/T21.md`, `memory-bank/tasks/T22.md`, `memory-bank/tasks/T25.md`, `memory-bank/tasks/T26.md`, `memory-bank/tasks/T27.md`, `memory-bank/tasks/T28.md`, `memory-bank/tasks/T29.md`, `memory-bank/tasks/T30.md`, `memory-bank/tasks/T31.md`, and `memory-bank/tasks/T32.md` - Linked existing implementation owners to the common plan without creating new task IDs; reconciled T6 Phase A and later work.
+- Updated `memory-bank/implementation-details/embeddable-super-chat-platform.md` and `memory-bank/implementation-details/obsidian-ai-capability-matrix.md` - Kept architectural and extraction detail while assigning execution order and feature tracking to the master plan.
+- Updated `apps/standalone/UI-STRUCTURE.md` - Replaced hidden-control guidance with visible unavailable states and aligned the toolbar/current Android baseline.
+- Updated `memory-bank/implementation-details/provider-profiles-and-switching.md`, `memory-bank/implementation-details/standalone-android.md`, `memory-bank/tasks/T28.md`, and `memory-bank/tasks/T32.md` - Recorded installed toolbar/connection-test changes and screenshot-confirmed basic OpenRouter chat, with the remaining device checks and layout work.
+- Updated `memory-bank/activeContext.md`, `memory-bank/session_cache.md`, and `memory-bank/sessions/2026-11-18-provider-profile-switching.md` - Recorded the master plan, current work, source state and later device evidence.
+
+#### 02:13:37 IST - T28/T22/T32: Add provider profiles and per-chat model switching
+- Modified shared provider contracts, session storage, request routing, and
+  React chat UI - Added profile/model selection per conversation and defaults
+  for new chats; tab selection restores each chat's saved choice.
+- Modified standalone provider settings and adapter - Added multiple profile
+  management, profile-specific credential references, legacy setting migration,
+  manual model entry, and connection checks.
+- Updated provider-switching and Android host notes plus T28/T22/T32 task
+  records - Recorded compile/build evidence and left cross-host tests, device,
+  credential, and live-provider acceptance open.
+- Created `memory-bank/edits/2026-11-18/20261118-021337-t28-provider-profile-switching.md` and the current session record.
+
+#### 23:56:09 IST - T32: Exclude Android Keystore credentials from backups
+- Modified `apps/standalone/android/app/src/main/AndroidManifest.xml`; created
+  `apps/standalone/android/app/src/main/res/xml/backup_rules.xml` and
+  `apps/standalone/android/app/src/main/res/xml/data_extraction_rules.xml` -
+  Excluded encrypted credential preferences from Android 12+
+  cloud/device-transfer backups and legacy full backups.
+- Updated `memory-bank/tasks/T32.md` and
+  `memory-bank/implementation-details/standalone-android.md` - Recorded the
+  device-local Keystore rationale and kept IndexedDB backup/recovery acceptance
+  open.
+- Updated `memory-bank/activeContext.md`, `session_cache.md`, and
+  `sessions/2026-11-17-standalone-platform-hosts.md` - Recorded the backup
+  policy and noted that this change was not built or device-checked.
+- Created `memory-bank/edits/2026-11-17/20261117-235609-t32-android-backup-policy.md` -
+  Recorded the source branch, commit, Android changes, and Memory Bank updates.
 
 #### 23:35:12 IST - T32/T22: Record Android provider UI verification
 - Modified standalone task records and Android implementation details -

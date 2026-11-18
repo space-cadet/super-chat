@@ -235,22 +235,34 @@ export class VercelLLMAdapter implements LLMAdapter {
 
 			const result = streamText({
 				model: model as any,
-				prompt: "Hi",
-				maxOutputTokens: 5,
+				prompt: "Reply with OK.",
+				maxOutputTokens: 64,
+				maxRetries: 0,
+				abortSignal: AbortSignal.timeout(30_000),
 			});
 
-			const { textStream } = result;
 			let gotData = false;
-			for await (const _chunk of textStream) {
-				gotData = true;
-				break;
+			let completed = false;
+			for await (const event of result.fullStream) {
+				if (event.type === "error") throw event.error;
+				if (event.type === "abort") throw new Error("Connection test timed out or was cancelled.");
+				if ((event.type === "text-delta" || event.type === "reasoning-delta") && event.text.length > 0) {
+					gotData = true;
+				}
+				if (event.type === "finish") {
+					if (event.finishReason === "error" || event.finishReason === "content-filter") {
+						throw new Error(`Provider ended the connection test: ${event.finishReason}.`);
+					}
+					completed = true;
+					gotData ||= (event.totalUsage.outputTokens ?? 0) > 0;
+				}
 			}
 
 			return {
-				ok: gotData,
-				message: gotData
+				ok: completed && gotData,
+				message: completed && gotData
 					? `Connected to ${this.profile.provider}/${this.profile.model}`
-					: "Stream started but no data received",
+					: "The provider returned no output. Check the selected provider and model ID, then try again.",
 			};
 		} catch (err) {
 			return {

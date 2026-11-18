@@ -19,6 +19,14 @@ the user confirms it works on mobile. Debug APK, unsigned release APK, and
 release AAB builds were verified. Release signing and remote Actions execution
 remain open.
 
+The 2026-11-18 source update adds multiple provider profiles, a default for new
+chats, and per-chat provider/model selection. Profile details remain in local
+settings; API keys use profile-specific credential IDs in Android Keystore,
+while sessions persist only the chosen profile ID, provider, and model. The
+chat picker restores a session's choice when switching tabs. The Android debug
+build and TypeScript checks passed for this source update, but no device visual
+check, credential save, or live provider request was performed.
+
 ## Code Structure
 
 ```text
@@ -27,7 +35,8 @@ apps/standalone/
 │   ├── main.tsx                            React entry point
 │   ├── App.tsx                              Chat, diagnostics, and settings navigation
 │   ├── host.ts                              Neutral standalone host capabilities
-│   ├── llm.ts                               Provider configuration and adapter
+│   ├── llm.ts                               Profile credentials and provider adapter
+│   ├── providerSettings.ts                  Local profiles and legacy migration
 │   ├── persistence.ts                       IndexedDB sessions and settings
 │   ├── lifecycle.ts                         Capacitor visibility callbacks
 │   ├── tools.ts                             Local calculator and time tools
@@ -57,13 +66,14 @@ Android launcher
             └── React App
                  ├── SuperChatApp
                  │    ├── standaloneHost
-                 │    │    ├── IndexedDB sessions/settings
+                 │    │    ├── IndexedDB sessions/provider profiles/default
                  │    │    ├── Android Keystore credentials
                  │    │    ├── lifecycle callbacks
                  │    │    └── calculator/time tools
                  │    └── StandaloneLLMAdapter
                  │         └── VercelLLMAdapter and configured provider
                  ├── ProviderSettingsScreen
+                 │    └── profile CRUD, default, model entry, connection check
                  └── DiagnosticsScreen
                       └── loadDiagnostics()
                            ├── Capacitor Device / App / Network plugins
@@ -80,11 +90,16 @@ Android launcher
 The diagnostics screen refreshes on mount and on network status changes. The
 native diagnostics plugin reads system state and declared permission status;
 it does not request runtime permissions. `SecureCredentialsPlugin` stores
-provider secrets encrypted with an Android Keystore key. The provider and
-lifecycle integration is in commit `f97c608`; the build and screen check do not
-verify credential storage, persistence/recovery, or a live provider connection.
-`AndroidManifest.xml`
-declares Internet and network-state access.
+provider secrets encrypted with an Android Keystore key. Android cloud backups
+and device-to-device transfers exclude the plugin's encrypted credential
+preferences because the Keystore key is device-local; older Android versions
+use the matching legacy backup exclusion. Other eligible app data follows the
+platform's default backup behavior, which has not yet been qualified as a
+session-recovery policy. The provider and lifecycle integration is in commit
+`f97c608`; the build and screen check do not verify credential storage,
+persistence/recovery, or a live provider connection. `AndroidManifest.xml`
+declares Internet and network-state access and points to both backup-rule
+files.
 
 ## Build and Artifact Flow
 
@@ -118,3 +133,16 @@ sessions/settings, interruption and offline recovery, protected credentials,
 file/document access with deliberate permission handling, signing, and broader
 device/distribution acceptance. The Android task is separate from any future
 iOS host task under INFRA-1.
+
+## Later Android evidence — 2026-11-18
+
+The toolbar and connection-test fixes were built and installed on the OPPO
+CPH2661IN at `.108` during this session. User screenshots `142484.jpg` and
+`142490.jpg` show OpenRouter selected and live assistant replies to Hello and
+supersymmetry questions. This establishes basic live chat; the exact effective
+model is not established by the clipped field. Independent chat/model switching,
+credential survival after restart, and tool execution still need checks.
+
+The screenshots also show truncated provider/model controls and a clipped
+composer placeholder. Remaining improvements and all reference feature groups
+are tracked in the [master plan](../master-plan.md).

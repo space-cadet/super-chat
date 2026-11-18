@@ -17,6 +17,7 @@ import type {
 	ChatModelMessage,
 	ChatSession,
 	LLMAdapter,
+	LLMRequestOptions,
 	StreamEvent,
 	ToolCall,
 	ToolDefinition,
@@ -161,6 +162,11 @@ export class AgentLoop {
 	): AsyncGenerator<StreamEvent, AgentLoopResult> {
 		const { llmAdapter, toolExecutor, maxSteps = 5, autoApply = false } =
 			this.opts;
+		const request: LLMRequestOptions = {
+			...(session.llmProfileId ? { providerProfileId: session.llmProfileId } : {}),
+			...(session.llmProvider ? { provider: session.llmProvider } : {}),
+			...(session.llmModel ? { model: session.llmModel } : {}),
+		};
 
 		let fullText = "";
 		let currentMessages = [...messages];
@@ -176,6 +182,7 @@ export class AgentLoop {
 				toAdapterMessages(currentMessages),
 				tools,
 				signal,
+				request,
 			);
 
 			for await (const event of stream) {

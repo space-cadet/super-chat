@@ -1,6 +1,7 @@
 # Standalone UI Structure
 
-**Status:** UI planning draft
+**Status:** Supporting layout specification; delivery order and feature checklist
+are in the [Master Delivery Plan](../../memory-bank/master-plan.md).
 
 **Scope:** shared standalone interface for Android, desktop, and browser
 
@@ -14,13 +15,13 @@ The visual treatment can vary by platform. Share the core colors, typography, an
 
 ## Product boundary
 
-The current standalone build uses a local demonstration response provider and in-memory chat storage. It has no connected model provider, agent tools, or host-OS tool calls. Diagnostics are already available and read-only. The [standalone Android notes](../../memory-bank/implementation-details/standalone-android.md) record the current boundary.
+The current standalone build mounts `SuperChatApp` with local sessions and settings, host tools, and configurable provider profiles. Android stores provider keys in Keystore; desktop and browser do not currently expose protected credential storage. The Android debug build and TypeScript checks pass. User screenshots on 2026-11-18 confirm basic live OpenRouter chat on Android; broader model-switching, credential recovery, and restart checks remain open. The [standalone Android notes](../../memory-bank/implementation-details/standalone-android.md) record the platform boundary.
 
 Design the full chat experience as a target, while making the current state honest:
 
 - With no provider configured, show an empty chat and a clear route to provider setup. Do not display assistant content in this state.
-- Hide controls that the active standalone host cannot perform. When a feature is planned but unavailable, show its setup or unavailable state without making it look active.
-- Keep repository actions generic. Offer local files or other sources only when the host exposes them; do not assume an Obsidian vault, wikilinks, or Dataview.
+- Keep every control visible, including unconfigured and unavailable actions. Show an explained disabled state in its expected location. Do not omit actions by capability, profile presence, hover, or screen width.
+- Keep repository actions generic. Keep file/source controls visible and explain unavailable host access; do not assume an Obsidian vault, wikilinks, or Dataview.
 - Treat persisted chat history, live collaboration, and cross-device sync as separate features with separate controls and status.
 
 ## App navigation
@@ -39,10 +40,10 @@ On Android, open destinations from the navigation drawer and keep the chat compo
 
 Keep the main chat in this order:
 
-1. **App bar:** navigation, active session title, New chat, History/Search, and an overflow menu.
+1. **Action toolbar:** New chat, History, Search, model/profile, Agents, Sync, Zen, Settings and session actions. Keep unavailable actions visible and explained; use consistent SVG icons and touch targets. No setup banner above chat.
 2. **Session tabs:** horizontally scrollable on phones, wider on desktop. Each tab shows its title and close action; a generating session gets a clear activity marker.
-3. **Chat controls:** active provider/model, AI participants, optional human participants, and Zen mode. Put less-used actions in the overflow menu. Show only controls supported by the current build.
-4. **Context row:** selected files/resources/scopes as removable chips, plus Add context when a source is available.
+3. **Chat identity and controls:** readable active provider/model and participant identity, with the toolbar controlling the current conversation. Model suggestions and manual model IDs are available. Keep action entry controls visible; unavailable features are disabled with an explanation.
+4. **Context row:** selected files/resources/scopes as removable chips, plus a visible Add context control with explained availability.
 5. **Transcript:** one scrollable message list with user/assistant attribution, timestamps, model and usage details when available, Markdown, attachments, and inline tool activity. Preserve scroll position; show Return to latest when the user reads older messages.
 6. **Composer:** fixed to the bottom, grows for multiline input, restores the active chat's draft and attachments, and exposes Attach, Context, supported reasoning options, and Send/Stop. Keep it above the Android keyboard.
 
@@ -74,16 +75,16 @@ On mobile, use a dedicated page or full-height sheet. On desktop, use a split vi
 
 ## Settings
 
-Use a sectioned settings page with focused subpages or dialogs:
+Use a sectioned settings page with focused subpages or dialogs. The current shell has Chat, Settings, and Diagnostics destinations; History and About remain part of the broader design target:
 
 - **Appearance:** system/light/dark.
 - **Chat behavior:** Enter-to-send, tab restoration, automatic titles, and other supported defaults.
 - **AI providers and models:** add/edit/remove profiles, credentials through protected host storage, connection status, model discovery, and defaults. Keep per-chat model selection in the chat controls.
-- **Context and files:** available sources, attachment behavior, and limits; omit sections until the host can use them.
-- **Tools and approvals:** available tools and approval behavior. Default to asking before actions; only show automatic approval if implemented.
+- **Context and files:** available sources, attachment behavior, and limits; keep sections visible with an explanation when unavailable.
+- **Tools and approvals:** available tools and approval behavior. Default to asking before actions; show automatic approval disabled with an explanation until implemented.
 - **Memory:** optional chat memory controls when the standalone host supports them.
 - **History and backup:** retention, export/import, and local data management.
-- **Collaboration and sync:** separate settings for live relay and saved-chat sync; show only when configured or supported.
+- **Collaboration and sync:** separate settings for live relay and saved-chat sync; keep controls visible with their setup or unavailable state.
 - **Diagnostics and About:** links to the existing diagnostics view and app information.
 
 ## Pickers, sheets, and dialogs

@@ -40,6 +40,7 @@ export type {
 	ProviderInfo,
 	ModelInfo,
 	ProviderProfile,
+	LLMRequestOptions,
 	ChatSettings,
 	LLMAdapter,
 	PersistenceAdapter,

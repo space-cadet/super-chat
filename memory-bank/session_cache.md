@@ -1,8 +1,50 @@
 # Session Cache — super-chat
 
-*Last Updated*: 2026-11-17 23:35:12 IST
+*Last Updated*: 2026-11-18 11:19:12 IST
 
-## Current Session: Standalone UI and Provider Wiring — 2026-11-17 23:35:12 IST
+## Current Session: INFRA-1/T22/T15 Master Delivery Plan — 2026-11-18 10:51:45 IST
+
+- Created `master-plan.md` as the single execution order, feature checklist,
+  owner map, completion checks and next work item, based on all sections of
+  Obsidian-AI's Chat Component Capability Map.
+- Linked INFRA-1, the registry, T6/T7/T8/T15/T16/T18/T21/T22/T25–T32, the
+  architecture and extraction matrix to the plan. Existing task IDs remain.
+- Replaced conflicting UI-plan guidance with visible unavailable controls;
+  reconciled T6 Phase A history with its open later work.
+- Recorded user-supplied Android screenshots of actual OpenRouter replies,
+  known toolbar/composer clipping and the installed connection-test fix.
+- Current work is Stage 1 mobile workspace completion. The source and Memory
+  Bank updates are recorded in the current commit on `main`; screenshot
+  attachments and local package cache remain outside it.
+- The plan now has eight Markdown stage checkboxes, sixty feature checkboxes,
+  and five immediate actions; incomplete items remain unchecked. The session
+  Memory Bank scan confirmed existing owners cover the work, so no new task is
+  needed.
+- This consolidation changes documentation only; no new build/install or test
+  run. Earlier source changes and unrelated untracked files are preserved.
+- Session record: `sessions/2026-11-18-provider-profile-switching.md`.
+
+
+## Current Session: T28 Per-chat Provider and Model Switching — 2026-11-18 02:13:37 IST
+
+- Read the Obsidian-AI profile/switching implementation and adapted its
+  per-session selection behavior to the standalone single-assistant chat.
+- Added the optional `provider-profiles` host capability, per-session
+  `llmProfileId`/provider/model persistence, request-level selection, and a
+  chat picker that restores each tab's independent choice.
+- Reworked Settings from one global provider into multiple named profiles with
+  add/edit/duplicate/remove, a default for new chats, model suggestions/manual
+  entry, connection checks, profile-specific protected credentials, and
+  migration of the existing single-provider setting.
+- Shared library typecheck/build, standalone typecheck, and Android debug build
+  passed. Test suites were not run; no live provider call, credential save, or
+  device UI check was performed. T28 cross-host tests and T32 device acceptance
+  remain open.
+- See `sessions/2026-11-18-provider-profile-switching.md`. The source work and
+  session plan are recorded in the current commit on `main`. Cross-host tests,
+  device acceptance and broader Android recovery remain open.
+
+## Current Session: Standalone UI, Provider Wiring, and Android Backup Handling — 2026-11-17 23:56:09 IST
 
 - Added the responsive UI plan at `apps/standalone/UI-STRUCTURE.md` and saved
   seven concept images under `memory-bank/assets/ui-mockups/standalone/`.
@@ -22,6 +64,9 @@
 - See `sessions/2026-11-17-standalone-platform-hosts.md` for the session
   record. The mockup-only work had no runtime check; the later Android build
   and visual screen check apply to the integrated source, not provider calls.
+- Android backup rules now exclude encrypted Keystore credential preferences
+  from cloud backup and device transfer, including a legacy rule for earlier
+  Android versions. IndexedDB session backup behavior remains unverified.
 
 ## Current Session: T31/T32 Standalone Platform Tasks — 2026-11-17 16:19:59 IST
 

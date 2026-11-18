@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useChat } from '../hooks/useChat';
 import type { ChatEngine } from '../../core/ChatEngine';
 import type { ChatMessage } from '../../core/types';
+import type { ProviderProfileSnapshot } from '../../contracts/host';
 import { ChatInput } from './ChatInput';
 import { MessageBubble } from './MessageBubble';
 import { SessionSidebar } from './SessionSidebar';
@@ -12,14 +13,18 @@ interface ChatAppProps {
 	engine: ChatEngine;
 	initialSessionId?: string;
 	onNewChat?: () => void;
+ onOpenSettings?: () => void;
 	loadSessionsOnMount?: boolean;
+	providerProfiles?: ProviderProfileSnapshot | null;
 }
 
 export function ChatApp({
 	engine,
 	initialSessionId,
 	onNewChat,
+ onOpenSettings,
 	loadSessionsOnMount = true,
+	providerProfiles,
 }: ChatAppProps) {
   const {
     messages,
@@ -43,6 +48,8 @@ export function ChatApp({
 	} = useChat(engine, { initialSessionId, loadSessionsOnMount });
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
+	const [modelDraft, setModelDraft] = useState('');
+	const [modelNotice, setModelNotice] = useState<string | null>(null);
 
 	const handleNewChat = useCallback(() => {
 		createSession("New Chat");
@@ -50,32 +57,109 @@ export function ChatApp({
 	}, [createSession, onNewChat]);
 
   const currentSessionId = currentSession?.id ?? '';
+	const profiles = providerProfiles?.profiles ?? [];
+	const selectedProfile = profiles.find((profile) => profile.id === currentSession?.llmProfileId)
+		?? profiles.find((profile) => profile.id === providerProfiles?.defaultProfileId);
+	const modelSuggestions = selectedProfile ? engine.getModels(selectedProfile.provider) : [];
+
+	useEffect(() => {
+		setModelDraft(currentSession?.llmModel ?? selectedProfile?.model ?? '');
+		setModelNotice(null);
+	}, [currentSession?.id, currentSession?.llmModel, selectedProfile?.id, selectedProfile?.model]);
+
+	const commitModel = useCallback(async (value: string) => {
+		if (!currentSession || !selectedProfile || !value.trim()) return;
+		try {
+			await engine.setSessionModelSelection(currentSession.id, {
+				providerProfileId: selectedProfile.id,
+				provider: selectedProfile.provider,
+				model: value.trim(),
+			});
+			setModelDraft(value.trim());
+			setModelNotice(null);
+		} catch (cause) {
+			setModelNotice(cause instanceof Error ? cause.message : String(cause));
+		}
+	}, [currentSession, engine, selectedProfile]);
+
+	const changeChatProfile = useCallback(async (profileId: string) => {
+		const profile = profiles.find((entry) => entry.id === profileId);
+		if (!currentSession || !profile) return;
+		try {
+			await engine.setSessionModelSelection(currentSession.id, {
+				providerProfileId: profile.id,
+				provider: profile.provider,
+				model: profile.model,
+			});
+			setModelDraft(profile.model);
+			setModelNotice(null);
+		} catch (cause) {
+			setModelNotice(cause instanceof Error ? cause.message : String(cause));
+		}
+	}, [currentSession, engine, profiles]);
 
   return (
 		<div className="flex flex-col h-full min-h-0 overflow-hidden bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-2 hover:bg-gray-100 rounded-lg text-gray-600"
-            title="Open sidebar"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-          <h1 className="font-semibold text-gray-900">
-            {currentSession?.title || 'Chat'}
-          </h1>
-        </div>
-        <button
-          onClick={handleNewChat}
-          className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
-        >
-          + New Chat
-        </button>
-      </header>
+		<div className="chat-toolbar-wrap">
+			<div className="chat-toolbar" role="toolbar" aria-label="Chat actions">
+				<button className="chat-toolbar-icon" type="button" onClick={handleNewChat} aria-label="New chat" title="New chat">
+					<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" d="M12 5v14M5 12h14" /></svg>
+				</button>
+				<button className="chat-toolbar-icon" type="button" onClick={() => setSidebarOpen(true)} aria-label="Open chat history" title="Open chat history">
+					<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
+				</button>
+<button className="chat-toolbar-icon" type="button" disabled title="Search chats — unavailable" aria-label="Search chats — unavailable">⌕</button>
+				{selectedProfile && currentSession && (
+					<>
+						<label className="chat-toolbar-field">
+							<span className="sr-only">Provider for this chat</span>
+					<select
+						aria-label="Provider for this chat"
+						value={selectedProfile.id}
+						disabled={isStreaming || profiles.length < 2}
+						onChange={(event) => void changeChatProfile(event.target.value)}
+					>
+						{profiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.name} · {profile.provider}</option>)}
+					</select>
+						</label>
+						<label className="chat-toolbar-field chat-toolbar-model">
+							<span className="sr-only">Model for this chat</span>
+					<input
+						aria-label="Model for this chat"
+						list="chat-model-suggestions"
+						value={modelDraft}
+						maxLength={160}
+						disabled={isStreaming}
+						autoComplete="off"
+						onChange={(event) => setModelDraft(event.target.value)}
+						onBlur={(event) => void commitModel(event.currentTarget.value)}
+						onKeyDown={(event) => {
+							if (event.key === 'Enter') {
+								event.preventDefault();
+								void commitModel(event.currentTarget.value);
+							}
+						}}
+					/>
+					<datalist id="chat-model-suggestions">
+						{modelSuggestions.map((model) => <option key={model.id} value={model.id}>{model.name}</option>)}
+					</datalist>
+						</label>
+					</>
+				)}
+				{!selectedProfile && (
+					<div className="chat-toolbar-model-empty" role="status" title="Connect a provider in Settings to choose a model">
+						<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="5" y="5" width="14" height="14" rx="3"/><path strokeLinecap="round" d="M9 2.5v2.5m6-2.5v2.5M9 19v2.5m6-2.5v2.5M2.5 9H5m-2.5 6H5M19 9h2.5M19 15h2.5M9 9h6v6H9z"/></svg>
+						<span>Connect a model</span>
+					</div>
+				)}
+<button className="chat-toolbar-icon" type="button" disabled title="Agents — unavailable" aria-label="Agents — unavailable">♧</button>
+<button className="chat-toolbar-icon" type="button" disabled title="Sync — unavailable" aria-label="Sync — unavailable">↻</button>
+<button className="chat-toolbar-icon" type="button" disabled title="Zen mode — unavailable" aria-label="Zen mode — unavailable">⛶</button>
+<button className="chat-toolbar-icon" type="button" onClick={onOpenSettings} disabled={!onOpenSettings} title="Settings" aria-label="Settings">⚙</button>
+<button className="chat-toolbar-icon" type="button" disabled title="More actions — unavailable" aria-label="More actions — unavailable">⋯</button>
+			</div>
+			{modelNotice && <div className="chat-toolbar-notice" role="alert">{modelNotice}</div>}
+		</div>
 
       <SessionTabs
         sessions={sessions}

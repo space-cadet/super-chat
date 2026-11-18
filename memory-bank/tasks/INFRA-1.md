@@ -1,11 +1,15 @@
 # INFRA-1: Unified super-chat Application Platform Program
 
+**Current master execution plan:** [Super Chat Master Delivery Plan](../master-plan.md).
+It defines the feature checklist, current delivery order, owners, and completion checks.
+The numbered phases below retain historical progress; use the master plan for next work.
+
 *Created: 2026-08-31 22:44:08 IST*
-*Last Updated: 2026-11-17 16:19:59 IST*
+*Last Updated: 2026-11-18 10:51:45 IST*
 
 **Status**: 🔄 **IN PROGRESS**
 **Priority**: CRITICAL
-**Scope**: `super-chat`, `obsidian-ai`, `arxivite`, standalone desktop, mobile
+**Scope**: shared Super Chat, fixture, Obsidian host, standalone Android and desktop; Arxivite integration is historical
 
 ## Arxivite Decision — 2026-09-08
 
@@ -52,8 +56,10 @@ return <SuperChatApp host={host} />;
 - Shared-core execution workstream: [T22](T22.md)
 - Global task registry: [`tasks.md`](../tasks.md)
 
-When older documents conflict with this program, INFRA-1 and the embeddable
-platform document take precedence.
+The master plan owns delivery order and feature coverage. The embeddable
+platform document owns architecture and host responsibilities. The feature map
+is the behavioral reference; the explicit no-hidden-controls rule overrides its
+optional-control visibility suggestions.
 
 ## Global Execution Order and Progress
 
@@ -400,31 +406,18 @@ remote Actions runs were not performed. See T32 and
 **Exit criterion**: credible Android and iOS support with platform-specific
 acceptance evidence.
 
-## Global Dependency Chain
+## Current Delivery Order
 
-```text
-INFRA-1
-  -> T22 safety, contracts, persistence, fixture host
-  -> T25 shared agentic tool runtime
-  -> T16 shared agentic RAG and evidence
-  -> T21 versioning and compatibility
-  -> T15 first Obsidian extraction
-  -> T18 Obsidian host migration
-  -> legacy removal
-  -> T31 standalone desktop host and release acceptance
-  -> T32 standalone Android host and release acceptance
-  -> iOS host task, if iOS remains in scope
-```
-
-This is the planned release-acceptance order. The Android shell and device
-baseline were implemented early; that does not close the desktop or full mobile
-phase criteria.
-
-T21 may proceed in parallel with early T22 work, but product-default changes
-must wait for traceable package compatibility.
+The [master plan](../master-plan.md#delivery-sequence) maintains the executable
+sequence: usable workspace; reliable conversations; complete provider controls;
+context/files; tools/retrieval; memory/history management; participants/sync;
+then remaining host/release completion. Shared foundations already implemented
+remain in use. Android UI work proceeds now under T22/T32; it does not wait for
+Obsidian migration or unrelated desktop release work.
 
 ## Program-Wide Rules
 
+- Keep UI controls visible with clear unavailable states; do not hide by capability, configuration, hover, or viewport.
 - `super-chat` owns reusable chat mechanics and complete chat UI.
 - Hosts supply capabilities; they do not coordinate the chat workflow.
 - Missing approval must never cause tool execution.
@@ -440,12 +433,13 @@ must wait for traceable package compatibility.
 ## Program Completion Criteria
 
 - [ ] `SuperChatApp` is the active chat application in fixture, Obsidian,
-      Arxivite, and standalone desktop environments.
+      standalone Android, and standalone desktop environments.
 - [ ] Hosts are limited to data and platform capabilities.
 - [ ] Tool approval is fail-closed and accepted across hosts.
 - [ ] Sessions, persistence, agentic RAG, context, tools, agents, memory, and shared UI
       have one reusable implementation.
-- [ ] Obsidian and Arxivite duplicate chat mechanics are removed.
+- [ ] Obsidian duplicate chat mechanics are removed after accepted host adoption;
+      Arxivite retains its own native implementation.
 - [ ] Versioned artifacts and compatibility matrices are maintained.
 - [ ] Desktop acceptance is complete; mobile completion is recorded separately
       if mobile remains outside the first program release.
@@ -455,7 +449,7 @@ must wait for traceable package compatibility.
 At the end of every related implementation session:
 
 1. Update the owning task's checklist and evidence.
-2. Update the matching INFRA-1 phase status and exit criterion.
+2. Update the master plan row/stage and next work item; link its evidence here.
 3. Record exact commits, tests, builds, and manual/platform checks separately.
 4. Update `activeContext.md`, `session_cache.md`, the session record, and
    `edit_history.md`.

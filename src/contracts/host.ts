@@ -7,6 +7,7 @@ import type {
 
 export type HostCapabilityKind =
 	| "identity"
+	| "provider-profiles"
 	| "persistence"
 	| "credentials"
 	| "tools"
@@ -39,6 +40,25 @@ export interface IdentityCapability extends HostCapabilityBase {
 	kind: "identity";
 	getIdentity(context: HostOperationContext): Promise<HostIdentity | null>;
 	subscribe?(listener: (identity: HostIdentity | null) => void): () => void;
+}
+
+export interface ProviderProfileSummary {
+	id: string;
+	name: string;
+	provider: string;
+	model: string;
+}
+
+export interface ProviderProfileSnapshot {
+	profiles: ProviderProfileSummary[];
+	defaultProfileId: string | null;
+}
+
+/** Non-secret provider choices available to the shared chat UI. */
+export interface ProviderProfilesCapability extends HostCapabilityBase {
+	kind: "provider-profiles";
+	getSnapshot(context: HostOperationContext): Promise<ProviderProfileSnapshot>;
+	subscribe?(listener: () => void): () => void;
 }
 
 export interface ChatPersistenceCapability extends HostCapabilityBase {
@@ -221,6 +241,7 @@ export interface LifecycleCapability extends HostCapabilityBase {
 
 export interface SuperChatCapabilities {
 	identity?: IdentityCapability;
+	providerProfiles?: ProviderProfilesCapability;
 	persistence?: ChatPersistenceCapability;
 	credentials?: CredentialCapability;
 	/** One tool service or several independently owned provider services. */

@@ -3,7 +3,8 @@ import { SuperChatApp } from "super-chat/react";
 import { DiagnosticsScreen } from "./screens/DiagnosticsScreen";
 import { ProviderSettingsScreen } from "./screens/ProviderSettingsScreen";
 import { standaloneHost } from "./host";
-import { loadStandaloneProviderConfiguration, StandaloneLLMAdapter } from "./llm";
+import { StandaloneLLMAdapter } from "./llm";
+import { loadStandaloneProviderSettings } from "./providerSettings";
 
 const llmAdapter = new StandaloneLLMAdapter();
 
@@ -38,14 +39,14 @@ function SettingsIcon() {
 
 export default function App() {
 	const [screen, setScreen] = useState<Screen>("chat");
-	const [providerConfigured, setProviderConfigured] = useState<boolean | null>(null);
+	const [, setProviderConfigured] = useState<boolean | null>(null);
 	const handleConfigurationChange = useCallback((configured: boolean) => setProviderConfigured(configured), []);
 
 	useEffect(() => {
 		let active = true;
-		void loadStandaloneProviderConfiguration()
-			.then((configuration) => {
-				if (active) setProviderConfigured(configuration !== null);
+		void loadStandaloneProviderSettings()
+			.then((settings) => {
+				if (active) setProviderConfigured(settings.profiles.length > 0);
 			})
 			.catch(() => {
 				if (active) setProviderConfigured(false);
@@ -58,13 +59,8 @@ export default function App() {
 			<main className="screen-stack">
 				<section className="screen-panel chat-panel" hidden={screen !== "chat"} aria-label="Chat">
 					<div className="chat-screen-content">
-						{providerConfigured === false && (
-							<button className="provider-setup-banner" type="button" onClick={() => setScreen("settings")}>
-								<span><strong>Connect a model provider</strong><small>Choose a model and add a key if your provider requires one.</small></span>
-								<span className="setup-banner-arrow" aria-hidden="true">›</span>
-							</button>
-						)}
-						<div className="chat-engine"><SuperChatApp host={standaloneHost} llmAdapter={llmAdapter} /></div>
+
+						<div className="chat-engine"><SuperChatApp host={standaloneHost} llmAdapter={llmAdapter} onOpenSettings={() => setScreen("settings")} /></div>
 					</div>
 				</section>
 				<section className="screen-panel" hidden={screen !== "diagnostics"} aria-label="Diagnostics">

@@ -1,6 +1,53 @@
 # Active Context
 
-*Last Updated: 2026-11-17 23:35:12 IST*
+*Last Updated: 2026-11-18 11:06:57 IST*
+
+## Current Delivery: One Master Plan — 2026-11-18
+
+Use [Super Chat Master Delivery Plan](master-plan.md) for current delivery
+order, feature coverage, task ownership, evidence and next work. INFRA-1 owns
+the program, T22 the application, T15 the reference comparison. Existing tasks
+remain implementation owners; no new task tree was created.
+
+Start with Stage 1: toolbar readability and visible unavailable actions,
+provider/model identity, composer clipping and multiline/keyboard behavior,
+message actions/rendering and transcript scrolling. Never hide controls.
+
+The master plan now presents eight delivery stages, sixty feature entries and
+five immediate actions as Markdown checkboxes. Incomplete acceptance remains
+unchecked.
+
+User screenshots now confirm basic OpenRouter chat on Android `.108`. The
+connection-test fix and toolbar updates built and installed successfully.
+This supersedes the earlier initial-snapshot statements below that no live
+request had been demonstrated. Model identity is clipped in the screenshot;
+provider switching, restart recovery and live tool execution remain open.
+
+
+## Per-chat Provider and Model Switching — 2026-11-18
+
+T28 now has a source implementation for multi-profile provider settings and
+per-chat model choice, based on Obsidian-AI's profile picker and session
+selection behavior. The host exposes only non-secret profile summaries;
+credentials stay in the host store. New chats inherit the configured default,
+and each saved chat restores its own profile/model when reopened or selected.
+
+Shared library and standalone TypeScript checks, the package build, and the
+Android debug build passed. No tests, device visual check, credential save, or
+live provider request were performed. T28 remains in progress for cross-host
+tests and device acceptance; Android persistence/recovery and broader T32
+acceptance remain open.
+
+See `tasks/T28.md`, `implementation-details/provider-profiles-and-switching.md`,
+and `sessions/2026-11-18-provider-profile-switching.md`.
+
+## Android Credential Backup Handling — 2026-11-17
+
+T32 adds Android backup exclusions for the encrypted API-key preferences on
+Android 12+ cloud backup/device transfer and through legacy backup rules on
+older Android. Other eligible app data remains under Android's default backup
+behavior; IndexedDB session backup and restore are still unverified. This
+closes only the credential-backup policy gap, not T32e/T32f acceptance.
 
 ## Standalone UI and Host Wiring — 2026-11-17
 

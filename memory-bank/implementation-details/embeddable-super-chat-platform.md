@@ -1,5 +1,9 @@
 # Embeddable super-chat Application Platform
 
+**Execution and feature coverage:** [Master Delivery Plan](../master-plan.md).
+This document defines architecture; its historical sequence is superseded by the
+master plan for current delivery.
+
 *Created: 2026-08-31 22:25:18 IST*
 *Last Updated: 2026-09-08 03:42:12 IST*
 *Program Owner: INFRA-1*

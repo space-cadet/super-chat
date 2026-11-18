@@ -59,6 +59,7 @@ package entry point.
 | Capability | Host owns | `super-chat` owns | Stability |
 |---|---|---|---|
 | `identity` | Authenticated identity facts and identity changes | Use of identity in shared chat behavior | Public |
+| `provider-profiles` | Non-secret profile choices and the default for new chats | Per-session provider/model selection and request identity | Public, evolving |
 | `persistence` | Physical load, save, archive, and delete operations | When sessions are created, loaded, saved, archived, or deleted | Public |
 | `credentials` | Secure credential storage and retrieval | Provider use of supplied credentials | Public |
 | `tools` | One or more product tool providers and execution | Discovery, routing, approval, lifecycle, and result display | Public, evolving |

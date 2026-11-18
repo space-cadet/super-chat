@@ -30,6 +30,8 @@ import type {
 	ChatSettings,
 	ChatTurn,
 	ExternalSessionIdentity,
+	LLMRequestOptions,
+	ModelInfo,
 	RetrievalError,
 	RetrievalSnapshot,
 	ReplayOptions,
@@ -164,6 +166,7 @@ export class ChatEngine {
 	private listeners = new Set<ChatEngineListener>();
 	private pendingApprovals = new Map<string, PendingApproval>();
 	private persistenceQueue: Promise<void> = Promise.resolve();
+	private defaultModelSelection: LLMRequestOptions | undefined;
 	private lastLoadReport: SessionLoadReport = {
 		migratedSessionIds: [],
 		recoveredSessionIds: [],
@@ -299,7 +302,13 @@ export class ChatEngine {
 				? { participants: [{ ...this.opts.participant }] }
 				: {}),
 			...(externalIdentity ? { externalIdentity } : {}),
-			llmProvider: this.opts.llmAdapter.getProviders()[0]?.id,
+			...(this.defaultModelSelection
+				? {
+						llmProfileId: this.defaultModelSelection.providerProfileId,
+						llmProvider: this.defaultModelSelection.provider,
+						llmModel: this.defaultModelSelection.model,
+					}
+				: { llmProvider: this.opts.llmAdapter.getProviders()[0]?.id }),
 		};
 
 		this.state.sessions.unshift(session);
@@ -365,6 +374,38 @@ export class ChatEngine {
 		);
 	}
 
+	/** Set the profile/model used by future sessions created by this engine. */
+	setDefaultModelSelection(selection: LLMRequestOptions | null): void {
+		this.defaultModelSelection = selection ? { ...selection } : undefined;
+	}
+
+	/** Save a profile/model choice on one chat; it applies to that chat's next turn. */
+	async setSessionModelSelection(
+		sessionId: string,
+		selection: Required<LLMRequestOptions>,
+	): Promise<void> {
+		if (this.state.isStreaming) {
+			throw new Error("Wait for the current reply to finish before changing its model.");
+		}
+		const session = this.state.sessions.find((candidate) => candidate.id === sessionId);
+		if (!session) throw new Error("This chat is no longer available.");
+		if (!selection.providerProfileId.trim() || selection.providerProfileId.length > 160 || !selection.provider.trim() || selection.provider.length > 80 || !selection.model.trim() || selection.model.length > 160) {
+			throw new Error("Choose a provider profile and model.");
+		}
+		session.llmProfileId = selection.providerProfileId.trim();
+		session.llmProvider = selection.provider.trim();
+		session.llmModel = selection.model.trim();
+		if (!this.opts.persistenceAdapter) {
+			session.updatedAt = Date.now();
+			this.emitState();
+			return;
+		}
+		await this.persistSession(session, {
+			owner: "chat-engine",
+			reason: "model-selection",
+		});
+	}
+
 	async deleteSession(sessionId: string): Promise<void> {
 		if (this.opts.persistenceAdapter) {
 			await this.enqueuePersistence(() =>
@@ -397,6 +438,10 @@ export class ChatEngine {
 
 	getSessions(): ChatSession[] {
 		return [...this.state.sessions];
+	}
+
+	getModels(provider: string): ModelInfo[] {
+		return this.opts.llmAdapter.getModels(provider);
 	}
 
 	/**
@@ -1161,6 +1206,11 @@ export class ChatEngine {
 			for await (const chunk of this.opts.llmAdapter.streamChat(
 				adapterMessages,
 				signal,
+				{
+					...(session.llmProfileId ? { providerProfileId: session.llmProfileId } : {}),
+					...(session.llmProvider ? { provider: session.llmProvider } : {}),
+					...(session.llmModel ? { model: session.llmModel } : {}),
+				},
 			)) {
 				if (signal.aborted) break;
 				if (chunkCount === 0) {

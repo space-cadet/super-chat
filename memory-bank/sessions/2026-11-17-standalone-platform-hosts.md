@@ -126,3 +126,13 @@ this task. New Memory Bank records remain uncommitted as well.
   No API key was entered, so credential persistence, live provider connection,
   and LLM/tool-call round trips were not tested. T22/T32 remain open for their
   broader acceptance criteria.
+
+## Android Credential Backup Handling — 2026-11-17 23:56 IST
+
+- Added Android backup exclusions for the encrypted credential SharedPreferences
+  file in both Android 12+ cloud backup/device transfer rules and the legacy
+  full-backup rules used by earlier Android versions.
+- The rules avoid restoring ciphertext without the device-local Keystore key.
+  Other eligible app data retains the platform's default backup behavior;
+  IndexedDB session backup and restore remain unverified.
+- No Android build or device check was run for this configuration change.

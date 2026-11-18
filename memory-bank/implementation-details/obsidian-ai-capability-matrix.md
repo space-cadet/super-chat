@@ -1,5 +1,9 @@
 # obsidian-ai Capability Extraction Matrix
 
+The [Master Delivery Plan](../master-plan.md#feature-checklist) is the canonical
+feature comparison and execution checklist. This document retains the extraction
+ownership model and dependency diagrams; do not maintain a second backlog here.
+
 ## Migration Shape
 
 ```text

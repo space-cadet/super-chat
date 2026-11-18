@@ -163,6 +163,9 @@ export function normalizePersistedSession(
 		...(turns ? { turns } : {}),
 		...(modelHistory ? { modelHistory } : {}),
 		...(participants.length > 0 ? { participants } : {}),
+		...(typeof value.llmProfileId === "string"
+			? { llmProfileId: value.llmProfileId }
+			: {}),
 		...(typeof value.llmProvider === "string"
 			? { llmProvider: value.llmProvider }
 			: {}),

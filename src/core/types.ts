@@ -165,6 +165,8 @@ export interface ChatSession {
   modelHistory?: ChatModelMessage[];
   /** Participants observed in this conversation, keyed by stable identity. */
   participants?: ChatParticipant[];
+  /** Host profile selected for this conversation; never contains credentials. */
+  llmProfileId?: string;
   llmProvider?: string;
   llmModel?: string;
   archived?: boolean;
@@ -310,6 +312,7 @@ export type SessionWriteReason =
   | 'turn-failed'
   | 'retrieval'
   | 'migration'
+  | 'model-selection'
   | 'manual'
   | 'archive';
 
@@ -388,17 +391,26 @@ export interface LLMAdapter {
   streamChat(
     messages: { role: string; content: string }[],
     signal?: AbortSignal,
+    request?: LLMRequestOptions,
   ): AsyncIterable<string>;
 
   streamChatWithTools(
     messages: { role: string; content: string }[],
     tools: ToolDefinition[],
     signal?: AbortSignal,
+    request?: LLMRequestOptions,
   ): AsyncIterable<StreamEvent>;
 
   getProviders(): ProviderInfo[];
   getModels(provider: string): ModelInfo[];
   testConnection(): Promise<{ ok: boolean; message: string }>;
+}
+
+/** Non-secret selection passed to a host adapter for one conversation turn. */
+export interface LLMRequestOptions {
+  providerProfileId?: string;
+  provider?: string;
+  model?: string;
 }
 
 export interface PersistenceAdapter {
