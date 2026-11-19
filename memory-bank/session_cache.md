@@ -1,6 +1,143 @@
 # Session Cache — super-chat
 
-*Last Updated*: 2026-11-18 14:25:11 IST
+*Last Updated*: 2026-11-19 19:03:26 IST
+
+## Memory Bank Reconciliation — 2026-11-19 19:03 IST
+
+- Reconciled the master plan with all 15 Settings sections, wired search/PDF,
+  sync, backup/import and diagnostics, current `.108` APK confirmation, and the
+  verified but unopened Apple Silicon DMG.
+- Updated T25/T26/T27/T29/T30 and their implementation notes. T29 is now
+  in progress; the full T15 source audit, live endpoints/round trips, desktop
+  runtime, provider credentials on web/desktop, and iOS remain open.
+- No source or build work was performed during this documentation update.
+
+## Latest Source Change — Cross-Platform Host Composition (2026-11-19)
+
+- Vite aliases `@standalone-host` to explicit web, Android, or desktop
+  composition modules; shared persistence/profile/tools stay common.
+- Android host owns Keystore credentials, native documents, Android lifecycle,
+  diagnostics, and Capacitor HTTP. Desktop uses its Electron diagnostics plugin;
+  web uses browser online/offline events. Android credential/document plugins
+  are excluded from web and desktop bundles.
+- Standalone TypeScript and web, desktop, and Android builds passed. The new
+  APK was installed on `.108`, and the user confirmed it works. A fresh arm64
+  DMG passed `hdiutil verify`; it has not been launched or installed. The user
+  plans to check web and desktop.
+- Desktop keychain and complete browser/desktop provider-secret handling are
+  still open. Session detail:
+  `sessions/2026-11-19-cross-platform-host-composition.md`.
+
+## Latest device delivery — 2026-11-19 01:59:52 IST
+
+The Settings layout refresh APK built, installed and launched on `.108`; the
+user approved the small-screen layout. Package version 0.1.0 / code 1 verified.
+SHA-256 and size are recorded in T32 and the current session. Live WebDAV and
+backup round trips remain open.
+
+## Current Session: T15/T22 Parallel Settings Port — 2026-11-19 01:38:26 IST
+
+- Integrated all 15 Settings section entries; copied functional search/PDF, backup,
+  WebDAV sync, commands, logging and diagnostics services.
+- Relay room joining and similar auxiliary features deferred by user.
+- Standalone web and Android builds passed; the layout check passed on device.
+- Settings import now restores sync selections and WebDAV preferences, while
+  excluding credentials and rejecting unsupported backends.
+- Details: `sessions/2026-11-19-parallel-settings-port.md`.
+
+## Current Session: T15/T22/T32 Settings Port Android Build and Install — 2026-11-18 19:10:41 IST
+
+- Built the current source with `pnpm --filter @super-chat/standalone build:android:debug`.
+- Library build, standalone TypeScript check, web build, Capacitor sync, and Android debug APK assembly passed.
+- Installed the 6,238,542-byte APK on the verified OPPO CPH2661IN at `192.168.1.108`; package `com.spacecadet.superchat`, version `0.1.0`, code 1.
+- APK SHA-256: `69ff407cce8ccaefacf8435b3ffd4a00ceb97ac82faf54faec8bebf0c8362d49`.
+- Install was verified with package metadata and APK path. The app was not launched or visually checked. No unit tests were run.
+- Session record: `sessions/2026-11-18-settings-port-android-build-install.md`.
+
+## Current Session: T15/T22 Settings Expand and Collapse All — 2026-11-18 19:04:59 IST
+
+- Added source-style Expand all and Collapse all actions for the four current
+  standalone Settings groups.
+- Both actions update the same open-section set as individual accordions, so
+  the existing IndexedDB persistence saves their state.
+- Updated the settings inventory, master plan, and T15/T22 records. No tests,
+  builds, or device checks were run; `git diff --check` remains the code check.
+- Session record: `sessions/2026-11-18-settings-expand-collapse.md`.
+
+## Current Session: T15/T22 Previous-Message Context Limit — 2026-11-18 19:01:32 IST
+
+- Added the source `maxContextMessages` setting to standalone Chat preferences,
+  with the source default of 10.
+- Passed the setting through shared text-only and tool-assisted request options
+  into the existing `buildBudgetedHistory` path.
+- Matched the source meaning of previous messages by leaving one additional
+  slot for the current user message. Older transcript entries remain saved.
+- Updated the T15/T22 inventory and plan. No tests, typechecks, builds, or
+  device checks were run. `git diff --check` passed.
+- Session record: `sessions/2026-11-18-max-context-messages.md`.
+
+## Current Session: T15/T22 Full Request Token Estimate — 2026-11-18 18:56:49 IST
+
+- Added Obsidian-AI's `showFullRequestTokens` preference to standalone Settings,
+  defaulting on as in the source.
+- Added a neutral `request-token-estimate` stream event, forwarded through the
+  agent and text-only paths. The standalone adapter estimates the prepared
+  prompt after adding system instructions and memory; the composer shows it
+  during the matching active request.
+- The count is a structured estimate, not provider-reported usage; tool
+  definitions and actual provider usage remain separate/unreported here.
+- Updated the source inventory and master-plan status. Provider usage and the
+  remaining Settings controls stay open.
+- No tests, builds, or device checks were run for this code change.
+- Session record: `sessions/2026-11-18-full-request-token-estimate.md`.
+
+## Current Session: T15/T22 Settings Feature Port — 2026-11-18 18:27:47 IST
+
+- Copied Obsidian-AI's session-title helper into `src/utils/sessionTitle.ts`;
+  routed its LLM call through the shared adapter and selected chat profile.
+  Automatic naming is opt-in and falls back to the source heuristic.
+- Added the source-style bounded session-tag helper and opt-in suggestions for
+  new chats, using the selected standalone provider profile. Imports clear the
+  pending flag; suggestions merge into current session metadata.
+- Added persisted controls for restoring saved/active tabs and transcript
+  positions, plus the source's 120–360 px tab-title width setting. Chat
+  preferences now load before workspace hydration so the restore choice applies
+  at startup.
+- Updated the Settings inventory and master-plan statuses. Manual/bulk tag
+  management, retention, context/compaction defaults, the remaining source
+  sections, and broad T15 reconciliation stay open.
+- No tests, builds, or device checks were run for these code changes.
+- Session record: `sessions/2026-11-18-settings-feature-port.md`.
+
+## Current Session: T15/T22 Settings Source Inventory — 2026-11-18 17:28:49 IST
+
+- The earlier OP01 summary listed only a fraction of the Settings gaps. Read
+  the current Obsidian-AI Settings registry and recorded all 13 regular and two
+  advanced sections, their major controls, and Super Chat status in
+  `implementation-details/settings-port-inventory.md`.
+- Updated the master plan and T15/T22 owners. OP01 remains open until every
+  listed control and Settings-page behavior is classified and delivered or
+  assigned to its existing host owner. T15's wider current-source audit against
+  the 2026-10-23 capability map also remains open.
+- Source code can be reused directly for compatible chat logic and helpers.
+  Settings UI modules that call Obsidian APIs need React/host-capability
+  adaptation; preserve Super Chat's fail-closed tool approval and do not treat
+  source placeholders as implemented features.
+- Documentation-only change; no tests/build/device checks were run.
+- Session record: `sessions/2026-11-18-settings-source-inventory.md`.
+
+## Current Session: T22 Settings Accordion Layout — 2026-11-18 17:05:30 IST
+
+- Replaced the Settings category switcher with one scrolling page containing
+  Providers, Chat, Tools, and Memory accordions.
+- Saved open/closed section IDs in standalone IndexedDB settings. The default
+  opens Providers; an explicit empty list restores all sections closed.
+- Existing Settings controls and drafts remain mounted when a section is
+  collapsed.
+- No build, test, or device visual check was run for this change. OP01 remains
+  open for tab restoration, naming/tags/retention, and remaining thinking/usage
+  behavior.
+- Session record: `sessions/2026-11-18-settings-layout.md`.
 
 ## Current Session: INFRA-1/T22/T15 Feature Reuse, Memory, and Settings — 2026-11-18 14:25:11 IST
 

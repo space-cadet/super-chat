@@ -41,10 +41,15 @@ not add a new tokenizer or a new context manager.
 See [`model-history-and-context.md`](model-history-and-context.md) for the
 shared rules on message order, provider conversion, and large content.
 
-## Implemented Attachment Slice — 2026-11-18
+## Implemented Attachment Slice — 2026-11-19
 
-The shared source now includes attachment resolution and budget helpers, an
-attachment composer, and provider message-part conversion. The standalone
-Android host adds document integration. Provider-specific PDF/image handling,
-cross-host type/size limits, and persisted captured-content replay remain open;
-the installed debug APK does not establish those behaviors.
+The shared source includes attachment resolution and budget helpers, an
+attachment composer, and provider message-part conversion. `PdfExtractor`
+accepts host HTTP and an optional PDF.js client; standalone Settings select
+client/server/automatic extraction and a page limit. The `read_pdf` tool and
+composer PDF-text path use that service, while each platform supplies its
+document/network access. Focused PDF and attachment integration checks passed.
+
+Provider-specific PDF/image behavior, cross-host type/size limits, live server
+acceptance, and persisted captured-content replay remain open. Installing the
+Android app does not establish those behaviors.

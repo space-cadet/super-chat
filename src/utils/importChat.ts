@@ -80,6 +80,7 @@ function sanitizeSession(
         : createdAt,
     messages,
     tags: normalizeSessionTags(metadata.tags),
+    autoTagPending: false,
   };
 }
 

@@ -34,12 +34,17 @@ tool history        evidence/citations   host storage
 Import must never execute tools as a side effect. Hosts control file sharing,
 download, conflict resolution, and final storage.
 
-## Implemented Standalone Slice — 2026-11-18
+## Implemented Standalone Slice — 2026-11-19
 
-The shared source now includes archive serialization/import utilities and an
-export interface. Android document output is provided by the standalone host's
-Capacitor document plugin. The shared package, standalone app, and Android
-debug artifact built successfully; the artifact was installed and launched.
-Import/export round-trip, schema migration, conflict handling, and preservation
-of tool/evidence history still need acceptance. Import remains data-only and
-must not execute saved tool calls.
+Standalone Settings export/import omits credentials and restores supported
+sync selections and WebDAV preferences. Saved chats exchange as JSON or JSONL;
+clearing history first saves a recovery copy. The host chooses file access:
+Android uses its document plugin, while web and desktop use their selected
+browser/desktop services. Import remains data-only and must never execute saved
+tool calls.
+
+Settings and chat round trips, schema migration, conflict handling, tool and
+evidence fidelity, and recovery after restart remain unverified. Obsidian
+file-format migration and rolling `data.json` backups do not apply to
+IndexedDB. See [`T30`](../tasks/T30.md) and the
+[`Settings port inventory`](settings-port-inventory.md).

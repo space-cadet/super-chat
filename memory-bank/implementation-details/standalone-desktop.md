@@ -6,11 +6,13 @@ The desktop host reuses the standalone React renderer and packages it with
 Capacitor Electron. Platform diagnostics are provided by a small Electron
 plugin. The previous recorded baseline mounted `ChatApp` with a local response
 adapter and in-memory persistence. Commit `f97c608` routes the renderer through
-`SuperChatApp` and `standaloneHost`, with IndexedDB
-session/settings storage, lifecycle callbacks, local tools, and provider
-settings. The host exposes protected API-key storage only on Android, so
-desktop keychain support remains open. The current integration has not been
-built or accepted in the Electron app.
+`SuperChatApp` and IndexedDB session/settings storage, with local tools and
+provider settings. The renderer now resolves an explicit desktop host entry
+through Vite's `@standalone-host` alias; desktop uses browser visibility,
+browser downloads and `fetch`. Protected provider API-key storage is still
+Android-only, so desktop keychain support remains open. The desktop renderer
+builds. A fresh Apple Silicon DMG was built on 2026-11-19 and passed
+`hdiutil verify`; it has not been opened or installed for runtime acceptance.
 
 As of 2026-11-17, an Apple Silicon DMG was built and passed `hdiutil verify`.
 The Windows/Linux build targets and CI matrix exist, but the handoff contains
@@ -23,12 +25,13 @@ apps/standalone/
 ├── src/
 │   ├── main.tsx                         React entry point
 │   ├── App.tsx                           Chat, diagnostics, and settings navigation
-│   ├── host.ts                           Neutral standalone host capabilities
+│   ├── host.ts                           TypeScript fallback host entry
+│   ├── hosts/                            Shared composer, host entries, diagnostics adapters
 │   ├── llm.ts                            Provider configuration and adapter
 │   ├── persistence.ts                    IndexedDB sessions and settings
 │   ├── lifecycle.ts                      Capacitor visibility callbacks
+│   ├── diagnostics.ts                    Neutral diagnostics types
 │   ├── tools.ts                          Local calculator and time tools
-│   ├── diagnostics.ts                    Capacitor diagnostics facade
 │   └── screens/                           Diagnostics and provider settings
 ├── scripts/build.mjs                     Build/sync/package orchestration
 ├── electron/
@@ -54,15 +57,16 @@ Electron main process
        └── Capacitor bridge + packaged Vite renderer
             └── React App
                  ├── SuperChatApp
-                 │    ├── standaloneHost
-                 │    │    ├── IndexedDB sessions/settings
-                 │    │    ├── lifecycle callbacks
-                 │    │    └── calculator/time tools
+                 │    ├── desktop host composition
+                 │    │    ├── shared IndexedDB sessions/settings and tools
+                 │    │    ├── window visibility lifecycle
+                 │    │    ├── browser download capability
+                 │    │    └── fetch-based web search and WebDAV
                  │    └── StandaloneLLMAdapter
                  │         └── VercelLLMAdapter and configured provider
                  ├── ProviderSettingsScreen
                  └── DiagnosticsScreen
-                      └── loadDiagnostics()
+                      └── desktop host diagnostics service
                            ├── Capacitor Device / App / Network plugins
                            └── SystemDiagnostics plugin
                                 └── Electron net + systemPreferences
@@ -98,11 +102,12 @@ matching OS.
 
 ## Acceptance and Remaining Work
 
-Verified in the handoff: the Apple Silicon DMG exists and passes
-`hdiutil verify`; TypeScript checking, frozen-lockfile installation, workflow
-YAML parsing, and `git diff --check` passed. The remote GitHub Actions workflow
-was not run. DMG integrity verification does not establish app signing,
-installation, update, or full runtime acceptance.
+The current Apple Silicon DMG passed `hdiutil verify`; its size and SHA-256 are
+recorded in [T31](../tasks/T31.md). On 2026-11-19 the standalone TypeScript
+check, web and desktop renderers, Android debug APK, and macOS arm64 package
+build passed. The DMG has not been opened or installed. Windows/Linux packages,
+the remote GitHub Actions workflow, signing, updates, and full runtime
+acceptance remain unverified.
 
 The remaining work is tracked by [T31](../tasks/T31.md): durable local data,
 backup/recovery and lifecycle behavior; OS-protected credentials; approved

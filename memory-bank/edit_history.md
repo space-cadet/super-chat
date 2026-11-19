@@ -1,6 +1,30 @@
 # Edit History
 *Created: 2026-05-19 11:15:00 IST*
-*Last Updated: 2026-11-18 11:19:12 IST*
+*Last Updated: 2026-11-19 19:03:26 IST*
+
+#### 19:03:26 IST - INFRA-1/T15/T22/T25/T26/T27/T29/T30/T31/T32: Reconcile feature records and host acceptance
+- Updated the master plan with the current 15-section Settings port, `.108` install confirmation, and verified but unopened Apple Silicon DMG; corrected the Web Search/PDF, token estimate, and diagnostics status.
+- Reconciled T25/T26/T27/T29/T30 and the task registry; added implementation notes for tools, PDF/context, diagnostics, archive exchange, cross-platform hosts, and WebDAV sync.
+- Refreshed active context and session cache; the broad T15 source audit, live endpoint and round-trip checks, desktop runtime, browser/desktop provider credentials, and iOS remain open.
+- Created `memory-bank/edits/2026-11-19/20261119-190326-infra1-t15-t22-feature-record-reconciliation.md`.
+
+#### 12:53:54 IST - T22/T31/T32: Build and install current platform artifacts
+- Rebuilt the Android debug APK and installed it on the OPPO CPH2661IN at `192.168.1.108`; package metadata confirms `com.spacecadet.superchat` version 0.1.0 / code 1. The user confirmed the app works.
+- Built `apps/standalone/electron/dist/Super Chat-0.1.0-arm64.dmg` from the current source and verified its checksum with `hdiutil verify`.
+- Updated Android/Desktop task evidence, the cross-platform session, active context, and session cache. Credential/recovery and desktop runtime checks remain open; no test suite was run.
+- Created `memory-bank/edits/2026-11-19/20261119-125354-t22-t31-t32-platform-artifacts.md`.
+
+#### 11:50:08 IST - T22/T31/T32: Route diagnostics through host services
+- Added a neutral diagnostics contract and browser adapter; Android and Electron host entries select the Capacitor/native adapter. `DiagnosticsScreen` no longer imports Capacitor plugins directly.
+- Rebuilt standalone TypeScript, web, desktop, and Android targets. Bundle inspection found Android credential/document plugins only in Android and `SystemDiagnostics` in Android and desktop, not web.
+- Updated the cross-platform session, task records, host architecture notes, active context, and session cache. The Android APK was not installed and the Electron app was not launched; no tests were run.
+
+#### 11:41:40 IST - T22/T31/T32: Compose standalone platform hosts
+- Added explicit web, Android, and desktop host compositions; the common composer supplies shared persistence, provider profiles, and tools while platform entries supply lifecycle, document export, credentials, and HTTP.
+- Updated standalone build selection, provider/search credential access, document export, WebDAV transport, and relay room-list requests to use the selected host services.
+- Updated the master plan, INFRA-1/T22/T31/T32, standalone host notes, README, UI structure, active context, and session cache; recorded open desktop/device acceptance.
+- Standalone typecheck, web and desktop renderer builds, and Android debug APK assembly passed. Native credential/document plugin inclusion was verified only in Android assets; no tests or device/Electron runtime checks were run.
+- Created `memory-bank/edits/2026-11-19/20261119-114140-t22-t31-t32-host-composition.md` and `memory-bank/sessions/2026-11-19-cross-platform-host-composition.md`.
 
 #### 11:19:12 IST - INFRA-1/T28/T32: Record committed delivery state
 - Updated `memory-bank/master-plan.md` - Replaced the planning-time uncommitted note with the current committed source and plan status.

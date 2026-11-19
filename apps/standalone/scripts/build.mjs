@@ -65,14 +65,14 @@ function buildLibrary() {
 	pnpm(["--dir", repoDir, "build"], repoDir, "Building super-chat library");
 }
 
-function buildWeb() {
+function buildWeb(platform = "web") {
 	buildLibrary();
 	pnpm(["exec", "tsc", "--noEmit"], appDir, "Checking standalone TypeScript");
-	pnpm(["exec", "vite", "build", "--config", "vite.config.ts"], appDir, "Building web app");
+	pnpm(["exec", "vite", "build", "--config", "vite.config.ts", "--mode", platform], appDir, `Building ${platform} renderer`);
 }
 
 function syncAndroid() {
-	buildWeb();
+	buildWeb("android");
 	pnpm(["exec", "cap", "sync", "android"], appDir, "Syncing Android project");
 }
 
@@ -84,7 +84,7 @@ function ensureAndroidProject() {
 
 function addDesktop() {
 	if (!exists(join(electronDir, "package.json"))) {
-		buildWeb();
+		buildWeb("desktop");
 		pnpm(["exec", "cap", "add", platformName], appDir, "Adding Capacitor desktop platform");
 	}
 	npm(["install"], electronDir, "Installing desktop build dependencies");
@@ -98,7 +98,7 @@ function syncDesktop() {
 	if (!exists(join(electronDir, "package.json"))) {
 		throw new Error("Desktop project is missing. Run `pnpm --filter @super-chat/standalone add:desktop` first.");
 	}
-	buildWeb();
+	buildWeb("desktop");
 	npm(["ci"], electronDir, "Installing locked desktop dependencies");
 	pnpm(["exec", "cap", "sync", platformName], appDir, "Syncing desktop project");
 }

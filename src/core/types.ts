@@ -209,6 +209,10 @@ export interface ChatSession {
   draftAttachments?: Attachment[];
   thinkingMode?: ThinkingMode;
   tags?: string[];
+  /** Marks a newly created session that should receive opt-in tag suggestions. */
+  autoTagPending?: boolean;
+  /** Saved transcript scroll position restored when chat tabs are restored. */
+  scrollPosition?: number;
   archived?: boolean;
   metadata?: Record<string, unknown>;
 }
@@ -290,6 +294,7 @@ export type StreamEvent =
   | { type: 'step-finish'; step: number }
   | { type: 'finish'; reason: string }
   | { type: 'error'; message: string }
+  | { type: 'request-token-estimate'; tokens: number }
   | { type: 'usage'; promptTokens: number; completionTokens: number; totalTokens: number }
   | { type: 'metrics'; ttftMs: number; totalDurationMs: number };
 
@@ -420,11 +425,25 @@ export interface ChatSettings {
   enableLaTeXPreview: boolean;
   maxSavedSessions: number;
   maxContextTokens: number;
+  /** Maximum previous model-history messages sent in one request. */
+  maxContextMessages?: number;
   maxAgentSteps: number;
   autoApply: boolean;
   showProviderIndicator: boolean;
   /** Enter submits the composer; Shift+Enter still inserts a line. */
   pressEnterToSend: boolean;
+  /** Show an adapter-provided estimate of the complete request while streaming. */
+  showFullRequestTokens?: boolean;
+  /** Generate a title for untitled chats after the first few messages. */
+  autoNameSessions?: boolean;
+  /** Suggest tags for sessions created while automatic tagging is enabled. */
+  autoTagSessions?: boolean;
+  /** Provider profile used for automatic tag suggestions. */
+  sessionTaggingProfileId?: string;
+  /** Reopen saved tabs and the active session after the host restarts. */
+  restoreChatTabs?: boolean;
+  /** Preferred width in pixels for each session tab title. */
+  chatTabTitleWidth?: number;
 }
 
 // ============================================================================
@@ -434,6 +453,12 @@ export interface ChatSettings {
 export interface LLMAdapter {
   streamChatEvents?(messages: ChatModelMessage[], signal?: AbortSignal, request?: LLMRequestOptions): AsyncIterable<StreamEvent>;
   streamChat(
+    messages: ChatModelMessage[],
+    signal?: AbortSignal,
+    request?: LLMRequestOptions,
+  ): AsyncIterable<string>;
+  /** One-off UI prompt; adapters can avoid injecting the full chat context. */
+  streamAuxiliaryChat?(
     messages: ChatModelMessage[],
     signal?: AbortSignal,
     request?: LLMRequestOptions,
@@ -459,6 +484,8 @@ export interface LLMRequestOptions {
   model?: string;
   /** Optional host preference that caps history sent to the provider. */
   maxRequestTokens?: number;
+  /** Optional host preference that caps previous messages sent to the provider. */
+  maxContextMessages?: number;
 }
 
 export interface ChatWorkspaceState {

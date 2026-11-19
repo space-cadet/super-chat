@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { loadDiagnostics, type DiagnosticsSnapshot } from "../diagnostics";
+import type { DiagnosticsSnapshot } from "../diagnostics";
+import { standaloneHost } from "@standalone-host";
 
 function formatBytes(value: number | undefined | null): string {
 	if (!value || value < 0) return "Unavailable";
@@ -53,7 +54,7 @@ export function DiagnosticsScreen() {
 		setLoading(true);
 		setError(null);
 		try {
-			setSnapshot(await loadDiagnostics());
+			setSnapshot(await standaloneHost.standalone.diagnostics.loadSnapshot());
 		} catch (cause) {
 			setError(cause instanceof Error ? cause.message : String(cause));
 		} finally {
@@ -65,12 +66,12 @@ export function DiagnosticsScreen() {
 		void refresh();
 		let disposed = false;
 		let removeListener: (() => void) | undefined;
-		void import("@capacitor/network").then(({ Network }) =>
-			Network.addListener("networkStatusChange", () => void refresh()),
-		).then((handle) => {
-			if (disposed) void handle.remove();
-			else removeListener = () => void handle.remove();
-		}).catch(() => undefined);
+		void standaloneHost.standalone.diagnostics.subscribeNetwork(() => void refresh())
+			.then(unsubscribe => {
+				if (disposed) unsubscribe();
+				else removeListener = unsubscribe;
+			})
+			.catch(() => undefined);
 		return () => {
 			disposed = true;
 			removeListener?.();

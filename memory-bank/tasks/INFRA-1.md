@@ -5,7 +5,7 @@ It defines the feature checklist, current delivery order, owners, and completion
 The numbered phases below retain historical progress; use the master plan for next work.
 
 *Created: 2026-08-31 22:44:08 IST*
-*Last Updated: 2026-11-18 14:25:11 IST*
+*Last Updated: 2026-11-19 11:41:40 IST*
 
 **Status**: 🔄 **IN PROGRESS**
 **Priority**: CRITICAL
@@ -354,24 +354,25 @@ relying on the intermediate engine path.
 ### Phase 12: Standalone desktop host
 
 **Owner**: T31 — [Standalone Desktop App and Host](T31.md)
-**Status**: 🔄 Electron shell and macOS arm64 artifact baseline implemented;
-full desktop acceptance remains open.
+**Status**: 🔄 Electron shell, macOS arm64 artifact, and explicit desktop host
+composition are present; full desktop acceptance remains open.
 
 - [x] Add the Capacitor Electron shell, shared React chat UI, read-only desktop
       diagnostics, OS-specific build targets, and CI artifact matrix.
 - [x] Build the Apple Silicon DMG and verify its container with `hdiutil`.
-- [ ] Integrate the full standalone path through `SuperChatApp` and neutral host
-      contracts; replace the local preview and in-memory adapters for production.
-- [ ] Add durable local persistence, operating-system keychain, file/document
-      access, lifecycle handling, and backup/recovery.
+- [ ] Verify the `SuperChatApp` path through the explicit desktop host
+      composition; source integration exists, while Electron runtime acceptance
+      remains open.
+- [ ] Complete and verify protected credentials, durable recovery, approved
+      file/document access, and lifecycle behavior.
 - [ ] Sign packages, implement update behavior, and verify runtime/install
       acceptance on each supported desktop OS.
 
-**Evidence (2026-11-17)**: TypeScript checking, frozen-lockfile installation,
-workflow YAML parsing, and `git diff --check` passed. The Apple Silicon DMG
-passed `hdiutil verify`. Windows/Linux artifacts and remote Actions runs were
-not verified. The current chat uses local preview replies and in-memory
-persistence. See T31 and
+**Evidence**: On 2026-11-19, standalone TypeScript and web/desktop renderer
+builds passed. The current Android debug APK was installed on `.108`, and the
+user confirmed that it works. A fresh Apple Silicon DMG was built and passed
+`hdiutil verify`, but has not been launched or installed. Windows/Linux
+artifacts and remote Actions runs remain unverified. See T31 and
 [`implementation-details/standalone-desktop.md`](../implementation-details/standalone-desktop.md).
 
 **Exit criterion**: a signed desktop application works without Obsidian or
@@ -389,8 +390,9 @@ iOS host acceptance remains open.
 - [x] Install and launch on the OPPO CPH2661IN; the user confirms the app works
       on mobile. Diagnostics showed network, Android/WebView, processor,
       memory, and battery readings.
-- [ ] Integrate the full standalone path through `SuperChatApp` and neutral host
-      contracts; replace the local preview and in-memory adapters for production.
+- [ ] Verify the `SuperChatApp` path through the explicit Android host
+      composition on device; source integration exists, while device recovery
+      and credential acceptance remain open.
 - [ ] Add durable storage, background/interruption recovery, secure
       credentials, file/document access, offline behavior, and any required
       sync/conflict policy.
@@ -402,6 +404,11 @@ workflow YAML parsing, and `git diff --check` passed. Android debug, unsigned
 release APK, and AAB builds were verified. Release signing is not configured;
 remote Actions runs were not performed. See T32 and
 [`implementation-details/standalone-android.md`](../implementation-details/standalone-android.md).
+
+**Additional evidence (2026-11-19)**: The host-specific Android debug APK was
+installed on the OPPO CPH2661IN at `.108`; Android reports package
+`com.spacecadet.superchat`, version `0.1.0` / code 1. The user confirmed that
+the app works. Credential-save and recovery checks remain open.
 
 **Exit criterion**: credible Android and iOS support with platform-specific
 acceptance evidence.

@@ -1,4 +1,4 @@
-import { Capacitor, registerPlugin } from "@capacitor/core";
+import { registerPlugin } from "@capacitor/core";
 import type {
 	CredentialCapability,
 	CredentialReference,
@@ -47,6 +47,3 @@ export const androidCredentialCapability: CredentialCapability = {
 		await SecureCredentials.deleteCredential({ id: credentialId });
 	},
 };
-
-export const hasAndroidSecureCredentials =
-	Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android";

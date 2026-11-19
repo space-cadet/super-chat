@@ -97,7 +97,7 @@ export { FixtureSuperChatHost } from './adapters/FixtureSuperChatHost';
 
 // Core classes
 export { ChatEngine } from './core/ChatEngine';
-export { estimateTokens } from './core/tokenEstimator';
+export { estimateTokens, estimateStructuredTokens } from './core/tokenEstimator';
 export {
   DEFAULT_RETRIEVAL_CONTEXT_TOKENS,
   normalizeRetrievedSources,
@@ -190,3 +190,6 @@ export { MemoryToolProvider } from "./memory/MemoryToolProvider";
 export type { MemoryToolSettings } from "./memory/MemoryToolProvider";
 export type { MemoryAuditRecord } from "./memory/MemoryHandlers";
 export type { MemoryEntry, MemoryCategory, MemoryStorage, MemorySnapshotStore } from "./memory/types";
+
+export * from "./web/WebSearchService";
+export * from "./documents/PdfExtractor";

@@ -175,6 +175,14 @@ export function normalizePersistedSession(
 		...(Array.isArray(value.draftAttachments) ? { draftAttachments: normalizeAttachments(value.draftAttachments) } : {}),
 		...(typeof value.thinkingMode === "string" && THINKING_MODES.includes(value.thinkingMode) ? { thinkingMode: value.thinkingMode as ChatSession["thinkingMode"] } : {}),
 		...(Array.isArray(value.tags) ? { tags: normalizeSessionTags(value.tags) } : {}),
+		...(typeof value.autoTagPending === "boolean"
+			? { autoTagPending: value.autoTagPending }
+			: {}),
+		...(typeof value.scrollPosition === "number" &&
+		Number.isFinite(value.scrollPosition) &&
+		value.scrollPosition >= 0
+			? { scrollPosition: value.scrollPosition }
+			: {}),
 		...(typeof value.archived === "boolean" ? { archived: value.archived } : {}),
 		...(isRecord(value.metadata) ? { metadata: value.metadata } : {}),
 	};

@@ -1,8 +1,41 @@
 # Active Context
 
-*Last Updated: 2026-11-18 14:25:11 IST*
+*Last Updated: 2026-11-19 19:03:26 IST*
 
-## Current Delivery: Feature Build and Settings — 2026-11-18
+## Cross-Platform Host Composition — 2026-11-19
+
+The standalone Vite build now selects explicit web, Android, or desktop host
+entries through `@standalone-host`. A shared composer provides IndexedDB,
+provider profiles, and tools; each target supplies lifecycle, documents,
+diagnostics, and HTTP services. Android alone provides protected provider
+credentials. Standalone TypeScript and web, desktop, and Android builds passed;
+target bundle inspection confirms Android credential/document plugins are
+Android-only and native diagnostics are absent from web. The new APK was
+installed on `.108`; the user confirmed it works. A fresh arm64 DMG passed
+`hdiutil verify` and is ready for the user's desktop check; it has not been
+launched here. See T22/T31/T32, the
+[cross-platform session](sessions/2026-11-19-cross-platform-host-composition.md),
+and the updated master plan. Desktop keychain, full browser provider-secret
+behavior, iOS, and platform runtime acceptance remain open.
+
+## Latest Settings Port — 2026-11-19
+
+All 15 reference section entries are now integrated, with functional search/PDF,
+backup/import, WebDAV sync, local commands and diagnostics services. See the
+latest update in the Settings inventory for actual behavior and limitations.
+Newly ported forms use responsive layouts and red × markers for unsupported
+options. Settings import restores sync and WebDAV preferences while excluding
+credentials. The Android debug APK was rebuilt, installed and opened on `.108`;
+the user approved the small-screen Settings layout. Live WebDAV and backup
+round trips remain unverified. Relay room joining and similar auxiliary
+integrations are deferred by the user.
+The earlier four-section description below is the preceding delivery snapshot.
+
+## Historical Delivery Snapshot: Feature Build and Settings — 2026-11-18 (superseded)
+
+This records the earlier four-section checkpoint. The 2026-11-19 Settings port
+and current host acceptance above supersede its section count and next-work
+sequence; use the Settings inventory and master plan for current gaps.
 
 Use [Super Chat Master Delivery Plan](master-plan.md) for current delivery
 order, feature coverage, task ownership, evidence and next work. INFRA-1 owns
@@ -16,15 +49,37 @@ Settings screen now has Providers, Chat, Tools, and Memory sections. Memory uses
 three tiers; prompt injection is opt-in and new memories require promotion to
 core.
 
+At that 2026-11-18 checkpoint, Settings displayed the four then-implemented
+groups on one scrolling page as independently collapsible accordions. Their
+open/closed choices persisted in
+standalone IndexedDB. Chat preferences now include source-backed automatic
+naming, optional new-session tags, a previous-message request cap, saved-tab
+and transcript scroll restoration, tab-title width, estimated full-request
+token counts during standalone streaming, and persistent expand/collapse-all
+actions for those groups. The source inventory still contains 13 regular and two
+advanced sections, so OP01 remains open for the remaining controls and full
+parity. The latest code changes built successfully and the debug APK is
+installed and launched on `.108`; the Settings layout was visually checked
+and approved by the user.
+
+The initial OP01 list was incomplete. The current Obsidian-AI Settings tab has
+13 regular sections and two advanced sections; every section and its major
+controls is now recorded with a Super Chat status in
+`implementation-details/settings-port-inventory.md`. The master plan links the
+inventory and requires T15 to reconcile the wider current source against the
+dated capability map before declaring feature coverage complete.
+
 Shared and standalone typechecks, the shared package build, and Android debug
 build passed. The final APK installed and launched on the OPPO CPH2661IN; its
 SHA-256 and remaining acceptance are recorded in T32 and the session log. No
 full suite ran after the final memory/Settings changes, and live memory/tool
 round trips remain open.
 
-Continue building the remaining Settings options from the master plan, including
-tab restoration, naming/tags/retention, and outstanding thinking/usage behavior.
-Layout issues are handled when the user reports them. Existing incomplete
+Continue building the remaining Settings behavior from the master plan and
+inventory through the existing owners. Next: retention, remaining
+context/compaction controls, manual and bulk tag management, and provider-reported
+usage controls.
+Then complete T15's wider source reconciliation. Existing incomplete
 acceptance remains open; no new task IDs were created.
 
 

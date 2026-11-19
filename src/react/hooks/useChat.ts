@@ -24,6 +24,7 @@ import type {
   Attachment,
   ChatSession,
   RetrievalSnapshot,
+  StreamEvent,
   ToolCall,
 } from "../../core/types";
 import type { ChatEngine } from "../../core/ChatEngine";
@@ -37,6 +38,7 @@ export interface UseChatState {
   error: string | null;
   pendingTools: ToolCall[];
   retrieval: RetrievalSnapshot;
+  requestTokenEstimate: { sessionId: string; tokens: number } | null;
 }
 
 export interface UseChatActions {
@@ -80,6 +82,13 @@ export function useChat(
     sources: [],
     warnings: [],
   });
+  const [requestTokenEstimate, setRequestTokenEstimate] = useState<UseChatState["requestTokenEstimate"]>(null);
+
+  const captureRequestTokenEstimate = useCallback((event: StreamEvent) => {
+    if (event.type !== "request-token-estimate") return;
+    const sessionId = engine.getActiveSession()?.id;
+    if (sessionId) setRequestTokenEstimate({ sessionId, tokens: event.tokens });
+  }, [engine]);
 
   // Sync with engine state
   useEffect(() => {
@@ -140,11 +149,13 @@ export function useChat(
     async (text: string, attachments?: Attachment[]) => {
       setError(null);
       setIsStreaming(true);
+      setRequestTokenEstimate(null);
 
       try {
         const stream = engine.sendMessage(text, { attachments });
 
         for await (const event of stream) {
+          captureRequestTokenEstimate(event);
           switch (event.type) {
             case "text-delta":
               setMessages([...(engine.getActiveSession()?.messages ?? [])]);
@@ -170,12 +181,13 @@ export function useChat(
         setIsStreaming(false);
       }
     },
-    [engine],
+    [captureRequestTokenEstimate, engine],
   );
 
   const createSession = useCallback(
     (title?: string) => {
       const session = engine.createSession(title);
+      setRequestTokenEstimate(null);
       setSessions(engine.getSessions());
       setOpenSessionIds(getOpenSessionIds(engine));
       setCurrentSession(session);
@@ -189,8 +201,10 @@ export function useChat(
     async (messageId: string) => {
       setError(null);
       setIsStreaming(true);
+      setRequestTokenEstimate(null);
       try {
         for await (const event of engine.replayMessage(messageId)) {
+          captureRequestTokenEstimate(event);
           if (event.type === "error") setError(event.message);
         }
         const session = engine.getActiveSession();
@@ -202,14 +216,16 @@ export function useChat(
         setIsStreaming(false);
       }
     },
-    [engine],
+    [captureRequestTokenEstimate, engine],
   );
 
   const resendMessage = useCallback(
     async (messageId: string, text?: string) => {
       setError(null);
+      setRequestTokenEstimate(null);
       try {
         for await (const event of engine.resendMessage(messageId, text)) {
+          captureRequestTokenEstimate(event);
           if (event.type === "error") setError(event.message);
         }
       } catch (cause) {
@@ -221,13 +237,14 @@ export function useChat(
         setMessages([...(session?.messages ?? [])]);
       }
     },
-    [engine],
+    [captureRequestTokenEstimate, engine],
   );
 
   const switchSession = useCallback(
     (sessionId: string) => {
       const ok = engine.switchSession(sessionId);
       if (ok) {
+        setRequestTokenEstimate(null);
         const session = engine.getActiveSession();
         setCurrentSession(session);
         setMessages(session?.messages ?? []);
@@ -243,6 +260,7 @@ export function useChat(
       const ok =
         engine.openSession?.(sessionId) ?? engine.switchSession(sessionId);
       if (ok) {
+        setRequestTokenEstimate(null);
         const session = engine.getActiveSession();
         setCurrentSession(session);
         setMessages(session?.messages ?? []);
@@ -257,6 +275,7 @@ export function useChat(
     (sessionId: string) => {
       const ok = engine.closeSessionTab?.(sessionId) ?? false;
       if (ok) {
+        setRequestTokenEstimate(null);
         const session = engine.getActiveSession();
         setCurrentSession(session);
         setMessages(session?.messages ?? []);
@@ -313,6 +332,7 @@ export function useChat(
     error,
     pendingTools,
     retrieval,
+    requestTokenEstimate,
     sendMessage,
     createSession,
     switchSession,

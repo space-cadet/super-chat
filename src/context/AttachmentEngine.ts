@@ -1,4 +1,6 @@
 // Adapted from obsidian-ai AttachmentEngine.
+export type PdfAttachmentExtractor = (buffer: ArrayBuffer) => Promise<string>;
+
 export interface AttachmentReader {
   readBinary(path: string): Promise<ArrayBuffer>;
   readText(path: string): Promise<string>;
@@ -177,6 +179,7 @@ export async function resolveAttachment(
   attachment: Attachment,
   app: AttachmentReader | undefined,
   provider: string,
+  extractPdf?: PdfAttachmentExtractor,
 ): Promise<
   Array<
     | { type: "text"; text: string }
@@ -185,6 +188,13 @@ export async function resolveAttachment(
   >
 > {
   const { path, name, type, data } = attachment;
+  if (extractPdf && (type === "pdf" || isPdfFile(path))) {
+    const buffer = data
+      ? Uint8Array.from(atob(data), char => char.charCodeAt(0)).buffer
+      : await readFileAsArrayBuffer(app, path);
+    const text = await extractPdf(buffer);
+    return [{type: "text", text: `[PDF attached: ${name}]\n\n${text || "(No text extracted)"}`}];
+  }
 
   // ─── External file with inline data ───
   if (data) {
@@ -315,6 +325,7 @@ export async function resolveAttachments(
   attachments: Attachment[],
   app: AttachmentReader | undefined,
   provider: string,
+  extractPdf?: PdfAttachmentExtractor,
 ): Promise<
   Array<
     | { type: "text"; text: string }
@@ -329,7 +340,7 @@ export async function resolveAttachments(
   > = [];
 
   for (const attachment of attachments) {
-    parts.push(...(await resolveAttachment(attachment, app, provider)));
+    parts.push(...(await resolveAttachment(attachment, app, provider, extractPdf)));
   }
 
   return parts;

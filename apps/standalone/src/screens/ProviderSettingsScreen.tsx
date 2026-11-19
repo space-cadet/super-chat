@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { standaloneHost } from "../host";
+import { standaloneHost } from "@standalone-host";
 import {
 	createStandaloneProfileId,
 	getStandaloneModels,
@@ -14,6 +14,7 @@ import {
 	saveStandaloneProviderProfile,
 	testStandaloneProviderProfile,
 } from "../llm";
+import { UnavailableMark } from "./SettingsSectionSupport";
 
 type SettingsNotice = { kind: "success" | "error"; message: string } | null;
 type Operation = "save" | "test" | "remove" | "default" | null;
@@ -288,7 +289,7 @@ export function ProviderSettingsScreen({
 
 						{needsApiKey && (
 							<div className="settings-field">
-								<label htmlFor="provider-api-key">API key</label>
+								<label htmlFor="provider-api-key">API key {!credentialAvailable && <UnavailableMark label="Protected API-key storage is unavailable in this host" />}</label>
 								<input id="provider-api-key" type="password" value={apiKey} maxLength={4096} required={!canReuseSavedKey} autoComplete="new-password" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder={canReuseSavedKey ? "Leave blank to keep the saved key" : "Paste your API key"} disabled={loading || busy || !credentialAvailable} onChange={(event) => { setApiKey(event.target.value); setNotice(null); }} />
 								<p className="field-help">{credentialAvailable ? canReuseSavedKey ? "The existing key stays protected in Android Keystore. Enter a new key to replace it." : "Required for this provider. Stored in Android Keystore and never shown after saving." : "Protected API-key storage is available in the Android app. This build cannot save provider keys."}</p>
 							</div>

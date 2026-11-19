@@ -1,6 +1,6 @@
 import { buildBudgetedHistory } from "../context/contextBudget";
 import { estimateStructuredTokens } from "../core/tokenEstimator";
-import { resolveAttachments } from "../context/AttachmentEngine";
+import { resolveAttachments, type PdfAttachmentExtractor } from "../context/AttachmentEngine";
 import { getThinkingProviderOptions } from "../api/thinkingProviderOptions";
 /**
  * VercelLLMAdapter — Bridges super-chat's LLMAdapter interface to Vercel AI SDK v6.
@@ -96,17 +96,20 @@ const providerModules: Record<string, () => Promise<ProviderFactory>> = {
 // ============================================================================
 
 export interface VercelLLMAdapterOptions {
+ extractPdf?: PdfAttachmentExtractor;
 	profile: ProviderProfile;
 	systemPrompt?: string;
 }
 
 export class VercelLLMAdapter implements LLMAdapter {
 	private profile: ProviderProfile;
+ private extractPdf?: PdfAttachmentExtractor;
 	private systemPrompt?: string;
 	private providerInstance?: ReturnType<ProviderFactory>;
 
 	constructor(opts: VercelLLMAdapterOptions) {
 		this.profile = opts.profile;
+ this.extractPdf = opts.extractPdf;
 		this.systemPrompt = opts.systemPrompt;
 	}
 
@@ -296,7 +299,11 @@ export class VercelLLMAdapter implements LLMAdapter {
 			history: modelMessages,
 			options: {
 				maxRequestTokens: contextWindow,
-				maxMessages: modelMessages.length,
+				// The source setting limits previous messages; the current user
+				// message is separate in Obsidian-AI's request budget.
+				maxMessages: request?.maxContextMessages !== undefined
+					? request.maxContextMessages + 1
+					: modelMessages.length,
 				preserveRecentMessages: 2,
 				responseReserveTokens: Math.min(4096, Math.floor(contextWindow / 4)),
 				additionalTokens: estimateStructuredTokens(tools),
@@ -329,7 +336,7 @@ export class VercelLLMAdapter implements LLMAdapter {
 			if (!structuredParts) {
 				uiMessage.parts.push({ type: "text", text: message.content });
 				if (message.attachments?.length) {
-					const attachmentParts = await resolveAttachments(message.attachments, undefined, this.profile.provider);
+					const attachmentParts = await resolveAttachments(message.attachments, undefined, this.profile.provider, this.extractPdf);
 					for (const part of attachmentParts) {
 						if (part.type === "text") uiMessage.parts.push(part);
 						else if (part.type === "image") uiMessage.parts.push({ type: "file", mediaType: part.image.slice(5, part.image.indexOf(";")), url: part.image });

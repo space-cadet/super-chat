@@ -1,10 +1,16 @@
+import { dispatchLocalCommand } from "../../lib/localCommands";
 import { parseSessionArchive } from "../../utils/importChat";
 import { useMessageSelection } from "../hooks/useMessageSelection";
 import { getThinkingModeOptions } from "../../api/thinkingModes";
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useChat } from "../hooks/useChat";
 import type { ChatEngine } from "../../core/ChatEngine";
-import type { ChatMessage, ChatSettings } from "../../core/types";
+import type {
+  ChatMessage,
+  ChatSettings,
+  LLMAdapter,
+  LLMRequestOptions,
+} from "../../core/types";
 import type { ProviderProfileSnapshot } from "../../contracts/host";
 import { ChatInput } from "./ChatInput";
 import { MessageBubble } from "./MessageBubble";
@@ -18,10 +24,17 @@ import { generateFilename, serializeChatExport } from "../../utils/exportChat";
 import type { ExportFormat } from "../../utils/exportChat";
 import type { ChatSession } from "../../core/types";
 import { ChatIcon } from "./ChatIcon";
+import { estimateTokens } from "../../core/tokenEstimator";
+import {
+  generateSessionTitle,
+  generateSessionTitleLLM,
+} from "../../utils/sessionTitle";
+import { generateSessionTags, normalizeSessionTags } from "../../core/sessionTags";
 
 interface ChatAppProps {
   onSaveExport?: (filename: string, content: string) => Promise<void>;
   engine: ChatEngine;
+	llmAdapter?: LLMAdapter;
   initialSessionId?: string;
   onNewChat?: () => void;
   onOpenSettings?: () => void;
@@ -30,8 +43,20 @@ interface ChatAppProps {
   chatSettings?: Partial<ChatSettings>;
 }
 
+const sessionTaggingByEngine = new WeakMap<ChatEngine, Set<string>>();
+
+function getSessionTaggingInFlight(engine: ChatEngine): Set<string> {
+  let sessions = sessionTaggingByEngine.get(engine);
+  if (!sessions) {
+    sessions = new Set<string>();
+    sessionTaggingByEngine.set(engine, sessions);
+  }
+  return sessions;
+}
+
 export function ChatApp({
   engine,
+	llmAdapter,
   onSaveExport,
   initialSessionId,
   onNewChat,
@@ -49,6 +74,7 @@ export function ChatApp({
     error,
     pendingTools,
     retrieval,
+    requestTokenEstimate,
     sendMessage,
     createSession,
     deleteSession,
@@ -73,6 +99,9 @@ export function ChatApp({
   const followRef = useRef(true);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
   const previousSessionRef = useRef<string | undefined>(undefined);
+  const autoNamedSessionsRef = useRef(new Set<string>());
+  const titleRequestsRef = useRef(new Map<string, AbortController>());
+  const scrollSaveTimersRef = useRef(new Map<string, number>());
 
   const openSessionInTab = useCallback(
     (sessionId: string, messageId?: string) => {
@@ -89,6 +118,177 @@ export function ChatApp({
   const reportError = useCallback((cause: unknown) => {
     setWorkspaceNotice(cause instanceof Error ? cause.message : String(cause));
   }, []);
+
+  useEffect(() => {
+    if (
+      !effectiveChatSettings.autoNameSessions ||
+      !llmAdapter ||
+      isStreaming ||
+      !currentSession
+    ) {
+      return;
+    }
+    const isUntitled =
+      !currentSession.title ||
+      currentSession.title === "New Chat" ||
+      currentSession.title === "Untitled Chat";
+    if (!isUntitled || autoNamedSessionsRef.current.has(currentSession.id)) {
+      return;
+    }
+
+    const userMessages = currentSession.messages.filter(
+      (message) => message.role === "user",
+    );
+    const assistantMessages = currentSession.messages.filter(
+      (message) => message.role === "assistant",
+    );
+    if (userMessages.length < 1 || assistantMessages.length < 2) return;
+
+    const sessionId = currentSession.id;
+    const messagesForTitle = currentSession.messages.slice(0, 6);
+    const request: LLMRequestOptions = {
+      ...(currentSession.llmProfileId
+        ? { providerProfileId: currentSession.llmProfileId }
+        : {}),
+      ...(currentSession.llmProvider
+        ? { provider: currentSession.llmProvider }
+        : {}),
+      ...(currentSession.llmModel ? { model: currentSession.llmModel } : {}),
+    };
+    const controller = new AbortController();
+    autoNamedSessionsRef.current.add(sessionId);
+    titleRequestsRef.current.set(sessionId, controller);
+
+    void (async () => {
+      try {
+        const suggested = await generateSessionTitleLLM(
+          messagesForTitle,
+          llmAdapter,
+          request,
+          controller.signal,
+        );
+        const latest = engine
+          .getSessions()
+          .find((session) => session.id === sessionId);
+        const latestIsUntitled =
+          latest &&
+          (!latest.title ||
+            latest.title === "New Chat" ||
+            latest.title === "Untitled Chat");
+        if (controller.signal.aborted || !latestIsUntitled) return;
+
+        const title = suggested || generateSessionTitle(messagesForTitle);
+        if (title) await engine.updateSessionMetadata(sessionId, { title });
+      } catch (cause) {
+        reportError(cause);
+      } finally {
+        titleRequestsRef.current.delete(sessionId);
+      }
+    })();
+  }, [
+    currentSession,
+    effectiveChatSettings.autoNameSessions,
+    engine,
+    isStreaming,
+    llmAdapter,
+    reportError,
+  ]);
+
+  useEffect(() => {
+    if (
+      !effectiveChatSettings.autoTagSessions ||
+      !llmAdapter ||
+      isStreaming
+    ) {
+      return;
+    }
+    const profile = providerProfiles?.profiles.find(
+      (candidate) =>
+        candidate.id === effectiveChatSettings.sessionTaggingProfileId,
+    );
+    if (!profile) return;
+
+    const inFlight = getSessionTaggingInFlight(engine);
+    for (const session of sessions) {
+      if (!session.autoTagPending || inFlight.has(session.id)) continue;
+      const hasUserMessage = session.messages.some(
+        (message) => message.role === "user",
+      );
+      const hasAssistantMessage = session.messages.some(
+        (message) => message.role === "assistant",
+      );
+      if (!hasUserMessage || !hasAssistantMessage) continue;
+
+      const request: LLMRequestOptions = {
+        providerProfileId: profile.id,
+        provider: profile.provider,
+        model: profile.model,
+      };
+      inFlight.add(session.id);
+
+      void (async () => {
+        try {
+          const suggestions = await generateSessionTags(
+            session.messages,
+            llmAdapter,
+            request,
+          );
+          const latest = engine
+            .getSessions()
+            .find((candidate) => candidate.id === session.id);
+          if (!latest?.autoTagPending) return;
+          const tags = normalizeSessionTags([
+            ...(latest.tags ?? []),
+            ...suggestions,
+          ]);
+          await engine.updateSessionMetadata(session.id, {
+            ...(suggestions.length > 0 ? { tags } : {}),
+            autoTagPending: false,
+          });
+        } catch (cause) {
+          console.warn(
+            `[super-chat] automatic session-tag suggestion failed: ${String(cause)}`,
+          );
+          const latest = engine
+            .getSessions()
+            .find((candidate) => candidate.id === session.id);
+          if (latest?.autoTagPending) {
+            await engine
+              .updateSessionMetadata(session.id, { autoTagPending: false })
+              .catch((saveError) =>
+                console.warn(
+                  `[super-chat] could not clear pending session tags: ${String(saveError)}`,
+                ),
+              );
+          }
+        } finally {
+          inFlight.delete(session.id);
+        }
+      })();
+    }
+  }, [
+    effectiveChatSettings.autoTagSessions,
+    effectiveChatSettings.sessionTaggingProfileId,
+    engine,
+    isStreaming,
+    llmAdapter,
+    providerProfiles,
+    sessions,
+  ]);
+
+  useEffect(
+    () => () => {
+      for (const controller of titleRequestsRef.current.values()) {
+        controller.abort();
+      }
+      titleRequestsRef.current.clear();
+      for (const timer of scrollSaveTimersRef.current.values()) {
+        window.clearTimeout(timer);
+      }
+      scrollSaveTimersRef.current.clear();
+    },
+    [engine],
+  );
   const renameSession = useCallback(
     (id: string, title: string) => {
       void engine.updateSessionMetadata(id, { title }).catch(reportError);
@@ -180,9 +380,22 @@ export function ChatApp({
   useEffect(() => {
     const container = transcriptRef.current;
     if (!container) return;
-    if (previousSessionRef.current !== currentSession?.id) {
+    const sessionChanged = previousSessionRef.current !== currentSession?.id;
+    if (sessionChanged) {
       previousSessionRef.current = currentSession?.id;
-      followRef.current = !scrollToMessageId;
+      if (
+        !scrollToMessageId &&
+        effectiveChatSettings.restoreChatTabs &&
+        currentSession?.scrollPosition !== undefined
+      ) {
+        container.scrollTop = Math.max(0, currentSession.scrollPosition);
+        const atBottom =
+          container.scrollHeight - container.scrollTop - container.clientHeight < 80;
+        followRef.current = atBottom;
+        setShowScrollBottom(!atBottom && messages.length > 0);
+      } else {
+        followRef.current = !scrollToMessageId;
+      }
     }
     if (scrollToMessageId) {
       const target = Array.from(
@@ -191,10 +404,23 @@ export function ChatApp({
       target?.scrollIntoView?.({ block: "center" });
       target?.focus({ preventScroll: true });
       followRef.current = false;
-    } else if (followRef.current) {
+    } else if (
+      !(
+        sessionChanged &&
+        effectiveChatSettings.restoreChatTabs &&
+        currentSession?.scrollPosition !== undefined
+      ) &&
+      followRef.current
+    ) {
       container.scrollTop = container.scrollHeight;
     }
-  }, [messages, currentSession?.id, scrollToMessageId]);
+  }, [
+    messages,
+    currentSession?.id,
+    currentSession?.scrollPosition,
+    effectiveChatSettings.restoreChatTabs,
+    scrollToMessageId,
+  ]);
 
   useEffect(() => {
     const container = transcriptRef.current;
@@ -214,7 +440,27 @@ export function ChatApp({
     onNewChat?.();
   }, [createSession, onNewChat]);
 
+  const [localCommandOutput, setLocalCommandOutput] = useState("");
   const currentSessionId = currentSession?.id ?? "";
+  const activeRequestTokenEstimate =
+    requestTokenEstimate?.sessionId === currentSessionId && isStreaming
+      ? requestTokenEstimate.tokens
+      : null;
+  const streamingOutputTokenEstimate = messages.reduce(
+    (total, message) =>
+      total +
+      (message.role === "assistant" && message.status === "streaming"
+        ? estimateTokens(message.content)
+        : 0),
+    0,
+  );
+  const inputTokenTotal =
+    effectiveChatSettings.showFullRequestTokens &&
+    activeRequestTokenEstimate !== null
+      ? `Request ~${(
+          activeRequestTokenEstimate + streamingOutputTokenEstimate
+        ).toLocaleString()} tokens (estimate)`
+      : undefined;
   const profiles = providerProfiles?.profiles ?? [];
   const selectedProfile =
     profiles.find((profile) => profile.id === currentSession?.llmProfileId) ??
@@ -479,6 +725,7 @@ export function ChatApp({
         sessions={sessions}
         openSessionIds={openSessionIds}
         activeSessionId={currentSessionId}
+        tabTitleWidth={effectiveChatSettings.chatTabTitleWidth}
         generatingSessionIds={
           isStreaming && currentSessionId
             ? new Set([currentSessionId])
@@ -552,6 +799,20 @@ export function ChatApp({
             80;
           followRef.current = atBottom;
           setShowScrollBottom(!atBottom && messages.length > 0);
+          if (currentSessionId) {
+            const oldTimer = scrollSaveTimersRef.current.get(currentSessionId);
+            if (oldTimer !== undefined) window.clearTimeout(oldTimer);
+            const scrollTop = container.scrollTop;
+            const timer = window.setTimeout(() => {
+              scrollSaveTimersRef.current.delete(currentSessionId);
+              void engine
+                .updateSessionMetadata(currentSessionId, {
+                  scrollPosition: scrollTop,
+                })
+                .catch(reportError);
+            }, 200);
+            scrollSaveTimersRef.current.set(currentSessionId, timer);
+          }
         }}
       >
         <div className="space-y-4">
@@ -697,10 +958,12 @@ export function ChatApp({
       )}
 
       {/* Input */}
+      {localCommandOutput && <div role="status" className="chat-local-command-output"><button type="button" onClick={() => setLocalCommandOutput("")}>Dismiss command output</button><pre style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere", maxHeight: 300, overflow: "auto" }}>{localCommandOutput}</pre></div>}
       <ChatInput
         key={currentSessionId}
         pressEnterToSend={effectiveChatSettings.pressEnterToSend}
         showTokenCount={effectiveChatSettings.showTokenCount}
+        tokenTotal={inputTokenTotal}
         draft={currentSession?.draft ?? ""}
         onDraftChange={updateDraft}
         attachments={currentSession?.draftAttachments ?? []}
@@ -722,6 +985,9 @@ export function ChatApp({
               .catch(reportError);
         }}
         onSend={async (text, attachments) => {
+          const command = await dispatchLocalCommand(text, { session: currentSession, settings: effectiveChatSettings });
+          if (command.handled) { setLocalCommandOutput(command.output); return; }
+          setLocalCommandOutput("");
           setScrollToMessageId(undefined);
           followRef.current = true;
           return sendMessage(text, attachments);

@@ -1,8 +1,9 @@
+import { startDiagnosticSnapshots } from "./settingsPortTools";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { SuperChatApp } from "super-chat/react";
 import { DiagnosticsScreen } from "./screens/DiagnosticsScreen";
 import { SettingsScreen } from "./screens/SettingsScreen";
-import { standaloneHost } from "./host";
+import { standaloneHost } from "@standalone-host";
 import { StandaloneLLMAdapter } from "./llm";
 import { defaultStandaloneChatPreferences, loadStandaloneChatPreferences, toChatEngineSettings, type StandaloneChatPreferences } from "./appSettings";
 import { loadStandaloneProviderSettings } from "./providerSettings";
@@ -39,9 +40,11 @@ function SettingsIcon() {
 }
 
 export default function App() {
+	useEffect(() => startDiagnosticSnapshots(), []);
 	const [screen, setScreen] = useState<Screen>("chat");
 	const [, setProviderConfigured] = useState<boolean | null>(null);
 	const [chatPreferences, setChatPreferences] = useState<StandaloneChatPreferences>(defaultStandaloneChatPreferences);
+	const [chatPreferencesLoaded, setChatPreferencesLoaded] = useState(false);
 	const handleConfigurationChange = useCallback((configured: boolean) => setProviderConfigured(configured), []);
 
 	useEffect(() => {
@@ -50,6 +53,8 @@ export default function App() {
 			if (active) setChatPreferences(settings);
 		}).catch(error => {
 			console.error("[super-chat] chat settings load failed:", error instanceof Error ? error.message : error);
+		}).finally(() => {
+			if (active) setChatPreferencesLoaded(true);
 		});
 		void loadStandaloneProviderSettings()
 			.then((settings) => {
@@ -69,7 +74,7 @@ export default function App() {
 				<section className="screen-panel chat-panel" hidden={screen !== "chat"} aria-label="Chat">
 					<div className="chat-screen-content">
 
-						<div className="chat-engine"><SuperChatApp host={standaloneHost} llmAdapter={llmAdapter} chatSettings={chatSettings} onOpenSettings={() => setScreen("settings")} /></div>
+						<div className="chat-engine">{chatPreferencesLoaded ? <SuperChatApp host={standaloneHost} llmAdapter={llmAdapter} chatSettings={chatSettings} onOpenSettings={() => setScreen("settings")} /> : <div className="settings-notice" role="status">Loading chat settings…</div>}</div>
 					</div>
 				</section>
 				<section className="screen-panel" hidden={screen !== "diagnostics"} aria-label="Diagnostics">

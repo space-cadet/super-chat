@@ -280,11 +280,13 @@ cd super-chat
 pnpm install
 
 # Development commands
+pnpm dev          # Run the standalone chat app
+pnpm demo:dev     # Run the legacy component demo
 pnpm typecheck     # TypeScript check
 pnpm test          # Run tests in watch mode
 pnpm test:run      # Run tests once
 pnpm build         # Build library
-pnpm demo          # Run demo app
+pnpm demo          # Build and run the legacy component demo
 pnpm test:real     # Real-world API test (needs OPENROUTER_API_KEY)
 ```
 

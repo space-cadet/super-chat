@@ -112,10 +112,17 @@ const defaultSettings: ChatSettings = {
 	enableLaTeXPreview: true,
 	maxSavedSessions: 100,
 	maxContextTokens: 128000,
+	maxContextMessages: 10,
 	maxAgentSteps: 5,
 	autoApply: false,
 	showProviderIndicator: true,
 	pressEnterToSend: true,
+	showFullRequestTokens: true,
+	autoNameSessions: false,
+	autoTagSessions: false,
+	sessionTaggingProfileId: "",
+	restoreChatTabs: true,
+	chatTabTitleWidth: 160,
 };
 
 function mergeParticipants(
@@ -258,13 +265,19 @@ export class ChatEngine {
 			if (this.state.openSessionIds.length === 0 && this.state.activeSessionId) {
 				this.state.openSessionIds = [this.state.activeSessionId];
 			}
-			const workspace = await this.opts.persistenceAdapter.loadWorkspace?.();
-			if (workspace && Array.isArray(workspace.openSessionIds)) {
-				const known = new Set(this.state.sessions.map(session => session.id));
-				this.state.openSessionIds = [...new Set(workspace.openSessionIds)].filter(id => known.has(id));
-				this.state.activeSessionId = this.state.openSessionIds.includes(workspace.activeSessionId ?? "")
-					? workspace.activeSessionId
-					: this.state.openSessionIds[0] ?? null;
+			if (this.state.settings.restoreChatTabs !== false) {
+				const workspace = await this.opts.persistenceAdapter.loadWorkspace?.();
+				if (workspace && Array.isArray(workspace.openSessionIds)) {
+					const known = new Set(this.state.sessions.map(session => session.id));
+					this.state.openSessionIds = [...new Set(workspace.openSessionIds)].filter(id => known.has(id));
+					this.state.activeSessionId = this.state.openSessionIds.includes(workspace.activeSessionId ?? "")
+						? workspace.activeSessionId
+						: this.state.openSessionIds[0] ?? null;
+				}
+			} else {
+				this.state.openSessionIds = this.state.activeSessionId
+					? [this.state.activeSessionId]
+					: [];
 			}
 
 			for (const session of this.state.sessions) {
@@ -337,6 +350,9 @@ export class ChatEngine {
 				? { participants: [{ ...this.opts.participant }] }
 				: {}),
 			...(externalIdentity ? { externalIdentity } : {}),
+			...(this.state.settings.autoTagSessions
+				? { autoTagPending: true }
+				: {}),
 			...(this.defaultModelSelection
 				? {
 						llmProfileId: this.defaultModelSelection.providerProfileId,
@@ -459,7 +475,16 @@ export class ChatEngine {
 	/** Update workspace fields without replacing live turn/message state. */
 	async updateSessionMetadata(
 		sessionId: string,
-		patch: Pick<Partial<ChatSession>, "title" | "draft" | "tags" | "draftAttachments" | "thinkingMode">,
+		patch: Pick<
+			Partial<ChatSession>,
+			| "title"
+			| "draft"
+			| "tags"
+			| "draftAttachments"
+			| "thinkingMode"
+			| "autoTagPending"
+			| "scrollPosition"
+		>,
 	): Promise<void> {
 		const session = this.state.sessions.find((item) => item.id === sessionId);
 		if (!session || this.deletingSessionIds.has(sessionId)) throw new Error("This chat is no longer available.");
@@ -467,7 +492,16 @@ export class ChatEngine {
 		if (patch.draft !== undefined) session.draft = patch.draft;
 		if (patch.draftAttachments !== undefined) session.draftAttachments = structuredClone(patch.draftAttachments);
 		if (patch.thinkingMode !== undefined) session.thinkingMode = patch.thinkingMode;
-		if (patch.tags !== undefined) session.tags = normalizeSessionTags(patch.tags);
+		if (patch.tags !== undefined) {
+			session.tags = normalizeSessionTags(patch.tags);
+			session.updatedAt = Date.now();
+		}
+		if (patch.autoTagPending !== undefined) {
+			session.autoTagPending = patch.autoTagPending;
+		}
+		if (patch.scrollPosition !== undefined && Number.isFinite(patch.scrollPosition)) {
+			session.scrollPosition = Math.max(0, patch.scrollPosition);
+		}
 		this.emitState();
 		await this.saveSession(session);
 	}
@@ -1158,6 +1192,7 @@ export class ChatEngine {
 		const generator = this.agentLoop.run(session, messages, tools, signal, {
 			maxSteps: this.state.settings.maxAgentSteps,
 			maxRequestTokens: this.state.settings.maxContextTokens,
+			maxContextMessages: this.state.settings.maxContextMessages ?? 10,
 		});
 		let result: AgentLoopResult | undefined;
 
@@ -1345,10 +1380,15 @@ export class ChatEngine {
 					...(session.llmModel ? { model: session.llmModel } : {}),
 					...(session.thinkingMode ? { thinkingMode: session.thinkingMode } : {}),
 					...(this.state.settings.maxContextTokens > 0 ? { maxRequestTokens: this.state.settings.maxContextTokens } : {}),
+					maxContextMessages: this.state.settings.maxContextMessages ?? 10,
 				},
 			)) {
 				if (signal.aborted) break;
 				if (event.type === "error") throw new Error(event.message);
+				if (event.type === "request-token-estimate") {
+					yield event;
+					continue;
+				}
 				if (event.type === "reasoning-delta") {
 					this.updateAssistantMessage(session, turn, assistantMessageId, assistantText, "streaming");
 					const assistant = session.messages.find(message => message.id === assistantMessageId)!;

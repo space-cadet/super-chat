@@ -59,10 +59,25 @@ shared AgentLoop
                     |              |
              +------v-----+  +-----v------+
              | built-ins  |  | host packs |
-             | 31 tools   |  | Arxivite  |
+             | registered |  | Arxivite  |
              +------------+  | Obsidian  |
                              +------------+
 ```
+
+## Standalone Search, PDF, and Local Commands — 2026-11-19
+
+The standalone host registers `search_web` and `read_pdf` through its tool
+provider. Search reuses the copied provider service for DuckDuckGo, Brave,
+Tavily, Exa, and SearXNG; HTTP is supplied by the selected host. PDF reading
+uses the shared extractor, optional PDF.js client, and host document/network
+access. These controls are documented in the
+[`Settings port inventory`](settings-port-inventory.md).
+
+The source-style `!` commands are copied into a local composer dispatcher, not
+the model-driven agent loop. Help, history, token estimate, and context
+commands run locally; manual compaction remains unavailable. Focused copied-
+service checks passed, while live endpoints, the complete current tool-family
+inventory, and cross-host model tool-call acceptance remain open.
 
 ## Dependencies
 

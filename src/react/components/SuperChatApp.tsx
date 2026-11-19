@@ -45,9 +45,13 @@ function createInitialization(
 	return initialization;
 }
 
-function hydrateInitialization(initialization: Initialization): Promise<ProviderProfileSnapshot | null> {
+function hydrateInitialization(
+	initialization: Initialization,
+	chatSettings?: Partial<ChatSettings>,
+): Promise<ProviderProfileSnapshot | null> {
 	if (!initialization.hydrationPromise) {
 		initialization.hydrationPromise = initialization.enginePromise.then(async (engine) => {
+			if (chatSettings) engine.updateSettings(chatSettings);
 			const sessions = await engine.loadSessions();
 			console.info("[super-chat] sessions loaded", { count: sessions.length });
 			const providerCapability = initialization.host.capabilities.providerProfiles;
@@ -159,7 +163,7 @@ export function SuperChatApp({
 
 	void initialization.enginePromise
 		.then((nextEngine) => {
-			return hydrateInitialization(initialization)
+			return hydrateInitialization(initialization, chatSettings)
 				.then((snapshot) => {
 					if (cancelled) return;
 					setProviderProfiles(snapshot);
@@ -286,6 +290,7 @@ export function SuperChatApp({
 	return (
 		<ChatApp
 			engine={engine}
+			llmAdapter={initializationRef.current?.llmAdapter}
 			providerProfiles={providerProfiles}
 					chatSettings={chatSettings}
 			initialSessionId={initialSessionId}

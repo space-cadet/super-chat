@@ -35,6 +35,7 @@
     "@capawesome/capacitor-electron": "0.2.2",
     "@super-chat/desktop-diagnostics": "workspace:*",
     "katex": "^0.16.0",
+    "pdfjs-dist": "4.10.38",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^10.0.0",

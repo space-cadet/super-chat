@@ -37,6 +37,7 @@ interface ChatInputProps {
   draft?: string;
   onDraftChange?: (text: string) => void;
   showTokenCount?: boolean;
+  tokenTotal?: string;
 }
 
 export function ChatInput({
@@ -61,6 +62,7 @@ export function ChatInput({
   draft,
   onDraftChange,
   showTokenCount = true,
+  tokenTotal,
 }: ChatInputProps) {
   const maxComposerHeight = 160;
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
@@ -257,7 +259,7 @@ export function ChatInput({
         )}
       </div>
       <ChatInputAttachments
-        tokenTotal={showTokenCount ?
+        tokenTotal={showTokenCount ? tokenTotal ??
           "Draft ~" +
           (
             estimateTokens(value) +

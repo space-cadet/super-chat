@@ -1,6 +1,17 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { ChatRelaySettingsSection, UpdatesSettingsSection } from "./HostSettingsSections";
+import { IntegrationsSection, ChatCommandsSection, DebugModeSection, DiagnosticsSettingsSection } from "./ToolsDiagnosticsSections";
+import { BackupRestoreSection, SyncComponentsSection, RemoteStorageSection } from "./DataManagementSections";
+import { WebSearchSettingsSection, PdfExtractionSettingsSection } from "./sections/SearchDocumentSettingsSection";
+import { DEFAULT_SEARCH_DOCUMENT_SETTINGS, loadSearchDocumentSettings, saveSearchDocumentSettings, type SearchDocumentSettings } from "../searchDocuments";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import type { MemoryAuditRecord, MemoryCategory, MemoryToolSettings, ScoredMemoryEntry } from "super-chat";
 import { ProviderSettingsScreen } from "./ProviderSettingsScreen";
+import { UnavailableMark } from "./SettingsSectionSupport";
+import {
+	loadStandaloneProviderSettings,
+	subscribeStandaloneProviderSettings,
+	type StandaloneProviderProfile,
+} from "../providerSettings";
 import {
 	createStandaloneMemory,
 	deleteStandaloneMemory,
@@ -17,15 +28,30 @@ import {
 	saveStandaloneChatPreferences,
 	type StandaloneChatPreferences,
 } from "../appSettings";
+import { standaloneSettingsStore } from "../persistence";
+import { standaloneHost } from "@standalone-host";
 
-type Section = "providers" | "chat" | "tools" | "memory";
+type Section = "providers" | "chat" | "tools" | "memory" | "integrations" | "web-search" | "relay" | "sync" | "remote" | "updates" | "pdf" | "commands" | "backup" | "debug" | "diagnostics";
 type Notice = { kind: "success" | "error"; text: string } | null;
 type MemoryListEntry = ScoredMemoryEntry & { tier: "core" | "staged" | "archive" };
+const SECTION_STATE_KEY = "standalone.settings-open-sections";
+const DEFAULT_OPEN_SECTIONS: Section[] = ["providers"];
 const sections: Array<{ id: Section; label: string; subtitle: string }> = [
 	{ id: "providers", label: "Providers", subtitle: "Profiles, models and credentials" },
 	{ id: "chat", label: "Chat", subtitle: "Composer, message display and assistant instructions" },
 	{ id: "tools", label: "Tools", subtitle: "Tool access, request budget and step limit" },
 	{ id: "memory", label: "Memory", subtitle: "Long-term memory, review and recovery" },
+ { id: "integrations", label: "Integrations", subtitle: "Compatible tool providers" },
+ { id: "web-search", label: "Web Search", subtitle: "Search providers, credentials and endpoints" },
+ { id: "relay", label: "Chat Relay", subtitle: "Relay connection, rooms and identity" },
+ { id: "sync", label: "Sync Components", subtitle: "Choose the data included in sync" },
+ { id: "remote", label: "Remote Storage", subtitle: "WebDAV, encryption and synchronization" },
+ { id: "updates", label: "Updates", subtitle: "Application release and updater support" },
+ { id: "pdf", label: "PDF Extraction", subtitle: "Local and server extraction, page limits" },
+ { id: "commands", label: "Chat Commands", subtitle: "Local composer command reference" },
+ { id: "backup", label: "Backup & Restore", subtitle: "Export, import and recovery" },
+ { id: "debug", label: "Debug Mode", subtitle: "Optional telemetry export controls" },
+ { id: "diagnostics", label: "Diagnostics", subtitle: "Application metrics and saved-data health" },
 ];
 const categories: MemoryCategory[] = ["user_fact", "project", "preference", "insight", "reference"];
 const categoryLabels: Record<MemoryCategory, string> = {
@@ -41,16 +67,20 @@ function PreferenceToggle({
 	description,
 	checked,
 	onChange,
+	disabled = false,
+	unavailableReason,
 }: {
 	label: string;
 	description: string;
 	checked: boolean;
 	onChange: (checked: boolean) => void;
+	disabled?: boolean;
+	unavailableReason?: string;
 }) {
 	return (
-		<label className="preference-toggle">
-			<span><strong>{label}</strong><small>{description}</small></span>
-			<input type="checkbox" checked={checked} onChange={event => onChange(event.target.checked)} />
+		<label className={`preference-toggle${unavailableReason ? " is-unavailable" : ""}`}>
+			<span><strong>{label}{unavailableReason && <UnavailableMark label={unavailableReason} />}</strong><small>{description}</small></span>
+			<input type="checkbox" checked={checked} disabled={disabled} onChange={event => onChange(event.target.checked)} />
 		</label>
 	);
 }
@@ -67,6 +97,52 @@ function SettingsCard({ title, description, children }: { title: string; descrip
 	);
 }
 
+function SettingsAccordion({
+	id,
+	title,
+	description,
+	open,
+	onToggle,
+	children,
+}: {
+	id: Section;
+	title: string;
+	description: string;
+	open: boolean;
+	onToggle: () => void;
+	children: ReactNode;
+}) {
+	const panelId = `settings-panel-${id}`;
+	return (
+		<section id={`settings-section-${id}`} className={`settings-accordion${open ? " is-open" : ""}`}>
+			<button className="settings-accordion-trigger" type="button" aria-expanded={open} aria-controls={panelId} onClick={onToggle}>
+				<span className="settings-accordion-copy">
+					<strong>{title}</strong>
+					<small>{description}</small>
+				</span>
+				<svg className="settings-accordion-chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+					<path strokeLinecap="round" strokeLinejoin="round" d={open ? "m6 15 6-6 6 6" : "m6 9 6 6 6-6"} />
+				</svg>
+			</button>
+			<div id={panelId} className="settings-accordion-panel" hidden={!open}>
+				{children}
+			</div>
+		</section>
+	);
+}
+
+function SearchDocumentPreferences({ pdf = false }: { pdf?: boolean }) {
+ const [value, setValue] = useState<SearchDocumentSettings>(DEFAULT_SEARCH_DOCUMENT_SETTINGS);
+ const [ready, setReady] = useState(false);
+ const [notice, setNotice] = useState("");
+ useEffect(() => { let active = true; void loadSearchDocumentSettings(standaloneHost.capabilities.credentials).then(saved => { if (active) { setValue(saved); setReady(true); } }).catch(error => { if (active) setNotice(String(error)); }); return () => { active = false; }; }, []);
+ return <fieldset className="settings-document-settings" disabled={!ready} style={{ border: 0, padding: 0, margin: 0 }}>
+ {pdf ? <PdfExtractionSettingsSection value={value} clientAvailable onChange={next => setValue(current => ({ ...current, ...next }))} /> : <WebSearchSettingsSection value={value} onChange={next => setValue(current => ({ ...current, ...next }))} />}
+ <button type="button" className="settings-primary-button" onClick={() => void saveSearchDocumentSettings(value, standaloneHost.capabilities.credentials).then(() => setNotice("Settings saved on this device.")).catch(error => setNotice(String(error)))}>Save {pdf ? "PDF" : "search"} settings</button>
+ {notice && <p role="status">{notice}</p>}
+ </fieldset>;
+}
+
 function ChatPreferencesSection({
 	initial,
 	onSaved,
@@ -75,9 +151,37 @@ function ChatPreferencesSection({
 	onSaved: (value: StandaloneChatPreferences) => void;
 }) {
 	const [draft, setDraft] = useState(initial);
+	const [tagProfiles, setTagProfiles] = useState<StandaloneProviderProfile[]>([]);
+	const [tagProfilesReady, setTagProfilesReady] = useState(false);
 	const [busy, setBusy] = useState(false);
 	const [notice, setNotice] = useState<Notice>(null);
 	const dirty = JSON.stringify(draft) !== JSON.stringify(initial);
+	const hasSelectedTagProfile = tagProfiles.some(
+		profile => profile.id === draft.sessionTaggingProfileId,
+	);
+
+	useEffect(() => setDraft(initial), [initial]);
+
+	useEffect(() => {
+		let active = true;
+		const refreshProfiles = () => {
+			void loadStandaloneProviderSettings().then(settings => {
+				if (active) {
+					setTagProfiles(settings.profiles);
+					setTagProfilesReady(true);
+				}
+			}).catch(error => {
+				if (active) setTagProfilesReady(true);
+				console.error("[super-chat] session-tag provider profiles could not be loaded:", error);
+			});
+		};
+		refreshProfiles();
+		const unsubscribe = subscribeStandaloneProviderSettings(refreshProfiles);
+		return () => {
+			active = false;
+			unsubscribe();
+		};
+	}, []);
 
 	const save = async (value: StandaloneChatPreferences) => {
 		setBusy(true);
@@ -101,6 +205,54 @@ function ChatPreferencesSection({
 					<PreferenceToggle label="Press Enter to send" description="Shift+Enter inserts a new line. When off, use Ctrl+Enter, ⌘+Enter or the Send button." checked={draft.pressEnterToSend} onChange={value => setDraft(current => ({ ...current, pressEnterToSend: value }))} />
 					<PreferenceToggle label="Show message times" description="Display the local time under each message." checked={draft.showTimestamps} onChange={value => setDraft(current => ({ ...current, showTimestamps: value }))} />
 					<PreferenceToggle label="Show token estimates" description="Display estimated token counts for the draft and messages." checked={draft.showTokenCount} onChange={value => setDraft(current => ({ ...current, showTokenCount: value }))} />
+					<PreferenceToggle label="Show full request token estimate" description="While a reply runs, include the prepared system instructions, memory and conversation history when the host provides that estimate. Provider-reported usage can differ." checked={draft.showFullRequestTokens} onChange={value => setDraft(current => ({ ...current, showFullRequestTokens: value }))} />
+					<PreferenceToggle label="Automatically name chats" description="Use the selected model to title an untitled chat after a few messages. A local title is used if the model cannot suggest one." checked={draft.autoNameSessions} onChange={value => setDraft(current => ({ ...current, autoNameSessions: value }))} />
+				</div>
+			</SettingsCard>
+
+			<SettingsCard title="Session tags" description="Keep related conversations easy to find. Automatic suggestions are optional and use the provider profile you choose.">
+				<div className="preference-list">
+					<PreferenceToggle
+						label="Suggest tags for new chats"
+						description={hasSelectedTagProfile
+							? "After the first reply, send up to 8 recent user/assistant messages, capped at 600 characters each, to the selected provider for tag suggestions."
+							: "Choose a provider profile below to enable automatic suggestions."
+						}
+						checked={draft.autoTagSessions}
+						disabled={!hasSelectedTagProfile}
+						unavailableReason={tagProfilesReady && !hasSelectedTagProfile ? "Choose an available provider profile before enabling tag suggestions." : undefined}
+						onChange={value => setDraft(current => ({ ...current, autoTagSessions: value }))}
+					/>
+				</div>
+				<div className="settings-field settings-field-spaced">
+					<label htmlFor="session-tagging-profile">Provider profile for tag suggestions{tagProfilesReady && draft.sessionTaggingProfileId && !hasSelectedTagProfile && <UnavailableMark label="The previously selected provider profile is unavailable" />}</label>
+					<select
+						id="session-tagging-profile"
+						value={draft.sessionTaggingProfileId}
+						onChange={event => setDraft(current => ({ ...current, sessionTaggingProfileId: event.target.value }))}
+					>
+						<option value="">Choose a provider profile</option>
+						{draft.sessionTaggingProfileId && !tagProfiles.some(profile => profile.id === draft.sessionTaggingProfileId) && (
+							<option value={draft.sessionTaggingProfileId}>Previously selected profile unavailable</option>
+						)}
+						{tagProfiles.map(profile => (
+							<option value={profile.id} key={profile.id}>
+								{profile.name} · {profile.provider} · {profile.model}
+							</option>
+						))}
+					</select>
+					<p className="field-help">Suggestions are created only for new chats while this setting is enabled. Existing chats are not sent automatically.</p>
+				</div>
+			</SettingsCard>
+
+			<SettingsCard title="Chat tabs" description="Choose which saved chats reopen and how much of each title is visible.">
+				<div className="preference-list">
+					<PreferenceToggle label="Restore chat tabs after restart" description="Reopen saved tabs and the active chat when the app starts." checked={draft.restoreChatTabs} onChange={value => setDraft(current => ({ ...current, restoreChatTabs: value }))} />
+				</div>
+				<div className="settings-field settings-field-spaced">
+					<label htmlFor="chat-tab-title-width">Chat tab title width</label>
+					<input id="chat-tab-title-width" type="number" min={120} max={360} step={10} value={draft.chatTabTitleWidth} onChange={event => setDraft(current => ({ ...current, chatTabTitleWidth: Number(event.target.value) }))} />
+					<p className="field-help">Choose 120 to 360 pixels. Default: 160 pixels.</p>
 				</div>
 			</SettingsCard>
 
@@ -132,6 +284,8 @@ function ToolPreferencesSection({
 	const [busy, setBusy] = useState(false);
 	const [notice, setNotice] = useState<Notice>(null);
 	const dirty = JSON.stringify(draft) !== JSON.stringify(initial);
+
+	useEffect(() => setDraft(initial), [initial]);
 
 	const save = async () => {
 		setBusy(true);
@@ -169,6 +323,11 @@ function ToolPreferencesSection({
 						{[8_000, 16_000, 32_000, 64_000, 128_000, 200_000, 1_000_000].map(value => <option value={value} key={value}>{value.toLocaleString()} tokens</option>)}
 					</select>
 					<p className="field-help">The selected model’s smaller native limit always takes precedence. Recent messages are kept first.</p>
+				</div>
+				<div className="settings-field settings-field-spaced">
+					<label htmlFor="max-context-messages">Maximum previous messages</label>
+					<input id="max-context-messages" type="number" min={1} step={1} value={draft.maxContextMessages} onChange={event => setDraft(current => ({ ...current, maxContextMessages: Number(event.target.value) }))} />
+					<p className="field-help">Older messages are left out of model requests. This limit does not remove anything from the saved chat.</p>
 				</div>
 			</SettingsCard>
 
@@ -395,10 +554,71 @@ export function SettingsScreen({
 	onChatPreferencesChange: (value: StandaloneChatPreferences) => void;
 	onProviderConfigurationChange: (configured: boolean) => void;
 }) {
-	const [section, setSection] = useState<Section>("providers");
+	const [openSections, setOpenSections] = useState<Set<Section>>(() => new Set(DEFAULT_OPEN_SECTIONS));
+	const [sectionQuery, setSectionQuery] = useState("");
+	const [sectionStateLoaded, setSectionStateLoaded] = useState(false);
+	const [sectionStateError, setSectionStateError] = useState<string | null>(null);
 	const [chatDraft, setChatDraft] = useState(chatPreferences);
+	const sectionSaveQueue = useRef(Promise.resolve());
+	const userChangedSectionState = useRef(false);
 
 	useEffect(() => { setChatDraft(chatPreferences); }, [chatPreferences]);
+
+	useEffect(() => {
+		let active = true;
+		void standaloneSettingsStore.load<unknown>(SECTION_STATE_KEY).then(value => {
+			if (!active) return;
+			if (!userChangedSectionState.current) {
+				if (Array.isArray(value)) {
+					const knownSections = new Set(sections.map(item => item.id));
+					setOpenSections(new Set(value.filter((item): item is Section => typeof item === "string" && knownSections.has(item as Section))));
+				} else {
+					setOpenSections(new Set(DEFAULT_OPEN_SECTIONS));
+				}
+			}
+			setSectionStateError(null);
+			setSectionStateLoaded(true);
+		}).catch(cause => {
+			if (!active) return;
+			setSectionStateError(cause instanceof Error ? cause.message : String(cause));
+			setSectionStateLoaded(true);
+		});
+		return () => { active = false; };
+	}, []);
+
+	useEffect(() => {
+		if (!sectionStateLoaded) return;
+		const value = [...openSections];
+		sectionSaveQueue.current = sectionSaveQueue.current
+			.then(() => standaloneSettingsStore.save(SECTION_STATE_KEY, value))
+			.then(() => setSectionStateError(null))
+			.catch(cause => setSectionStateError(cause instanceof Error ? cause.message : String(cause)));
+	}, [openSections, sectionStateLoaded]);
+
+	const toggleSection = (id: Section) => {
+		userChangedSectionState.current = true;
+		setOpenSections(current => {
+			const next = new Set(current);
+			if (next.has(id)) next.delete(id);
+			else next.add(id);
+			return next;
+		});
+	};
+
+	const setAllSectionsOpen = (open: boolean) => {
+		userChangedSectionState.current = true;
+		setOpenSections(open ? new Set(sections.map(item => item.id)) : new Set<Section>());
+	};
+
+	const navigateToSection = (id: Section) => {
+		userChangedSectionState.current = true;
+		setOpenSections(current => new Set([...current, id]));
+		requestAnimationFrame(() => {
+			const element = document.getElementById(`settings-section-${id}`);
+			element?.scrollIntoView({ behavior: "smooth", block: "start" });
+			element?.querySelector<HTMLButtonElement>(".settings-accordion-trigger")?.focus({ preventScroll: true });
+		});
+	};
 
 	const handleChatSaved = (value: StandaloneChatPreferences) => {
 		setChatDraft(value);
@@ -410,16 +630,50 @@ export function SettingsScreen({
 			<header className="settings-header">
 				<p className="eyebrow">SUPER CHAT</p>
 				<h1>Settings</h1>
-				<p className="page-subtitle">{sections.find(item => item.id === section)?.subtitle}</p>
+				<p className="page-subtitle">Provider profiles, chat behavior, tools and memory</p>
 			</header>
-			<nav className="settings-section-nav" aria-label="Settings categories">
-				{sections.map(item => <button type="button" key={item.id} className={section === item.id ? "is-active" : ""} aria-current={section === item.id ? "page" : undefined} onClick={() => setSection(item.id)}>{item.label}</button>)}
-			</nav>
 			<div className="settings-scroll">
-				{section === "providers" && <ProviderSettingsScreen embedded onConfigurationChange={onProviderConfigurationChange} />}
-				{section === "chat" && <ChatPreferencesSection initial={chatDraft} onSaved={handleChatSaved} />}
-				{section === "tools" && <ToolPreferencesSection initial={chatDraft} onSaved={handleChatSaved} />}
-				{section === "memory" && <MemorySection />}
+				<div className="settings-field settings-search">
+					<label htmlFor="settings-section-search">Find a section</label>
+					<input id="settings-section-search" type="search" value={sectionQuery} onChange={event => setSectionQuery(event.target.value)} placeholder="Search section names and descriptions" />
+				</div>
+				<nav className="settings-section-index" aria-label="Settings section index">
+					{sections.filter(item => `${item.label} ${item.subtitle}`.toLowerCase().includes(sectionQuery.toLowerCase())).map(item => (
+						<button key={item.id} type="button" className="settings-secondary-button" aria-controls={`settings-panel-${item.id}`} onClick={() => navigateToSection(item.id)}>{item.label}</button>
+					))}
+				</nav>
+				<div className="settings-section-actions" role="group" aria-label="Settings sections">
+					<span>Sections</span>
+					<button className="settings-secondary-button" type="button" onClick={() => setAllSectionsOpen(true)}>Expand all</button>
+					<button className="settings-secondary-button" type="button" onClick={() => setAllSectionsOpen(false)}>Collapse all</button>
+				</div>
+				{sectionStateError && <div className="settings-notice error" role="status">Section layout could not be saved: {sectionStateError}</div>}
+				{sections.map(item => (
+					<SettingsAccordion
+						key={item.id}
+						id={item.id}
+						title={item.label}
+						description={item.subtitle}
+						open={openSections.has(item.id)}
+						onToggle={() => toggleSection(item.id)}
+					>
+						{item.id === "providers" && <ProviderSettingsScreen embedded onConfigurationChange={onProviderConfigurationChange} />}
+						{item.id === "chat" && <ChatPreferencesSection initial={chatDraft} onSaved={handleChatSaved} />}
+						{item.id === "tools" && <ToolPreferencesSection initial={chatDraft} onSaved={handleChatSaved} />}
+						{item.id === "memory" && <MemorySection />}
+ {item.id === "integrations" && <IntegrationsSection />}
+ {item.id === "web-search" && <SearchDocumentPreferences />}
+ {item.id === "relay" && <ChatRelaySettingsSection />}
+ {item.id === "sync" && <SyncComponentsSection />}
+ {item.id === "remote" && <RemoteStorageSection />}
+ {item.id === "updates" && <UpdatesSettingsSection />}
+ {item.id === "pdf" && <SearchDocumentPreferences pdf />}
+ {item.id === "commands" && <ChatCommandsSection />}
+ {item.id === "backup" && <BackupRestoreSection />}
+ {item.id === "debug" && <DebugModeSection />}
+ {item.id === "diagnostics" && <DiagnosticsSettingsSection />}
+					</SettingsAccordion>
+				))}
 			</div>
 		</div>
 	);

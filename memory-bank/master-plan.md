@@ -1,6 +1,6 @@
 # Super Chat Master Delivery Plan
 
-*Updated: 2026-11-18 14:25:11 IST*
+*Updated: 2026-11-19 19:03:26 IST*
 *Program owner: INFRA-1 · shared application: T22 · reference comparison: T15*
 
 ## Start here
@@ -16,6 +16,16 @@ whose stated reference date is 2026-10-23. Its branch prototypes and support
 qualifications must remain identified. Check current Obsidian-AI source before
 implementing a feature. Its generic chat behavior applies across hosts; actual
 vault, file, editor, network, and storage operations belong in host adapters.
+
+For Settings, use the current-source
+[Obsidian-AI Settings port inventory](implementation-details/settings-port-inventory.md),
+checked against Obsidian-AI commit `7b7e73560281e11e4a9a68faafc0b2f692c75b4d`.
+It lists all 13 regular and two advanced sections, their controls, and the
+current Super Chat gap for each. The capability map is dated, so T15 must also
+reconcile current source modules and user-visible behavior against this plan;
+any source feature missing from the checklist is added before its source group
+is marked covered. The Settings inventory alone does not close that wider
+source audit.
 
 The [platform architecture](implementation-details/embeddable-super-chat-platform.md)
 continues to define shared versus host responsibilities. This plan supplies the
@@ -44,8 +54,15 @@ fixture, Android, desktop, and Obsidian remain the active targets.
 
 The worktree is on `main`. It now contains source for reused chat feature
 groups, expanded Settings, three-tier memory, attachment and archive handling,
-and native Android document export. The final Android debug build passed,
-installed, and launched; broader feature acceptance remains open.
+native Android document export, and explicit web/Android/desktop host
+compositions. Web and desktop use browser services; Android adds Keystore,
+native documents, app lifecycle, and native HTTP. Protected provider-key
+storage remains Android-only. The latest standalone TypeScript check, web and
+desktop renderer builds, and Android debug APK build passed. The current APK
+was installed on `.108`, and the user confirmed that the app works. A fresh
+Apple Silicon arm64 DMG passed `hdiutil verify` but has not been opened or
+installed. Desktop runtime checks and browser/desktop provider API-key
+profiles remain open.
 
 - Shared session/turn storage, model history, cancellation/replay foundations,
   host contracts, and local tool integration already have implementation records.
@@ -54,15 +71,28 @@ installed, and launched; broader feature acceptance remains open.
   need work.
 - Reused source now covers saved-chat search, tabs/drafts, message selection and
   edit/resend, replay, thinking controls, provider message conversion,
-  attachments, and archive import/export. Settings now has Providers, Chat,
-  Tools, and Memory sections with send behavior, message metadata, assistant
-  instructions, tool access/round limits, request budget, and memory controls.
+  attachments, and archive import/export. Settings registers all 15 reference
+  sections on one searchable, persistent accordion page. Standalone search/PDF,
+  backup/import, WebDAV sync, local commands, debug, and diagnostics are wired;
+  unavailable controls remain visible and marked. See the
+  [Settings inventory](implementation-details/settings-port-inventory.md) for
+  section-by-section behavior and remaining gaps.
+- Web search, PDF extraction/read, WebDAV synchronization, local chat commands,
+  telemetry/logging, and data-health controls have source implementations.
+  Live search/PDF/WebDAV endpoints and backup/restore round trips remain
+  unverified. Relay joining and similar auxiliary features are deferred by the
+  user.
 - Three-tier memory and its standalone IndexedDB adapter are present. Prompt
   injection is opt-in; new items stay staged until promoted. AI pruning and a
   live memory-tool round trip remain open.
 - Android debug builds and repeated ADB updates to the OPPO CPH2661IN at `.108`
   succeeded during this session. The connection test now reads SDK error events
   and allows bounded reasoning/output with a timeout.
+- The standalone renderer selects a dedicated host module per Vite build
+  target. Browser and desktop artifacts exclude Android credential/document
+  plugins; Android includes them. See T22, T31, T32, and the current
+  [session record](sessions/2026-11-19-cross-platform-host-composition.md) for
+  the exact build and acceptance status.
 - User screenshots `142484.jpg` and `142490.jpg` show OpenRouter selected and
   actual assistant responses to Hello and a supersymmetry question. This confirms
   basic live chat on Android. The truncated model field does not establish the
@@ -111,17 +141,70 @@ and gaps in working behavior. Address layout issues as the user reports them.
   **Complete when:** Each supported host passes its feature, persistence, permission and package checks; signed artifacts correspond to the accepted source.
 
 
+
+## Parallel Settings Port — 2026-11-19
+
+The standalone registry now contains all 15 reference sections on one scrolling
+page, with a searchable section index, navigation that opens the selected
+accordion, and persistent individual/expand-all/collapse-all choices.
+This adds functional implementations as well as visible support boundaries:
+
+- Web Search: copied provider service for DuckDuckGo, Brave, Tavily, Exa and
+  SearXNG; standalone tool uses host HTTP. Android keys use Keystore; web and
+  desktop keys remain in memory for the session.
+- PDF Extraction: copied buffer/URL extractor, PDF.js 4.10.38, method/server/page
+  controls, `read_pdf` tool, and injected composer PDF attachment extraction.
+- Backup & Restore: settings export with secrets omitted, settings import,
+  JSON/JSONL chat exchange, recovery copy before clear, reload after mutations.
+- Sync Components / Remote Storage: copied source sync engine, file manager,
+  cache, index, retry, identity, encryption, and WebDAV adapter; selected settings,
+  memory/audit/persona and sessions are wired. Credential sync is disabled;
+  usage exports session/message counts only. Auto-sync stays disabled and
+  S3/custom backends remain source placeholders.
+- Chat Commands: source reference copied; local dispatcher handles help,
+  history, token estimates and context. Manual compaction remains unavailable.
+- Debug / Diagnostics: persisted telemetry choices, selected telemetry export,
+  structured log retention, periodic snapshots, metrics, data-health check and
+  diagnostics export. Automatic repair remains unavailable.
+- Integrations: injectable provider discovery/toggle bridge; standalone has no
+  Obsidian plugin discovery implementation.
+- Relay: persisted defaults and source-protocol connection/room-list test.
+  Joining/broadcasting is deferred at the user's request, along with similar
+  auxiliary integrations. Updates shows the missing native updater explicitly.
+
+Existing Provider/Chat/Tools/Memory controls remain partial. Section count does
+not establish full parity. Settings-wide control search, advanced grouping,
+manual/bulk tags, remaining context/compaction behavior, source-wide T15 audit,
+and live WebDAV/backup acceptance remain open. The small-screen Settings layout
+was checked on `.108` and approved by the user; this is visual acceptance only.
+
 ### Next executable work
 
-Continue building the missing Settings options from the reference. The current
-screen already has Providers, Chat, Tools, and Memory sections; expand actual
-behavior for tab restoration, naming/tags/retention, and the remaining thinking
-and usage controls. Keep feature work ahead of a broad layout review; the user
-will report layout issues.
+All 15 reference sections are now registered on one scrolling page, and their
+open state persists in the standalone IndexedDB settings store. Search/PDF,
+backup/import, WebDAV sync, local commands and diagnostics have working paths;
+unavailable options are visibly disabled and marked. The complete inventory is
+in `implementation-details/settings-port-inventory.md` and remains the OP01
+checklist. Continue with remaining source controls for retention,
+context/compaction, tag management, thinking/usage, and the wider T15 source
+reconciliation. Exercise live WebDAV and backup round trips before claiming
+host acceptance.
 
-- [ ] **Build the remaining Settings options (OP01).** Add the missing settings
-  and connect each option to persisted app behavior, including tab restoration,
-  naming/tags/retention, and remaining thinking/usage preferences.
+- [ ] **Complete the Settings inventory (OP01/T15).** Account for every section
+  and control in `settings-port-inventory.md`; connect reusable controls to
+  persisted behavior and route host-only operations through existing host
+  owners. Do not mark OP01 done while any listed control or page behavior is
+unclassified. Implemented slices include the 15-section registry and index,
+persistent section state, automatic naming, new-session tag suggestions,
+prepared-request estimates, saved-tab and transcript scroll restoration, tab
+width, the previous-message request cap, search/PDF, backup/import, WebDAV sync,
+local commands, logging, diagnostics, and explicit unavailable states.
+  Remaining early slices: retention, other context/compaction options, tag management,
+  and thinking/usage controls.
+- [ ] **Reconcile all current Obsidian-AI features (T15).** Compare current
+  source modules and user-visible behavior with the dated capability map and
+  this plan. Add a checklist row for every uncovered feature before completing
+  its port group; keep host-specific features assigned to their existing owners.
 - [ ] **Finish search and conversation continuity (SE02–SE04).** Continue from
   the implemented search, tab, and draft source; add the remaining matched-
   message navigation and saved-state behavior as feature slices.
@@ -155,7 +238,7 @@ not new task IDs.
 
 - [ ] **UI03 — Attributed user, assistant, agent, human and diagnostic messages; timestamp, model, duration, real usage or labelled estimates**
   **Owner:** T22/T8/T29. **Reference:** 3.2.
-  **Current state:** Partial; message timestamps and token estimates are configurable; model, duration, and actual-usage coverage remain open.
+  **Current state:** Partial; message timestamps, draft estimates, and prepared-request estimates are configurable. Provider-reported usage, model/duration details, and broader attribution remain open.
 
 - [ ] **UI04 — Markdown, links, code, tables, equations, files and references render; wide content scrolls within its block**
   **Owner:** T22/T8. **Reference:** 3.2.
@@ -202,11 +285,11 @@ not new task IDs.
 
 - [ ] **SE02 — Per-chat text draft, attachments, context, profile/models, participants, thinking, tabs and scroll restored; closing last tab gives clean new chat**
   **Owner:** T22/T27/T28. **Reference:** 2, 4.1, 11.
-  **Current state:** Partial; per-chat drafts/tabs and profile/model restoration are implemented; restart and full-state restoration remain open.
+  **Current state:** Partial; drafts, tabs, profile/model choices, and transcript scroll positions persist. Standalone can restore the saved open/active tabs or start with only the active chat; broader restart and full-state acceptance remain open.
 
 - [ ] **SE03 — Searchable recent-history list: title, count, excerpt, date, usage; load, manual rename, delete and configurable auto-name with fallback**
   **Owner:** T22/T8. **Reference:** 4.2.
-  **Current state:** Partial; saved-chat search and results exist; history metadata, rename/delete, and naming options remain incomplete.
+  **Current state:** Partial; saved-chat search and auto-naming with a local fallback exist; full history metadata, matched-message navigation, rename/delete, and acceptance remain incomplete.
 
 - [ ] **SE04 — Full saved-message search; open/highlight matching message; past-session tool excludes current session**
   **Owner:** T22/T25. **Reference:** 4.3.
@@ -222,11 +305,11 @@ not new task IDs.
 
 - [ ] **SE07 — Session tags: manual/model-assisted tags, filter/count, manage/search/create/remove; persistence and archive inclusion**
   **Owner:** T22/T30/T25. **Reference:** 4.2.
-  **Current state:** Compare; reference includes prototype/branch qualifications.
+  **Current state:** Partial; normalized session metadata, archive preservation, and opt-in new-chat suggestions from a selected profile exist. Manual tag controls, filter/count, bulk generation, and management remain open.
 
 - [ ] **SE08 — Reviewable tag normalization and optional tag-name-only suggestions, stale-plan rejection, retry and preserved transcripts**
   **Owner:** T22/T30. **Reference:** 4.2.
-  **Current state:** Compare; reference branch work requires current source check.
+  **Current state:** Partial; shared normalization and bounded tag-suggestion helpers exist. Reviewable global normalization and bulk tag workflows remain open; automatic generation clears its pending marker after success, empty output, or failure as in the reference.
 
 - [ ] **SE09 — Retention controls and explicit deletion records prevent old snapshots restoring deleted sessions**
   **Owner:** T22/T30. **Reference:** 4.2, 11.
@@ -304,7 +387,7 @@ not new task IDs.
 
 - [ ] **CX10 — Request token estimate includes tools and attachments, image estimate labelled, actual usage distinguished**
   **Owner:** T29/T27/T28. **Reference:** 3.3, 9.
-  **Current state:** Compare.
+  **Current state:** Partial; standalone estimates the prepared prompt, including system instructions and memory. Tool definitions, attachments/images, and provider-reported usage remain separate or unreported.
 
 
 ### Tool catalog, execution and evidence
@@ -319,7 +402,7 @@ not new task IDs.
 
 - [ ] **TL03 — Web search and PDF read with bounded results/pages and visible backend configuration**
   **Owner:** T25/T16/T27. **Reference:** 8.2.
-  **Current state:** Planned; basic chat alone does not demonstrate web search.
+  **Current state:** Partial; standalone wires provider-configured web search and PDF extraction/read with page limits. Live search/PDF endpoint checks and cross-host acceptance remain open.
 
 - [ ] **TL04 — Memory tools, past-session search, tag tools and full stored-result retrieval**
   **Owner:** T26/T25/T22. **Reference:** 8.2.
@@ -375,9 +458,9 @@ not new task IDs.
 
 ### Settings, durability, access and release
 
-- [ ] **OP01 — Visible configurable persona, send behavior, tab restoration, naming/tags/retention, tools/approval/steps, budgets, thinking and usage options**
+- [ ] **OP01 — Inventory and deliver every applicable Obsidian-AI Settings section/control, with persisted state, visible unavailable host controls, and adapted host-only behavior**
   **Owner:** T22 plus feature owners. **Reference:** 9.
-  **Current state:** Partial; Providers/Chat/Tools/Memory settings exist for send behavior, timestamps/token estimates, instructions, tool access/rounds, budget, and memory. Tab restoration, naming/tags/retention, and remaining thinking/usage options are open.
+  **Current state:** Partial; all 15 reference sections are registered on one page with searchable section navigation and persisted accordion state. Standalone search/PDF, backup/import, WebDAV sync, local commands, debug and diagnostics have working paths. Unsupported controls are disabled and marked. The [Settings port inventory](implementation-details/settings-port-inventory.md) tracks each section and support boundary. Remaining gaps include control-level search, advanced-settings grouping/load errors, retention and context/compaction controls, bulk/manual tag management, provider-reported usage, deferred relay joining, live WebDAV/backup acceptance and the wider T15 source audit. Host-only rows and source placeholders stay with their existing owners.
 
 - [ ] **OP02 — Durable sessions, drafts, parts, index/transcript hydration, no empty overwrite of unloaded data, migration and corruption recovery**
   **Owner:** T22/T30/T32/T31. **Reference:** 10–11.
@@ -393,7 +476,7 @@ not new task IDs.
 
 - [ ] **OP05 — Correlated/redacted provider/tool/context/storage diagnostics, opt-in telemetry fields and safe export**
   **Owner:** T29. **Reference:** 9, 12.
-  **Current state:** Planned; native device diagnostics alone do not satisfy this.
+  **Current state:** Partial; standalone provides selected telemetry export, structured logs, snapshots, metrics, health checks, and host diagnostics. The shared correlated/redacted provider/tool/context/storage event pipeline remains incomplete.
 
 - [ ] **OP06 — Host credential storage, explicit data destinations, secret-free archives/logs and secure room identity**
   **Owner:** T28/T29/T30/T31/T32. **Reference:** 10, 12.
@@ -450,6 +533,6 @@ For each implemented group:
 - [Attachments](implementation-details/attachments-and-context.md), [memory](implementation-details/memory-and-pruning.md), [archive exchange](implementation-details/session-export-import.md)
 - [Android](implementation-details/standalone-android.md) and [desktop](implementation-details/standalone-desktop.md)
 
-Text Memory Bank files remain authoritative. This consolidation updates planning
-and evidence only; no application source, build, install or tests are run by the
-planning change.
+Text Memory Bank files remain authoritative. The plan records feature coverage
+and acceptance state; platform task and session records hold detailed source,
+build, device, and runtime evidence.

@@ -1,7 +1,9 @@
+import { extractStandalonePdf } from './searchDocuments';
 import { getMemoryContext } from "./memory";
 import { loadStandaloneChatPreferences } from "./appSettings";
 import {
 	createProviderProfile,
+	estimateStructuredTokens,
 	VercelLLMAdapter,
 	type LLMAdapter,
 	type LLMRequestOptions,
@@ -10,7 +12,7 @@ import {
 	type ToolDefinition,
 } from "super-chat";
 import type { CredentialReference } from "super-chat/contracts";
-import { standaloneHost } from "./host";
+import { standaloneHost } from "@standalone-host";
 import {
 	getStandaloneModels,
 	getStandaloneProviders,
@@ -148,7 +150,10 @@ async function createAdapter(profile: StandaloneProviderProfile, modelOverride?:
 	const adapterProfile = createProviderProfile(profile.provider, model, apiKey, {
 		baseUrl: profile.baseUrl,
 	});
-	const adapter = new VercelLLMAdapter({ profile: adapterProfile });
+	const adapter = new VercelLLMAdapter({
+		profile: adapterProfile,
+		extractPdf: (data) => extractStandalonePdf(data, standaloneHost.capabilities.credentials),
+	});
 	cachedAdapters.set(configurationKey, { configurationKey, adapter });
 	return adapter;
 }
@@ -178,7 +183,9 @@ async function withMemoryContext(messages: import("super-chat").ChatModelMessage
 export class StandaloneLLMAdapter implements LLMAdapter {
  async *streamChatEvents(messages: import("super-chat").ChatModelMessage[], signal?: AbortSignal, request?: LLMRequestOptions): AsyncIterable<StreamEvent> {
   const adapter = await configuredAdapter(request);
-  yield* adapter.streamChatEvents(await withMemoryContext(messages), signal, request);
+  const preparedMessages = await withMemoryContext(messages);
+  yield { type: "request-token-estimate", tokens: estimateStructuredTokens(preparedMessages) };
+  yield* adapter.streamChatEvents(preparedMessages, signal, request);
  }
 
 	async *streamChat(
@@ -190,6 +197,15 @@ export class StandaloneLLMAdapter implements LLMAdapter {
 		yield* adapter.streamChat(await withMemoryContext(messages), signal, request);
 	}
 
+	async *streamAuxiliaryChat(
+		messages: import("super-chat").ChatModelMessage[],
+		signal?: AbortSignal,
+		request?: LLMRequestOptions,
+	): AsyncIterable<string> {
+		const adapter = await configuredAdapter(request);
+		yield* adapter.streamChat(messages, signal, request);
+	}
+
 	async *streamChatWithTools(
 		messages: Array<{ role: string; content: string }>,
 		tools: ToolDefinition[],
@@ -197,7 +213,9 @@ export class StandaloneLLMAdapter implements LLMAdapter {
 		request?: LLMRequestOptions,
 	): AsyncIterable<StreamEvent> {
 		const adapter = await configuredAdapter(request);
-		yield* adapter.streamChatWithTools(await withMemoryContext(messages), tools, signal, request);
+		const preparedMessages = await withMemoryContext(messages);
+		yield { type: "request-token-estimate", tokens: estimateStructuredTokens(preparedMessages) };
+		yield* adapter.streamChatWithTools(preparedMessages, tools, signal, request);
 	}
 
 	getProviders(): ProviderInfo[] {

@@ -1,6 +1,22 @@
 # Super Chat standalone app
 
-The standalone app reuses the Super Chat React interface in a Capacitor Android app and a Capacitor Electron desktop app. It also builds as a browser app. The current chat uses local preview responses; it has no model provider, agent tools, or host-OS tool calls.
+The standalone app uses the same Super Chat React interface and chat runtime in a browser, a Capacitor Android app, and a Capacitor Electron desktop app. It has configurable model providers and host tools. Each build selects a platform host composition while keeping common chat, persistence, and tool behavior shared.
+
+## Host composition
+
+Vite aliases `@standalone-host` to the host entry for the selected build mode:
+
+| Target | Host services |
+| --- | --- |
+| Web | IndexedDB, browser visibility, browser diagnostics, browser file downloads, browser `fetch` |
+| Android | Shared IndexedDB, Android lifecycle and diagnostics, Keystore credentials, native document export, Capacitor HTTP |
+| Desktop | IndexedDB, window visibility, Electron diagnostics, browser file downloads, browser `fetch` |
+
+Provider API-key profiles require protected credential storage, so they are
+available on Android only until browser-session and desktop keychain behavior
+are deliberately supported. Web and desktop web-search keys remain in memory
+for the current app session. Browser and desktop network requests also remain
+subject to the server's CORS policy.
 
 ## Build commands
 
@@ -24,7 +40,8 @@ Each desktop target must be built on its matching OS. The GitHub Actions workflo
 
 ## Development
 
-- `pnpm standalone:dev` starts the browser preview.
+- `pnpm dev` or `pnpm standalone:dev` starts the standalone browser app.
+- `pnpm demo:dev` starts the separate legacy component demo.
 - `pnpm standalone:run:android` builds, syncs, and launches the Android app.
 - `pnpm standalone:run:desktop` builds, syncs, and launches the Electron desktop app.
 - `pnpm --filter @super-chat/standalone add:android` creates the Android platform folder once.

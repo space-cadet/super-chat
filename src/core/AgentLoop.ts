@@ -160,7 +160,7 @@ export class AgentLoop {
 		messages: ChatMessage[],
 		tools: ToolDefinition[],
 		signal?: AbortSignal,
-		runtimeOptions?: { maxSteps?: number; maxRequestTokens?: number },
+		runtimeOptions?: { maxSteps?: number; maxRequestTokens?: number; maxContextMessages?: number },
 	): AsyncGenerator<StreamEvent, AgentLoopResult> {
 		const { llmAdapter, toolExecutor, maxSteps: configuredMaxSteps = 5, autoApply = false } =
 			this.opts;
@@ -171,6 +171,7 @@ export class AgentLoop {
 			...(session.llmModel ? { model: session.llmModel } : {}),
 			...(session.thinkingMode ? { thinkingMode: session.thinkingMode } : {}),
 			...(runtimeOptions?.maxRequestTokens ? { maxRequestTokens: runtimeOptions.maxRequestTokens } : {}),
+			...(runtimeOptions?.maxContextMessages ? { maxContextMessages: runtimeOptions.maxContextMessages } : {}),
 		};
 
 		let fullText = "";
@@ -217,6 +218,9 @@ export class AgentLoop {
 						break;
 					case "error":
 						throw new Error(event.message);
+					case "request-token-estimate":
+						yield event;
+						break;
 					// finish, step-finish from stream are bookkeeping
 					default:
 						break;

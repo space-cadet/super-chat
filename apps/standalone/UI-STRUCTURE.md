@@ -15,7 +15,7 @@ The visual treatment can vary by platform. Share the core colors, typography, an
 
 ## Product boundary
 
-The current standalone build mounts `SuperChatApp` with local sessions and settings, host tools, and configurable provider profiles. Android stores provider keys in Keystore; desktop and browser do not currently expose protected credential storage. The Android debug build and TypeScript checks pass. User screenshots on 2026-11-18 confirm basic live OpenRouter chat on Android; broader model-switching, credential recovery, and restart checks remain open. The [standalone Android notes](../../memory-bank/implementation-details/standalone-android.md) record the platform boundary.
+The current standalone build mounts `SuperChatApp` with local sessions and settings, host tools, and configurable provider profiles. Vite selects explicit web, Android, or desktop host entries through `@standalone-host`; each composes shared capabilities with its platform services. Android stores provider keys in Keystore; desktop and browser do not currently expose protected provider-credential storage. The Android debug build and TypeScript checks pass. User screenshots on 2026-11-18 confirm basic live OpenRouter chat on Android; broader model-switching, credential recovery, and restart checks remain open. The [standalone Android notes](../../memory-bank/implementation-details/standalone-android.md) record the platform boundary.
 
 Design the full chat experience as a target, while making the current state honest:
 

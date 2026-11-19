@@ -5,7 +5,7 @@ This document defines architecture; its historical sequence is superseded by the
 master plan for current delivery.
 
 *Created: 2026-08-31 22:25:18 IST*
-*Last Updated: 2026-11-18 14:25:11 IST*
+*Last Updated: 2026-11-19 19:03:26 IST*
 *Program Owner: INFRA-1*
 *Shared-Core Workstream: T22*
 
@@ -75,6 +75,29 @@ function ProductChat() {
   return <SuperChatApp host={host} />;
 }
 ```
+
+### Standalone platform composition (2026-11-19)
+
+The browser, Android, and Electron renderers all mount the shared React app and
+chat runtime. The standalone Vite config aliases `@standalone-host` to one
+platform entry per build mode. `createStandaloneHost` composes common IndexedDB,
+provider-profile, and tool services with platform-owned lifecycle, documents,
+credentials, diagnostics, and HTTP transports. Android supplies Keystore
+credentials and native document/HTTP/diagnostics plugins; desktop supplies
+Electron diagnostics; the browser supplies online/offline diagnostics. Browser
+and desktop use visibility, downloads, and `fetch`. The app-specific WebDAV
+transport is kept alongside the standalone host and does not widen the shared
+chat contract.
+
+This is source-level separation, not full platform acceptance. Provider API-key
+profiles are protected only on Android; Electron keychain support and full
+browser/desktop provider-secret behavior remain open. Web, desktop renderer, and
+Android debug builds passed for this source change. The current Android debug
+APK was installed on `.108`, and the user confirmed that the app works. A fresh
+Apple Silicon arm64 DMG passed `hdiutil verify` but has not been opened or
+installed. The desktop runtime, credential/restart recovery, and iOS host
+remain unverified; see the
+[`cross-platform host session`](../sessions/2026-11-19-cross-platform-host-composition.md).
 
 ## 3. Ownership Rules
 

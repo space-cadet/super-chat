@@ -34,14 +34,16 @@ apps/standalone/
 ├── src/
 │   ├── main.tsx                            React entry point
 │   ├── App.tsx                              Chat, diagnostics, and settings navigation
-│   ├── host.ts                              Neutral standalone host capabilities
+│   ├── host.ts                              TypeScript fallback host entry
+│   ├── hosts/                               Shared composer, host entries, diagnostics adapters
 │   ├── llm.ts                               Profile credentials and provider adapter
 │   ├── providerSettings.ts                  Local profiles and legacy migration
 │   ├── persistence.ts                       IndexedDB sessions and settings
-│   ├── lifecycle.ts                         Capacitor visibility callbacks
+│   ├── lifecycle.ts                         Android Capacitor lifecycle callbacks
 │   ├── tools.ts                             Local calculator and time tools
 │   ├── androidCredentials.ts                Android secure credential bridge
-│   ├── diagnostics.ts                       Capacitor diagnostics facade
+│   ├── androidDocuments.ts                  Android document export bridge
+│   ├── diagnostics.ts                       Neutral diagnostics types
 │   └── screens/
 │       ├── DiagnosticsScreen.tsx             Diagnostics UI
 │       └── ProviderSettingsScreen.tsx        Provider setup UI
@@ -65,17 +67,18 @@ Android launcher
        └── Capacitor WebView loads the Vite renderer
             └── React App
                  ├── SuperChatApp
-                 │    ├── standaloneHost
+                 │    ├── Android host composition
                  │    │    ├── IndexedDB sessions/provider profiles/default
                  │    │    ├── Android Keystore credentials
-                 │    │    ├── lifecycle callbacks
+                 │    │    ├── Android lifecycle and document export
+                 │    │    ├── native HTTP for web search and WebDAV
                  │    │    └── calculator/time tools
                  │    └── StandaloneLLMAdapter
                  │         └── VercelLLMAdapter and configured provider
                  ├── ProviderSettingsScreen
                  │    └── profile CRUD, default, model entry, connection check
                  └── DiagnosticsScreen
-                      └── loadDiagnostics()
+                      └── Android host diagnostics service
                            ├── Capacitor Device / App / Network plugins
                            └── SystemDiagnostics.getSnapshot()
                                 └── Java SystemDiagnosticsPlugin
@@ -133,6 +136,22 @@ sessions/settings, interruption and offline recovery, protected credentials,
 file/document access with deliberate permission handling, signing, and broader
 device/distribution acceptance. The Android task is separate from any future
 iOS host task under INFRA-1.
+
+## Explicit Platform Host Composition — 2026-11-19
+
+The renderer build now aliases `@standalone-host` to a dedicated Android
+composition. `createStandaloneHost` combines shared provider profiles,
+IndexedDB persistence, and tools with Android Keystore credentials, Android
+lifecycle, native document export, diagnostics, and Capacitor HTTP. Web and
+desktop use separate host entries and do not import the Android credential/
+document plugins. `DiagnosticsScreen` uses a neutral host service; Android and
+Electron select the native diagnostics adapter, while web uses browser
+online/offline events. Separate web, desktop, and Android builds passed. Android
+credential and document plugin markers appear only in Android; the native
+`SystemDiagnostics` marker appears in Android and desktop, not web. The current
+debug APK was installed on `.108`, and the user confirmed that the app works.
+That confirmation did not list specific screens or flows. Credential saving,
+restart recovery, live remote calls, and broader T32 acceptance remain open.
 
 ## Later Android evidence — 2026-11-18
 

@@ -41,8 +41,8 @@ async function startListening(): Promise<void> {
 }
 
 /** Bridges Android app foreground/background events into the neutral host API. */
-export const standaloneLifecycle: LifecycleCapability = {
-	id: "standalone-app-lifecycle",
+export const androidLifecycle: LifecycleCapability = {
+	id: "android-app-lifecycle",
 	kind: "lifecycle",
 	async start() {
 		startCount += 1;
