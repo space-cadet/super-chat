@@ -1,6 +1,12 @@
 # Edit History
 *Created: 2026-05-19 11:15:00 IST*
-*Last Updated: 2026-11-19 19:03:26 IST*
+*Last Updated: 2026-11-20 15:46:29 IST*
+
+
+#### 15:46:29 IST - T31/T32: Finalize icon mockup selections
+- Updated `memory-bank/assets/icon-concepts/2026-11-20/SELECTION.md` - Recorded primary mockup 13, reverse-colour companion 14, accepted alternate 16, and retained prior ring option 15.
+- Updated `memory-bank/assets/icon-concepts/2026-11-20/README.md` - Indexed all 16 saved concept images and linked their prompt records.
+- Created `memory-bank/edits/2026-11-20/154629-op08-icon-selection.md` - Recorded this Memory Bank closeout.
 
 #### 19:03:26 IST - INFRA-1/T15/T22/T25/T26/T27/T29/T30/T31/T32: Reconcile feature records and host acceptance
 - Updated the master plan with the current 15-section Settings port, `.108` install confirmation, and verified but unopened Apple Silicon DMG; corrected the Web Search/PDF, token estimate, and diagnostics status.
