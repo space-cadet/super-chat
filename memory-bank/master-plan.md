@@ -1,6 +1,6 @@
 # Super Chat Master Delivery Plan
 
-*Updated: 2026-11-19 19:03:26 IST*
+*Updated: 2026-11-20 16:08:58 IST*
 *Program owner: INFRA-1 · shared application: T22 · reference comparison: T15*
 
 ## Start here
@@ -34,6 +34,18 @@ historical progress records. Arxivite's external-host migration is retired;
 fixture, Android, desktop, and Obsidian remain the active targets.
 
 ## Product rules
+
+- Implement Settings table items in order, beginning with PG01, under the
+  [source reuse and compatibility contract](implementation-details/obsidian-ai-source-compatibility.md).
+  Maximize feature availability; preserve reference data structures, field
+  meanings/names, defaults, validation and formats. Reuse coherent source groups
+  unchanged where possible and record required adaptations. Deliver dependencies
+  as needed, then resume table order; update evidence per item.
+
+- Map every Obsidian-AI Settings control without assuming what to keep or leave
+  out. Disabled/source-placeholder controls and platform-specific capabilities
+  remain listed. Host differences require an explicit mapping or later product
+  decision; they are not automatic exclusions.
 
 - Keep all UI controls visible. Show unavailable or unconfigured controls in
   place with clear disabled states and explanations. Do not omit controls by
@@ -180,17 +192,47 @@ was checked on `.108` and approved by the user; this is visual acceptance only.
 
 ### Next executable work
 
+**PG01 implementation:** Show advanced settings is wired in the standalone UI.
+Its source field/default and classification data are preserved; focused tests,
+typecheck, web build and browser reload checks passed. Android device acceptance
+and full checklist acceptance remain open. Continue in table order with PG02 —
+search setting names and descriptions as well as sections. Earlier next-work
+suggestions below do not supersede this sequence.
+
+The master plan remains the execution checklist. The user prioritised app icons
+and consistent Android app identity alongside the existing feature sequence;
+keep this work with T32 and desktop icon packaging with T31, without creating
+a separate app-completion plan.
+
+- [ ] **Priority — App icons and Android identity (OP08/T32; T31 desktop assets).**
+  Create a reusable master icon and platform exports. Deliver Android legacy,
+  adaptive and monochrome/themed launcher icons, and align the launcher, splash
+  screen, recent-apps view and system app information with the Super Chat name
+  and artwork. Preserve `com.spacecadet.superchat` so updates retain installed
+  app data. Verify a replacement install and appearance on a real device;
+  record themed-icon checks separately if the device cannot exercise them.
+  Supply matching desktop icon exports and packaging references under T31;
+  desktop appearance remains subject to its own runtime check.
+  Selected mockup directions are recorded in
+  [the icon selection](assets/icon-concepts/2026-11-20/SELECTION.md); production
+  artwork, exports, package wiring and device checks remain open.
+
 All 15 reference sections are now registered on one scrolling page, and their
 open state persists in the standalone IndexedDB settings store. Search/PDF,
 backup/import, WebDAV sync, local commands and diagnostics have working paths;
 unavailable options are visibly disabled and marked. The complete inventory is
-in `implementation-details/settings-port-inventory.md` and remains the OP01
-checklist. Continue with remaining source controls for retention,
+in `implementation-details/settings-control-checklist.md`, with the dated
+section summary in `settings-port-inventory.md`, and remains the OP01 checklist.
+Continue with remaining source controls for retention,
 context/compaction, tag management, thinking/usage, and the wider T15 source
 reconciliation. Exercise live WebDAV and backup round trips before claiming
 host acceptance.
 
-- [ ] **Complete the Settings inventory (OP01/T15).** Account for every section
+- [ ] **Complete Settings control parity (OP01/T15).** Use the 249-entry
+  `settings-control-checklist.md` for individual controls, nested dialogs, source
+  evidence and open differences. The source inventory is recorded; behavior,
+  persistence, error handling and host acceptance stay unchecked. Do not infer
+  keep/drop decisions from missing or disabled controls. Account for every section
   and control in `settings-port-inventory.md`; connect reusable controls to
   persisted behavior and route host-only operations through existing host
   owners. Do not mark OP01 done while any listed control or page behavior is
@@ -199,8 +241,10 @@ persistent section state, automatic naming, new-session tag suggestions,
 prepared-request estimates, saved-tab and transcript scroll restoration, tab
 width, the previous-message request cap, search/PDF, backup/import, WebDAV sync,
 local commands, logging, diagnostics, and explicit unavailable states.
-  Remaining early slices: retention, other context/compaction options, tag management,
-  and thinking/usage controls.
+  Remaining comparisons include retention, all context/compaction options, bulk
+  tags/global normalization, provider/authentication, prompt inspection, memory,
+  updates, credential exchange, storage migration/repair and telemetry. Manual
+  history tag controls already have wired source paths.
 - [ ] **Reconcile all current Obsidian-AI features (T15).** Compare current
   source modules and user-visible behavior with the dated capability map and
   this plan. Add a checklist row for every uncovered feature before completing
@@ -211,6 +255,28 @@ local commands, logging, diagnostics, and explicit unavailable states.
 - [ ] **Complete attachment and archive behavior (CX05/CX06, SE05/SE06).** Extend
   the existing paths for supported files, provider conversion, and import/export
   recovery rather than replacing them.
+
+The [side-by-side Settings status table](implementation-details/settings-status-comparison.md)
+provides separate Obsidian-AI/Super Chat icons for all 249 entries, with source
+check time, versions and differences. Detailed acceptance remains in the control
+checklist; source presence does not complete OP01.
+
+## Current-source mapping — 2026-11-20
+
+The [source mapping](implementation-details/obsidian-ai-source-mapping.md)
+records 24 source groups and all 45 current built-in reference tools against
+existing owners. Ten corresponding tool definitions are wired in standalone
+(memory and web/PDF), plus its calculator and clock. This is an inventory and
+initial source comparison; exact schema/policy parity and runtime acceptance
+remain open. The wider T15 call-site/test audit is not complete.
+
+Search jump/highlight, follow-latest and manual history/tag controls already
+have wired source paths; verify those paths instead of rebuilding them.
+Continue OP01's Settings table from PG02 under the current item-by-item order;
+the older SE09/OP02 next-work suggestion is superseded. Keep advanced compaction
+subject to the existing simple-first policy. Icon mockup choices are recorded
+in [the selection note](assets/icon-concepts/2026-11-20/SELECTION.md); production
+assets and Android identity acceptance remain open.
 
 ## Feature checklist
 
@@ -250,7 +316,7 @@ not new task IDs.
 
 - [ ] **UI06 — Follow latest and late layout changes; preserve position when reading up; visible return-to-latest control**
   **Owner:** T22/T8. **Reference:** 3.2, 12.
-  **Current state:** Compare.
+  **Current state:** Partial; ChatApp has follow/scroll-up state, ResizeObserver for late layout changes, saved scroll restoration and return-to-latest. Runtime interaction and session-switch acceptance remain open.
 
 - [ ] **UI07 — Multiline auto-growing composer, caret/input correctness, placeholder, keyboard/safe areas and configurable send shortcuts**
   **Owner:** T22/T8/T32. **Reference:** 3.3.
@@ -289,11 +355,11 @@ not new task IDs.
 
 - [ ] **SE03 — Searchable recent-history list: title, count, excerpt, date, usage; load, manual rename, delete and configurable auto-name with fallback**
   **Owner:** T22/T8. **Reference:** 4.2.
-  **Current state:** Partial; saved-chat search and auto-naming with a local fallback exist; full history metadata, matched-message navigation, rename/delete, and acceptance remain incomplete.
+  **Current state:** Partial; history metadata, manual rename, confirmed deletion, saved-message search and auto-naming with local fallback are wired. Full metadata parity, restart/recovery and interaction acceptance remain open.
 
 - [ ] **SE04 — Full saved-message search; open/highlight matching message; past-session tool excludes current session**
   **Owner:** T22/T25. **Reference:** 4.3.
-  **Current state:** Partial; saved-chat search exists; matched-message navigation/highlight and past-session tool behavior remain open.
+  **Current state:** Partial; fuzzy search indexes saved messages, and result selection passes the message ID to ChatApp for scrolling/highlighting. Reload/full-history and device checks remain open; standalone past-session tool routing is missing.
 
 - [ ] **SE05 — Single message/selection/session/bulk copy and export in Markdown, JSON and JSONL as applicable**
   **Owner:** T30/T22. **Reference:** 4.2.
@@ -305,7 +371,7 @@ not new task IDs.
 
 - [ ] **SE07 — Session tags: manual/model-assisted tags, filter/count, manage/search/create/remove; persistence and archive inclusion**
   **Owner:** T22/T30/T25. **Reference:** 4.2.
-  **Current state:** Partial; normalized session metadata, archive preservation, and opt-in new-chat suggestions from a selected profile exist. Manual tag controls, filter/count, bulk generation, and management remain open.
+  **Current state:** Partial; normalized metadata, archive preservation, opt-in suggestions, manual create/add/remove controls and tag filtering/counts are wired through the history dialog. Bulk generation, global normalization and device/reload acceptance remain open.
 
 - [ ] **SE08 — Reviewable tag normalization and optional tag-name-only suggestions, stale-plan rejection, retry and preserved transcripts**
   **Owner:** T22/T30. **Reference:** 4.2.
@@ -313,7 +379,7 @@ not new task IDs.
 
 - [ ] **SE09 — Retention controls and explicit deletion records prevent old snapshots restoring deleted sessions**
   **Owner:** T22/T30. **Reference:** 4.2, 11.
-  **Current state:** Compare.
+  **Current state:** Partial; standalone deletes records directly and saves via put. Reference storage guards stale snapshots with explicit deletion records; local retention/stale-save behavior still needs characterization independently of sync tombstones.
 
 
 ### Profiles, models and request lifecycle
@@ -394,7 +460,7 @@ not new task IDs.
 
 - [ ] **TL01 — Reconcile every current tool family against source; map generic operations to host capability and owner instead of freezing the old 31-tool count**
   **Owner:** T25/T15. **Reference:** 8.1–8.2.
-  **Current state:** Partial; composition exists; current full inventory open.
+  **Current state:** Partial; the current-source mapping inventories all 45 built-in reference tools and existing owners. Dynamic external-provider discovery, schemas, policy and execution parity remain open.
 
 - [ ] **TL02 — Repository read/inspect, browse/search/list/count, reference/resolve, supported queries, create/update/patch/append/section, organize/move/delete**
   **Owner:** T25/T18/T32/T31. **Reference:** 8.1–8.2.
@@ -404,13 +470,13 @@ not new task IDs.
   **Owner:** T25/T16/T27. **Reference:** 8.2.
   **Current state:** Partial; standalone wires provider-configured web search and PDF extraction/read with page limits. Live search/PDF endpoint checks and cross-host acceptance remain open.
 
-- [ ] **TL04 — Memory tools, past-session search, tag tools and full stored-result retrieval**
+- [ ] **TL04 — Memory tools, past-session search, session list/read/open/rename/delete, tag tools and full stored-result retrieval**
   **Owner:** T26/T25/T22. **Reference:** 8.2.
   **Current state:** Partial; memory tools exist; live tool round trip, past-session search, tags, and full-result retrieval remain open.
 
-- [ ] **TL05 — Sanitized read-settings, allow-listed setting changes and capability/identity reporting for this app**
+- [ ] **TL05 — Sanitized settings, allow-listed changes, agent-prompt read/update/reset and app capability/identity reporting**
   **Owner:** T25/T29. **Reference:** 8.2.
-  **Current state:** Planned/compare; adapt get_plugin_info to host identity.
+  **Current state:** Planned; standalone composition has no settings, app-identity or agent-prompt tool routes. Adapt get_plugin_info to host identity and preserve the reference restrictions on settings/prompt mutation.
 
 - [ ] **TL06 — Built-in/external tool discovery, unique routes, input validation and local risk/authorization policy**
   **Owner:** T25. **Reference:** 8.2–8.3.
@@ -458,9 +524,9 @@ not new task IDs.
 
 ### Settings, durability, access and release
 
-- [ ] **OP01 — Inventory and deliver every applicable Obsidian-AI Settings section/control, with persisted state, visible unavailable host controls, and adapted host-only behavior**
+- [ ] **OP01 — Map every Obsidian-AI Settings control and deliver its agreed behavior, with persisted state and explicit host differences**
   **Owner:** T22 plus feature owners. **Reference:** 9.
-  **Current state:** Partial; all 15 reference sections are registered on one page with searchable section navigation and persisted accordion state. Standalone search/PDF, backup/import, WebDAV sync, local commands, debug and diagnostics have working paths. Unsupported controls are disabled and marked. The [Settings port inventory](implementation-details/settings-port-inventory.md) tracks each section and support boundary. Remaining gaps include control-level search, advanced-settings grouping/load errors, retention and context/compaction controls, bulk/manual tag management, provider-reported usage, deferred relay joining, live WebDAV/backup acceptance and the wider T15 source audit. Host-only rows and source placeholders stay with their existing owners.
+  **Current state:** Source control inventory recorded in the [249-entry checklist](implementation-details/settings-control-checklist.md); implementation/acceptance remains partial. No features were excluded or approved for omission. All 15 reference sections are registered on one page with searchable section navigation and persisted accordion state. Standalone search/PDF, backup/import, WebDAV sync, local commands, debug and diagnostics have working paths. Unsupported controls are disabled and marked. The [Settings port inventory](implementation-details/settings-port-inventory.md) tracks each section and support boundary. Remaining gaps include control-level search, advanced-settings grouping/load errors, retention and context/compaction controls, bulk tag generation/global normalization, provider-reported usage, deferred relay joining, live WebDAV/backup acceptance and the wider T15 source audit. Host-only rows and source placeholders stay with their existing owners.
 
 - [ ] **OP02 — Durable sessions, drafts, parts, index/transcript hydration, no empty overwrite of unloaded data, migration and corruption recovery**
   **Owner:** T22/T30/T32/T31. **Reference:** 10–11.
@@ -485,6 +551,23 @@ not new task IDs.
 - [ ] **OP07 — Versioned package and host adoption, accepted source/artifact identity, signing, Android/desktop/Obsidian checks**
   **Owner:** T21/T18/T31/T32. **Reference:** 13.
   **Current state:** Partial local debug delivery; broader acceptance open.
+
+
+- [ ] **OP08 — App icons and consistent Android app identity**
+  **Owners:** T32 Android identity and device checks; T31 desktop icon packaging.
+  **Priority:** User-requested near-term work alongside the existing delivery sequence.
+  **Complete when:** A reusable icon source and platform exports exist; Android
+  launcher/adaptive/themed icons, splash, recent-apps appearance and app labels
+  are consistent; `com.spacecadet.superchat` is preserved; replacement-install
+  data continuity and device appearance are checked. Matching desktop icons
+  are wired into packaging, with desktop runtime appearance recorded separately.
+  **Current state:** In progress. The reusable master is
+  `apps/standalone/resources/icon.png`, copied from selected concept 13. Android
+  legacy/adaptive raster resources are packaged, and the debug APK was installed
+  on `.108` with `com.spacecadet.superchat` and the `Super Chat` label. Visual
+  appearance and data continuity remain unchecked; monochrome/themed icons,
+  splash/recent-app alignment, and desktop exports/package wiring remain open.
+  See T32 for build and install evidence.
 
 
 ## Tool and reference coverage rules

@@ -1,3 +1,4 @@
+import { loadSettingsPresentation, saveSettingsPresentation, normalizeSettingsPresentation } from "./settingsPresentation";
 import { standalonePersistence, standaloneSettingsStore as store } from './persistence';
 import { loadStandaloneChatPreferences, saveStandaloneChatPreferences, validateStandaloneChatPreferences } from './appSettings';
 import { loadStandaloneProviderSettings, saveStandaloneProviderSettings, validateStandaloneProviderProfile } from './providerSettings';
@@ -23,7 +24,7 @@ export async function loadRemotePreferences():Promise<RemotePreferences>{return 
 export async function saveRemotePreferences(value:RemotePreferences){await store.save('remote-storage',value)}
 export async function saveDataFile(filename:string,content:string){const documents=standaloneHost.capabilities.documents;if(!documents?.createDocument)throw new Error('Document export is not available on this host.');await documents.createDocument({id:globalThis.crypto.randomUUID(),title:filename,content},{requestId:globalThis.crypto.randomUUID()})}
 function redact(value:unknown):unknown {if(Array.isArray(value))return value.map(redact); if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).filter(([key])=>!/(api.?key|password|token|secret|passphrase|credentialId)/i.test(key)).map(([key,v])=>[key,redact(v)])); return value}
-export async function exportSettings(){return JSON.stringify({format:'super-chat-settings',version:1,exportedAt:new Date().toISOString(),chat:await loadStandaloneChatPreferences(),providers:redact(await loadStandaloneProviderSettings()),components:await loadSyncComponents(),remote:await loadRemotePreferences()},null,2)}
+export async function exportSettings(){return JSON.stringify({format:'super-chat-settings',version:1,exportedAt:new Date().toISOString(),presentation:await loadSettingsPresentation(),chat:await loadStandaloneChatPreferences(),providers:redact(await loadStandaloneProviderSettings()),components:await loadSyncComponents(),remote:await loadRemotePreferences()},null,2)}
 export async function importSettings(text: string) {
  const value = JSON.parse(text);
  if (value.format !== 'super-chat-settings' || value.version !== 1) throw new Error('Choose a Super Chat settings export. Obsidian settings need a separate migration.');
@@ -64,6 +65,7 @@ export async function importSettings(text: string) {
   remote.allowDeletions = incoming.allowDeletions ?? remote.allowDeletions;
  }
 
+ if (value.presentation !== undefined) await saveSettingsPresentation(normalizeSettingsPresentation(value.presentation));
  await saveStandaloneChatPreferences(chat);
  await saveStandaloneProviderSettings(providers);
  await saveSyncComponents(components);

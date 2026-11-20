@@ -1,6 +1,63 @@
 # Active Context
 
-*Last Updated: 2026-11-19 19:03:26 IST*
+*Last Updated: 2026-11-20 16:44:12 IST*
+
+## Android icon build and install — 2026-11-20 16:44:12 IST
+
+Built the debug APK from selected concept 13 as the reusable icon master and
+installed it on `.108` using `adb install -r`; the user confirmed installation.
+The app ID and label are still `com.spacecadet.superchat` / `Super Chat`.
+Device appearance, app launch after install and data continuity were not
+verified. Themed icons, splash/recent-app appearance and desktop assets remain
+open. Continue the Settings map at PG02 after this icon work.
+
+## Source reuse implementation — 2026-11-20 15:54:30 IST
+
+User authorised the item-by-item plan and implementation with step updates.
+T15f–T15h and T22 follow the [compatibility contract](implementation-details/obsidian-ai-source-compatibility.md).
+PG01 is wired: the reference `showAdvancedSettings` name/default and
+classification blocks are preserved; the browser toggle and reload work. The
+standalone IndexedDB/export container is a documented host adaptation. PG01
+Android device and full row acceptance remain open. Next row: PG02, search setting names
+and descriptions. Preserve every feature and record adaptations.
+
+## Settings comparison view — 2026-11-20 15:20:01 IST
+
+Saved the [two-app Settings table](implementation-details/settings-status-comparison.md)
+with 249 entries, Obsidian-AI/Super Chat status icons, dated source evidence and
+notes. Source inspection status and runtime acceptance remain separate; the
+control checklist owns detailed requirements and all acceptance stays open.
+
+## Individual Settings mapping — 2026-11-20
+
+The [249-entry checklist](implementation-details/settings-control-checklist.md)
+now expands Settings sections, conditional fields, dynamic controls and nested
+dialogs with source evidence and explicit differences. Every feature remains
+represented; the user requested no keep/drop assumptions. All acceptance is
+open. Continue from this ledger under OP01/T15/T22; do not treat platform
+storage, credential, updater or compaction differences as exclusions.
+Session: [2026-11-20](sessions/2026-11-20-app-identity-priority.md).
+
+## Current-source mapping — 2026-11-20
+
+T15 now has a [24-group source mapping](implementation-details/obsidian-ai-source-mapping.md)
+and 45-tool inventory linked from the master plan. Corrected existing search,
+scrolling and manual history/tag paths; full source/test/runtime parity stays
+open. Next: PG02, search setting names and descriptions under the user's
+item-by-item order; the earlier SE09/OP02 suggestion is superseded. Icon mockup
+choices were selected in dedicated chat `01a1f831-92db-7192-aa47-bd8a82e8d2aa`;
+see [the selection note](assets/icon-concepts/2026-11-20/SELECTION.md). The
+primary master and Android resources now exist and the debug APK is installed;
+device appearance/data continuity and the remaining identity work stay open.
+
+## App identity priority — 2026-11-20
+
+Continue using the master plan. App icons and consistent Android identity are
+a near-term priority under OP08/T32h, with matching desktop assets under T31h.
+The selected concept 13 now supplies the Android master and launcher resources;
+the debug APK installed on `.108` and retains the `com.spacecadet.superchat`
+app ID. Device appearance and data continuity, themed/splash/recent-app styling,
+and desktop exports/package wiring remain open.
 
 ## Cross-Platform Host Composition — 2026-11-19
 

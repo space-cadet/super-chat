@@ -4,6 +4,10 @@ The [Master Delivery Plan](../master-plan.md#feature-checklist) is the canonical
 feature comparison and execution checklist. This document retains the extraction
 ownership model and dependency diagrams; do not maintain a second backlog here.
 
+The [current-source mapping](obsidian-ai-source-mapping.md), checked on
+2026-11-20, supplies source pointers and the 45-tool inventory. It supports the
+master plan without maintaining a separate execution backlog.
+
 ## Migration Shape
 
 ```text

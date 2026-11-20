@@ -274,7 +274,11 @@ pushed as `4015d8b`.
 
 ## 8. Capability Extraction from obsidian-ai
 
-`obsidian-ai` is the behavioral reference, not a source tree to copy wholesale.
+`obsidian-ai` is both the behavioral and source-code reference. Reuse complete
+working source groups unchanged wherever possible; adapt required UI/host calls
+at integration points rather than rebuilding the feature. Preserve compatible
+data structures, field meanings/names, defaults, validation and formats under
+[source compatibility](obsidian-ai-source-compatibility.md).
 
 ### Candidate reusable capabilities
 

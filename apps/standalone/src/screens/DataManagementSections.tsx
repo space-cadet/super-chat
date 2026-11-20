@@ -1,3 +1,4 @@
+import { AdvancedSetting } from "./SettingsPresentation";
 import { useEffect, useState } from "react";
 import {
 	componentLabels,
@@ -144,8 +145,8 @@ export function RemoteStorageSection() {
 			<label className="settings-field">Encryption passphrase<input type="password" autoComplete="new-password" value={passphrase} onChange={event => setPassphrase(event.target.value)} /><span className="field-help">Passwords and passphrases stay in memory and must be entered again after leaving Settings.</span></label>
 			<p className="field-help">Browser WebDAV requires server CORS support. Android uses the native HTTP adapter.</p>
 			<div className="settings-option-row is-unavailable" aria-disabled="true"><span className="settings-option-copy"><strong>Automatic sync <UnavailableMark label="Automatic sync is disabled pending verification" /></strong><small>Disabled pending verification, matching the source app.</small></span><input type="checkbox" disabled aria-label="Automatic sync unavailable" /></div>
-			<label className="settings-field">Sync direction<select value={value.direction} onChange={event => update("direction", event.target.value as RemotePreferences["direction"])}><option value="both">Both directions</option><option value="upload">Upload only</option><option value="download">Download only</option></select></label>
-			<label className="settings-field">Conflict strategy<select value={value.conflictStrategy} onChange={event => update("conflictStrategy", event.target.value as RemotePreferences["conflictStrategy"])}><option value="keep-both">Keep both</option><option value="last-write-wins">Last write wins</option><option value="manual">Manual (leave conflicts unresolved)</option></select></label>
+			<AdvancedSetting section="Remote Storage" name="Sync Direction"><label className="settings-field">Sync direction<select value={value.direction} onChange={event => update("direction", event.target.value as RemotePreferences["direction"])}><option value="both">Both directions</option><option value="upload">Upload only</option><option value="download">Download only</option></select></label></AdvancedSetting>
+			<AdvancedSetting section="Remote Storage" name="Conflict Resolution"><label className="settings-field">Conflict strategy<select value={value.conflictStrategy} onChange={event => update("conflictStrategy", event.target.value as RemotePreferences["conflictStrategy"])}><option value="keep-both">Keep both</option><option value="last-write-wins">Last write wins</option><option value="manual">Manual (leave conflicts unresolved)</option></select></label></AdvancedSetting>
 			<label className="settings-option-row"><span className="settings-option-copy"><strong>Allow remote deletion records to remove local chats</strong></span><input type="checkbox" checked={value.allowDeletions} onChange={event => update("allowDeletions", event.target.checked)} /></label>
 			<div className="settings-action-grid">
 				<button className="settings-secondary-button" type="button" disabled={action.busy} onClick={() => void action.run(() => runRemoteSync(value, password, passphrase, true))}>Test connection</button>

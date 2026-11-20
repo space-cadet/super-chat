@@ -1,3 +1,4 @@
+import { AdvancedSetting } from "../SettingsPresentation";
 import type { WebSearchSettings } from "../../../../../src/web/WebSearchService";
 import { UnavailableMark } from "../SettingsSectionSupport";
 
@@ -62,14 +63,14 @@ export function PdfExtractionSettingsSection({ value, onChange, clientAvailable 
 				</select>
 			</label>
 			{!clientAvailable && <p className="field-help">Local extraction requires a PDF reader supplied by this host.</p>}
-			<label className="settings-field">
+			<AdvancedSetting section="PDF Extraction" name="Server endpoint URL"><label className="settings-field">
 				Server endpoint URL
 				<input type="url" value={value.pdfExtractionServerUrl} disabled={value.pdfExtractionMethod === "client"} onChange={event => update({ pdfExtractionServerUrl: event.target.value.trim() })} />
-			</label>
-			<label className="settings-field">
+			</label></AdvancedSetting>
+			<AdvancedSetting section="PDF Extraction" name="Maximum pages"><label className="settings-field">
 				Maximum pages (0 extracts all pages)
 				<input type="number" min={0} max={200} step={10} value={value.pdfMaxPages} onChange={event => update({ pdfMaxPages: Math.max(0, Math.min(200, Math.floor(Number(event.target.value) || 0))) })} />
-			</label>
+			</label></AdvancedSetting>
 		</section>
 	);
 }

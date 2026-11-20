@@ -85,6 +85,15 @@ Unloading a session from client memory is not deletion. Further lifecycle and
 record-shape rules are canonical in
 [`session-persistence.md`](session-persistence.md).
 
+## Reference data compatibility
+
+For Settings feature ports, follow
+[source compatibility](obsidian-ai-source-compatibility.md). Preserve reference
+structures, property meanings/names, defaults, validation and formats where
+possible. Existing Super Chat public contracts and saved data also need an
+explicit migration/adapter when changed. Do not leak Obsidian App/vault types
+into shared contracts merely to keep a platform-specific import unchanged.
+
 ## Stability and Change Rules
 
 - **Public** interfaces require contract tests and compatibility notes when

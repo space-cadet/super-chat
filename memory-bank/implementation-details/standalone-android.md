@@ -124,6 +124,27 @@ Android platform 35, and build-tools 35.0.0. It uploads debug APK, release APK,
 and AAB artifacts. The workflow was parsed locally but no remote Actions run
 was performed in the handoff. Release artifacts are unsigned.
 
+## Android App Icon Assets — 2026-11-20 16:44 IST
+
+The reusable square master is `apps/standalone/resources/icon.png`, byte-for-
+byte copied from selected mockup 13 in
+[`SELECTION.md`](../assets/icon-concepts/2026-11-20/SELECTION.md). Android
+legacy `ic_launcher`/`ic_launcher_round` images and adaptive foreground PNGs
+are resized from this master into the existing `mipmap-mdpi`, `hdpi`, `xhdpi`,
+`xxhdpi`, and `xxxhdpi` folders. The adaptive-icon XML uses the same foreground
+resource and a dusk-blue (`#1D3358`) background. The Capacitor app ID and
+Android label remain `com.spacecadet.superchat` and `Super Chat`.
+
+The 2026-11-20 debug build passed and installed on `.108` with `adb install -r`.
+Artifact: `apps/standalone/android/app/build/outputs/apk/debug/app-debug.apk`,
+6,747,703 bytes, SHA-256
+`5a509a054f289276ce2289bb7b99bf78a576d3d37a97c2e4a69b2d287e560799`.
+The ADB install returned `Success` and the user confirmed installation, but
+ADB disconnected before post-install package or launch inspection. The new
+icon's on-device appearance and replacement-install data continuity were not
+checked. Monochrome/themed icons and splash/recent-app appearance remain open
+under [T32](../tasks/T32.md); desktop exports remain under T31.
+
 ## Device Evidence and Remaining Work
 
 The OPPO CPH2661IN installation and launch worked. The Diagnostics screen

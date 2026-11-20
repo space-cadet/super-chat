@@ -1,3 +1,5 @@
+import { ADVANCED_SECTION_TITLES } from "../settingsPresentation";
+import { AdvancedSetting, SettingsPresentationProvider, SettingsPresentationControls, useShowAdvancedSettings } from "./SettingsPresentation";
 import { ChatRelaySettingsSection, UpdatesSettingsSection } from "./HostSettingsSections";
 import { IntegrationsSection, ChatCommandsSection, DebugModeSection, DiagnosticsSettingsSection } from "./ToolsDiagnosticsSections";
 import { BackupRestoreSection, SyncComponentsSection, RemoteStorageSection } from "./DataManagementSections";
@@ -103,6 +105,7 @@ function SettingsAccordion({
 	description,
 	open,
 	onToggle,
+	hidden = false,
 	children,
 }: {
 	id: Section;
@@ -110,14 +113,15 @@ function SettingsAccordion({
 	description: string;
 	open: boolean;
 	onToggle: () => void;
+	hidden?: boolean;
 	children: ReactNode;
 }) {
 	const panelId = `settings-panel-${id}`;
 	return (
-		<section id={`settings-section-${id}`} className={`settings-accordion${open ? " is-open" : ""}`}>
+		<section hidden={hidden} data-settings-tier={ADVANCED_SECTION_TITLES.has(title) ? "advanced" : "normal"} id={`settings-section-${id}`} className={`settings-accordion${open ? " is-open" : ""}`}>
 			<button className="settings-accordion-trigger" type="button" aria-expanded={open} aria-controls={panelId} onClick={onToggle}>
 				<span className="settings-accordion-copy">
-					<strong>{title}</strong>
+					<strong>{title}{ADVANCED_SECTION_TITLES.has(title) ? " *" : ""}</strong>
 					<small>{description}</small>
 				</span>
 				<svg className="settings-accordion-chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -205,7 +209,7 @@ function ChatPreferencesSection({
 					<PreferenceToggle label="Press Enter to send" description="Shift+Enter inserts a new line. When off, use Ctrl+Enter, ⌘+Enter or the Send button." checked={draft.pressEnterToSend} onChange={value => setDraft(current => ({ ...current, pressEnterToSend: value }))} />
 					<PreferenceToggle label="Show message times" description="Display the local time under each message." checked={draft.showTimestamps} onChange={value => setDraft(current => ({ ...current, showTimestamps: value }))} />
 					<PreferenceToggle label="Show token estimates" description="Display estimated token counts for the draft and messages." checked={draft.showTokenCount} onChange={value => setDraft(current => ({ ...current, showTokenCount: value }))} />
-					<PreferenceToggle label="Show full request token estimate" description="While a reply runs, include the prepared system instructions, memory and conversation history when the host provides that estimate. Provider-reported usage can differ." checked={draft.showFullRequestTokens} onChange={value => setDraft(current => ({ ...current, showFullRequestTokens: value }))} />
+					<AdvancedSetting section="Chat Defaults" name="Show full request token count"><PreferenceToggle label="Show full request token estimate" description="While a reply runs, include the prepared system instructions, memory and conversation history when the host provides that estimate. Provider-reported usage can differ." checked={draft.showFullRequestTokens} onChange={value => setDraft(current => ({ ...current, showFullRequestTokens: value }))} /></AdvancedSetting>
 					<PreferenceToggle label="Automatically name chats" description="Use the selected model to title an untitled chat after a few messages. A local title is used if the model cannot suggest one." checked={draft.autoNameSessions} onChange={value => setDraft(current => ({ ...current, autoNameSessions: value }))} />
 				</div>
 			</SettingsCard>
@@ -307,28 +311,28 @@ function ToolPreferencesSection({
 				<div className="preference-list">
 					<PreferenceToggle label="Allow agent tools" description="Let the assistant call available tools during a reply." checked={draft.enableTools} onChange={value => setDraft(current => ({ ...current, enableTools: value }))} />
 				</div>
-				<div className="settings-field settings-field-spaced">
+				<AdvancedSetting section="Agent Tools" name="Max agent steps"><div className="settings-field settings-field-spaced">
 					<label htmlFor="max-agent-steps">Maximum tool rounds per reply</label>
 					<select id="max-agent-steps" value={draft.maxAgentSteps} onChange={event => setDraft(current => ({ ...current, maxAgentSteps: Number(event.target.value) }))}>
 						{[1, 2, 3, 5, 8, 12].map(value => <option value={value} key={value}>{value} rounds</option>)}
 					</select>
 					<p className="field-help">Write and delete tools still ask for your approval. This limit only caps how many tool rounds a reply can use.</p>
-				</div>
+				</div></AdvancedSetting>
 			</SettingsCard>
 
 			<SettingsCard title="Model request budget" description="Cap the full prompt sent to the selected model, including system instructions, chat history, files and tools.">
-				<div className="settings-field settings-field-spaced">
+				<AdvancedSetting section="Chat Defaults" name="Model request token budget"><div className="settings-field settings-field-spaced">
 					<label htmlFor="request-budget">Maximum request tokens</label>
 					<select id="request-budget" value={draft.maxContextTokens} onChange={event => setDraft(current => ({ ...current, maxContextTokens: Number(event.target.value) }))}>
 						{[8_000, 16_000, 32_000, 64_000, 128_000, 200_000, 1_000_000].map(value => <option value={value} key={value}>{value.toLocaleString()} tokens</option>)}
 					</select>
 					<p className="field-help">The selected model’s smaller native limit always takes precedence. Recent messages are kept first.</p>
-				</div>
-				<div className="settings-field settings-field-spaced">
+				</div></AdvancedSetting>
+				<AdvancedSetting section="Chat Defaults" name="Max context messages"><div className="settings-field settings-field-spaced">
 					<label htmlFor="max-context-messages">Maximum previous messages</label>
 					<input id="max-context-messages" type="number" min={1} step={1} value={draft.maxContextMessages} onChange={event => setDraft(current => ({ ...current, maxContextMessages: Number(event.target.value) }))} />
 					<p className="field-help">Older messages are left out of model requests. This limit does not remove anything from the saved chat.</p>
-				</div>
+				</div></AdvancedSetting>
 			</SettingsCard>
 
 			{notice && <div className={`settings-notice ${notice.kind}`} role={notice.kind === "error" ? "alert" : "status"}>{notice.text}</div>}
@@ -484,22 +488,22 @@ function MemorySection() {
 			<SettingsCard title="Long-term memory" description="Memory stays on this device. Core entries can be included in future model requests while enabled.">
 				<div className="preference-list">
 					<PreferenceToggle label="Enable memory" description="Let the assistant read and update saved memories. The core tier is added to its prompt." checked={settings.enabled} onChange={enabled => void saveSettings({ ...settings, enabled })} />
-					<PreferenceToggle label="Expose memory audit tool" description="Let the assistant inspect memory activity. Local review stays available in this screen." checked={settings.auditEnabled} onChange={auditEnabled => void saveSettings({ ...settings, auditEnabled })} />
+					<AdvancedSetting section="AI Intelligence Layer" name="Enable memory audit tool"><PreferenceToggle label="Expose memory audit tool" description="Let the assistant inspect memory activity. Local review stays available in this screen." checked={settings.auditEnabled} onChange={auditEnabled => void saveSettings({ ...settings, auditEnabled })} /></AdvancedSetting>
 				</div>
-				<div className="settings-field settings-field-spaced">
+				<AdvancedSetting section="AI Intelligence Layer" name="Identity context budget"><div className="settings-field settings-field-spaced">
 					<label htmlFor="memory-context-budget">Core memory prompt budget</label>
 					<select id="memory-context-budget" value={settings.contextBudgetTokens ?? 2_000} onChange={event => void saveSettings({ ...settings, contextBudgetTokens: Number(event.target.value) })}>
 						{[0, 500, 1_000, 2_000, 4_000, 8_000].map(value => <option key={value} value={value}>{value === 0 ? "Off" : `${value.toLocaleString()} tokens`}</option>)}
 					</select>
 					<p className="field-help">Only core memories are included. Staged memories stay available for review and promotion.</p>
-				</div>
-				<div className="settings-field settings-field-spaced">
+				</div></AdvancedSetting>
+				<AdvancedSetting section="AI Intelligence Layer" name="Legacy memory backup retention"><div className="settings-field settings-field-spaced">
 					<label htmlFor="memory-backup-retention">Recovery copies</label>
 					<select id="memory-backup-retention" value={settings.backupRetention ?? 20} onChange={event => void saveSettings({ ...settings, backupRetention: Number(event.target.value) })}>
 						{[0, 10, 20, 50, 100].map(value => <option key={value} value={value}>{value === 0 ? "Off" : `Keep ${value}`}</option>)}
 					</select>
 					<p className="field-help">Current copies: {backupCount}. New copies are written after each memory change.</p>
-				</div>
+				</div></AdvancedSetting>
 			</SettingsCard>
 
 			<SettingsCard title="Review memories" description="Search and manage entries across the core, staged and archive tiers.">
@@ -545,7 +549,7 @@ function MemorySection() {
 	);
 }
 
-export function SettingsScreen({
+function SettingsScreenContent({
 	chatPreferences,
 	onChatPreferencesChange,
 	onProviderConfigurationChange,
@@ -554,6 +558,7 @@ export function SettingsScreen({
 	onChatPreferencesChange: (value: StandaloneChatPreferences) => void;
 	onProviderConfigurationChange: (configured: boolean) => void;
 }) {
+	const showAdvancedSettings = useShowAdvancedSettings();
 	const [openSections, setOpenSections] = useState<Set<Section>>(() => new Set(DEFAULT_OPEN_SECTIONS));
 	const [sectionQuery, setSectionQuery] = useState("");
 	const [sectionStateLoaded, setSectionStateLoaded] = useState(false);
@@ -637,8 +642,9 @@ export function SettingsScreen({
 					<label htmlFor="settings-section-search">Find a section</label>
 					<input id="settings-section-search" type="search" value={sectionQuery} onChange={event => setSectionQuery(event.target.value)} placeholder="Search section names and descriptions" />
 				</div>
+				<SettingsPresentationControls />
 				<nav className="settings-section-index" aria-label="Settings section index">
-					{sections.filter(item => `${item.label} ${item.subtitle}`.toLowerCase().includes(sectionQuery.toLowerCase())).map(item => (
+					{sections.filter(item => (showAdvancedSettings || !ADVANCED_SECTION_TITLES.has(item.label)) && `${item.label} ${item.subtitle}`.toLowerCase().includes(sectionQuery.toLowerCase())).map(item => (
 						<button key={item.id} type="button" className="settings-secondary-button" aria-controls={`settings-panel-${item.id}`} onClick={() => navigateToSection(item.id)}>{item.label}</button>
 					))}
 				</nav>
@@ -655,6 +661,7 @@ export function SettingsScreen({
 						title={item.label}
 						description={item.subtitle}
 						open={openSections.has(item.id)}
+						hidden={!showAdvancedSettings && ADVANCED_SECTION_TITLES.has(item.label)}
 						onToggle={() => toggleSection(item.id)}
 					>
 						{item.id === "providers" && <ProviderSettingsScreen embedded onConfigurationChange={onProviderConfigurationChange} />}
@@ -677,4 +684,8 @@ export function SettingsScreen({
 			</div>
 		</div>
 	);
+}
+
+export function SettingsScreen(props: Parameters<typeof SettingsScreenContent>[0]) {
+	return <SettingsPresentationProvider><SettingsScreenContent {...props} /></SettingsPresentationProvider>;
 }

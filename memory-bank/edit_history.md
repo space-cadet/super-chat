@@ -1,12 +1,101 @@
 # Edit History
 *Created: 2026-05-19 11:15:00 IST*
-*Last Updated: 2026-11-20 15:46:29 IST*
+*Last Updated: 2026-11-20 16:44:12 IST*
 
+### 2026-11-20
+
+#### 16:44:12 IST - T32: Build and install primary Android icon
+- Created `apps/standalone/resources/icon.png` - Added the reusable master copied from selected concept 13.
+- Modified `apps/standalone/android/app/src/main/res` - Regenerated legacy, round, and adaptive-foreground PNGs in all five Android density folders.
+- Updated `apps/standalone/android/app/src/main/res/values/ic_launcher_background.xml` - Matched the adaptive-icon background to the selected dusk-blue palette.
+- Updated `apps/standalone/android/app/src/main/res/drawable/ic_launcher_background.xml` - Removed the unused teal grid and matched the selected palette.
+- Deleted `apps/standalone/android/app/src/main/res/drawable-v24/ic_launcher_foreground.xml` - Removed the unused default launcher foreground.
+- Created `apps/standalone/android/app/build/outputs/apk/debug/app-debug.apk` - Built the debug artifact and installed it on `.108` with package identity preserved.
+- Updated `memory-bank/implementation-details/standalone-android.md` - Documented the icon source, Android resource mapping, build artifact, and remaining acceptance checks.
+- Updated `memory-bank/tasks/T31.md` - Recorded the shared master and kept desktop icon work open.
+- Updated `memory-bank/tasks/T32.md` - Recorded Android icon resources, build and install evidence, and remaining T32h checks.
+- Updated `memory-bank/master-plan.md` - Reconciled the current OP08 state and remaining work.
+- Updated `memory-bank/activeContext.md` - Recorded the current Android icon build/install result and next Settings mapping step.
+- Updated `memory-bank/session_cache.md` - Recorded the current Android icon build/install result and next Settings mapping step.
+- Updated `memory-bank/sessions/2026-11-20-app-identity-priority.md` - Added source, APK, build, installation, and verification details.
+- Updated `memory-bank/edit_history.md` - Added this canonical edit chunk to the generated view.
+
+
+#### 16:08:58 IST - T32: Record selected icon mockups across platform owners
+- Updated `memory-bank/master-plan.md` - Linked the selected mockups, clarified production and platform work still open, and superseded the older SE09/OP02 next-work note with PG02.
+- Updated `memory-bank/tasks/T31.md` - Linked the selected concept set and kept desktop exports, packaging, and runtime appearance open.
+- Updated `memory-bank/tasks/T32.md` - Recorded the selected concepts and retained open production-asset, package, and Android device acceptance.
+- Updated `memory-bank/activeContext.md` - Reconciled the selected mockup state and current PG02 next step.
+- Updated `memory-bank/session_cache.md` - Reconciled the selected mockup state and current PG02 next step.
+- Updated `memory-bank/sessions/2026-11-20-app-identity-priority.md` - Added the 15:46 IST mockup selection outcome and linked its committed gallery/selection record.
+- Updated `memory-bank/edit_history.md` - Refreshed the chronological view from this edit chunk.
+
+#### 15:58:54 IST - T15: Implement PG01 advanced settings
+- Created `apps/standalone/src/settingsPresentation.ts` - Preserved the `showAdvancedSettings` field/default and copied both Obsidian-AI advanced classification blocks unchanged.
+- Created `apps/standalone/src/screens/SettingsPresentation.tsx` - Added the React presentation adapter, error handling, and advanced-control wrapper.
+- Updated `apps/standalone/src/screens/SettingsScreen.tsx` - Added the display preference, advanced section visibility, and source-name bindings for existing controls.
+- Updated `apps/standalone/src/screens/sections/SearchDocumentSettingsSection.tsx` - Applied source advanced classifications to PDF endpoint and page controls.
+- Updated `apps/standalone/src/screens/DataManagementSections.tsx` - Applied source classifications to remote sync direction and conflict settings.
+- Updated `apps/standalone/src/screens/HostSettingsSections.tsx` - Applied source classifications to update channel and auto-install controls.
+- Updated `apps/standalone/src/dataManagement.ts` - Included the preference in settings export/import and app-settings sync while preserving compatibility with older exports.
+- Updated `apps/standalone/src/styles.css` - Ensured hidden controls stay hidden under Settings styles and added the advanced marker styling.
+- Updated `apps/standalone/vitest.config.ts` - Enabled the focused TSX integration and exchange tests.
+- Created `apps/standalone/tests/settingsPresentation.test.tsx` - Covered defaults, source classification, persistence, draft retention, and load/save errors.
+- Created `apps/standalone/tests/SettingsScreen.test.tsx` - Covered Settings integration and draft retention.
+- Created `apps/standalone/tests/settingsPresentationExchange.test.ts` - Covered settings export/import roundtrip and older-export behavior.
+- Updated `memory-bank/implementation-details/obsidian-ai-source-compatibility.md` - Recorded exact field reuse, storage/rendering adaptations, semantic differences, verification, and open Android device acceptance.
+- Updated `memory-bank/implementation-details/settings-control-checklist.md` - Marked PG01 Wired, refreshed counts, and left its acceptance box unchecked pending Android device verification.
+- Updated `memory-bank/implementation-details/settings-status-comparison.md` - Updated PG01 icon/status, counts, timestamps, source commit and checklist digest.
+- Updated `memory-bank/master-plan.md` - Recorded PG01 checks and set PG02 as the next table item.
+- Updated `memory-bank/tasks/T15.md` - Recorded PG01 implementation and remaining acceptance.
+- Updated `memory-bank/tasks/T22.md` - Recorded shared UI integration and host verification limits.
+- Updated `memory-bank/activeContext.md` - Recorded PG01 status and next row.
+- Updated `memory-bank/session_cache.md` - Recorded PG01 status and next row.
+- Updated `memory-bank/sessions/2026-11-20-app-identity-priority.md` - Recorded implementation, thirteen Vitest tests, standalone typecheck, web build, browser checks, source classification byte equality, passing `git diff --check`, the preview favicon 404, and open Android acceptance; no commit or push was made.
 
 #### 15:46:29 IST - T31/T32: Finalize icon mockup selections
 - Updated `memory-bank/assets/icon-concepts/2026-11-20/SELECTION.md` - Recorded primary mockup 13, reverse-colour companion 14, accepted alternate 16, and retained prior ring option 15.
 - Updated `memory-bank/assets/icon-concepts/2026-11-20/README.md` - Indexed all 16 saved concept images and linked their prompt records.
 - Created `memory-bank/edits/2026-11-20/154629-op08-icon-selection.md` - Recorded this Memory Bank closeout.
+
+
+#### 15:20:01 IST - T15: Save side-by-side Settings status tables
+- Created `memory-bank/implementation-details/settings-status-comparison.md` - Saved or linked the dated 249-entry comparison with per-app icons and verification limits.
+- Updated `memory-bank/implementation-details/settings-control-checklist.md` - Saved or linked the dated 249-entry comparison with per-app icons and verification limits.
+- Updated `memory-bank/implementation-details/settings-port-inventory.md` - Saved or linked the dated 249-entry comparison with per-app icons and verification limits.
+- Updated `memory-bank/master-plan.md` - Saved or linked the dated 249-entry comparison with per-app icons and verification limits.
+- Updated `memory-bank/tasks/T15.md` - Saved or linked the dated 249-entry comparison with per-app icons and verification limits.
+- Updated `memory-bank/sessions/2026-11-20-app-identity-priority.md` - Saved or linked the dated 249-entry comparison with per-app icons and verification limits.
+- Updated `memory-bank/activeContext.md` - Saved or linked the dated 249-entry comparison with per-app icons and verification limits.
+- Updated `memory-bank/session_cache.md` - Saved or linked the dated 249-entry comparison with per-app icons and verification limits.
+
+#### 14:45:32 IST - T15: Map every Settings control without scope exclusions
+- Created `memory-bank/implementation-details/settings-control-checklist.md` - Recorded individual control evidence, open differences and no keep/drop assumptions.
+- Updated `memory-bank/implementation-details/settings-port-inventory.md` - Recorded individual control evidence, open differences and no keep/drop assumptions.
+- Updated `memory-bank/master-plan.md` - Recorded individual control evidence, open differences and no keep/drop assumptions.
+- Updated `memory-bank/tasks/T15.md` - Recorded individual control evidence, open differences and no keep/drop assumptions.
+- Updated `memory-bank/tasks/T22.md` - Recorded individual control evidence, open differences and no keep/drop assumptions.
+- Updated `memory-bank/sessions/2026-11-20-app-identity-priority.md` - Recorded individual control evidence, open differences and no keep/drop assumptions.
+- Updated `memory-bank/activeContext.md` - Recorded individual control evidence, open differences and no keep/drop assumptions.
+- Updated `memory-bank/session_cache.md` - Recorded individual control evidence, open differences and no keep/drop assumptions.
+
+#### 14:34:26 IST - T15: Map current Obsidian-AI feature groups and tools
+- Updated `memory-bank/master-plan.md` - Recorded source mapping, corrected observed coverage and retained open acceptance.
+- Updated `memory-bank/tasks/T15.md` - Recorded source mapping, corrected observed coverage and retained open acceptance.
+- Updated `memory-bank/tasks/T25.md` - Recorded source mapping, corrected observed coverage and retained open acceptance.
+- Updated `memory-bank/implementation-details/obsidian-ai-source-mapping.md` - Recorded source mapping, corrected observed coverage and retained open acceptance.
+- Updated `memory-bank/implementation-details/obsidian-ai-capability-matrix.md` - Recorded source mapping, corrected observed coverage and retained open acceptance.
+- Updated `memory-bank/sessions/2026-11-20-app-identity-priority.md` - Recorded source mapping, corrected observed coverage and retained open acceptance.
+- Updated `memory-bank/activeContext.md` - Recorded source mapping, corrected observed coverage and retained open acceptance.
+- Updated `memory-bank/session_cache.md` - Recorded source mapping, corrected observed coverage and retained open acceptance.
+
+#### 14:19:01 IST - INFRA-1: Prioritise app icons and Android identity
+- Updated `memory-bank/master-plan.md` - Recorded app identity priority, ownership and unchecked acceptance.
+- Updated `memory-bank/tasks/T32.md` - Recorded app identity priority, ownership and unchecked acceptance.
+- Updated `memory-bank/tasks/T31.md` - Recorded app identity priority, ownership and unchecked acceptance.
+- Updated `memory-bank/activeContext.md` - Recorded app identity priority, ownership and unchecked acceptance.
+- Updated `memory-bank/session_cache.md` - Recorded app identity priority, ownership and unchecked acceptance.
+- Updated `memory-bank/sessions/2026-11-20-app-identity-priority.md` - Recorded app identity priority, ownership and unchecked acceptance.
 
 #### 19:03:26 IST - INFRA-1/T15/T22/T25/T26/T27/T29/T30/T31/T32: Reconcile feature records and host acceptance
 - Updated the master plan with the current 15-section Settings port, `.108` install confirmation, and verified but unopened Apple Silicon DMG; corrected the Web Search/PDF, token estimate, and diagnostics status.

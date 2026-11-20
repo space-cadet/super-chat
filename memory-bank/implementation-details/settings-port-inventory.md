@@ -1,6 +1,6 @@
 # Obsidian-AI Settings Port Inventory
 
-*Updated: 2026-11-19 01:59:52 IST*
+*Updated: 2026-11-20 14:45:32 IST*
 *Reference repository: `/Users/deepak/code/obsidian-ai`*
 *Reference commit: `7b7e73560281e11e4a9a68faafc0b2f692c75b4d`*
 
@@ -9,6 +9,45 @@ This inventory records the Settings UI registered by Obsidian-AI's
 has 13 regular sections and two advanced sections. T15 still owns the
 source-wide comparison of the rest of Obsidian-AI.
 
+
+**Side-by-side status view:** [Settings comparison](settings-status-comparison.md)
+— individual Obsidian-AI and Super Chat icon columns, dated 2026-11-20 15:20:01 IST.
+
+**Implementation procedure:** [direct source reuse and compatibility](obsidian-ai-source-compatibility.md).
+Work in table order from PG01; preserve reference fields and formats, record
+necessary adaptations and verify each item without silently reducing scope.
+
+## Current control-level mapping — 2026-11-20
+
+Use the [individual Settings control checklist](settings-control-checklist.md)
+for current per-control coverage: **249 entries** across all 15 registered
+sections, Settings page behavior/readouts and delegated dialogs. Every literal
+setting name in the section/data-health modules is accounted for; dynamic
+provider, sync, telemetry, command and metric controls are expanded separately.
+Source links and inspected counterpart files accompany every entry.
+
+This is an inventory and source comparison, not completion acceptance. All
+acceptance checkboxes remain open. No feature has been selected for removal or
+excluded because a host differs. Source placeholders and disabled controls
+remain recorded; host adaptation and behavior decisions remain open.
+
+Corrections to the older summary below:
+
+- Manual tag create/add/remove, filtering and counts already exist in Chat
+  History; bulk generation and global normalization remain missing.
+- Base instructions do not cover the reference prompt preview/copy/reset modal.
+- A request-budget setting does not cover the separate selected-context budget,
+  recent-message preservation, response reserve or result-replay settings.
+- JSON/JSONL **archive export** does not cover the reference persistent-storage
+  format selector, rolling session backup count or legacy storage migration.
+- Memory budget/recovery settings exist but differ from the reference's combined
+  persona budget and legacy-file backup semantics.
+- Diagnostics/data-health and telemetry controls have narrower outputs in several
+  places; matching section labels do not establish equivalent behavior.
+
+The following dated summaries retain previous delivery history. Their blanket
+platform exclusions and grouped “implemented” labels do not settle current
+scope or supersede the individual checklist.
 
 ## Parallel Settings Port — 2026-11-19
 

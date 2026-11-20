@@ -379,3 +379,9 @@ button:focus-visible { outline: 3px solid #e6874e; outline-offset: 2px; }
 .settings-section-index { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 16px; }
 .settings-section-index .settings-secondary-button { min-width: 0; padding: 10px; overflow-wrap: anywhere; }
 .settings-accordion { scroll-margin-top: 12px; }
+
+/* Hidden preferences stay mounted so switching display mode preserves drafts. */
+.settings-page [hidden] { display: none !important; }
+.settings-presentation-controls { margin-bottom: 16px; }
+.settings-advanced-control { min-width: 0; }
+.settings-advanced-label { display: block; margin: 4px 0; color: #536561; font-size: 12px; }
