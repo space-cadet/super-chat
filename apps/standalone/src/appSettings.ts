@@ -10,6 +10,7 @@ export interface StandaloneChatPreferences {
 	showFullRequestTokens: boolean;
 	showTimestamps: boolean;
 	autoNameSessions: boolean;
+ autoApply: boolean;
 	autoTagSessions: boolean;
 	sessionTaggingProfileId: string;
 	restoreChatTabs: boolean;
@@ -27,6 +28,7 @@ export const defaultStandaloneChatPreferences: StandaloneChatPreferences = {
 	showFullRequestTokens: true,
 	showTimestamps: true,
 	autoNameSessions: false,
+ autoApply:false,
 	autoTagSessions: false,
 	sessionTaggingProfileId: "",
 	restoreChatTabs: true,
@@ -45,7 +47,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 export function validateStandaloneChatPreferences(value: unknown): StandaloneChatPreferences {
 	if (!isRecord(value)) throw new Error("Saved chat settings could not be read.");
 	const merged = { ...defaultStandaloneChatPreferences, ...value };
-	for (const key of ["pressEnterToSend", "showTokenCount", "showFullRequestTokens", "showTimestamps", "autoNameSessions", "autoTagSessions", "restoreChatTabs", "enableTools"] as const) {
+	for (const key of ["autoApply", "pressEnterToSend", "showTokenCount", "showFullRequestTokens", "showTimestamps", "autoNameSessions", "autoTagSessions", "restoreChatTabs", "enableTools"] as const) {
 		if (typeof merged[key] !== "boolean") throw new Error(`The saved ${key} setting is invalid.`);
 	}
 	if (typeof merged.maxAgentSteps !== "number" || !Number.isInteger(merged.maxAgentSteps) || merged.maxAgentSteps < 1 || merged.maxAgentSteps > 12) {
@@ -86,6 +88,7 @@ export function toChatEngineSettings(value: StandaloneChatPreferences): Partial<
 		showFullRequestTokens: value.showFullRequestTokens,
 		showTimestamps: value.showTimestamps,
 		autoNameSessions: value.autoNameSessions,
+ autoApply:value.autoApply,
 		autoTagSessions: value.autoTagSessions,
 		sessionTaggingProfileId: value.sessionTaggingProfileId,
 		restoreChatTabs: value.restoreChatTabs,

@@ -1,7 +1,7 @@
 # Host Services for super-chat
 
 *Created: 2026-08-31 23:19:22 IST*
-*Last Updated: 2026-09-07 15:45:36 IST*
+*Last Updated: 2026-11-21 00:25:09 IST*
 *Program: INFRA-1 Phase 2*
 
 ## What This Is
@@ -121,3 +121,20 @@ stored under the wrong name. It does not call product APIs or write data.
 This phase defines the public shapes and checks them. It does not yet make
 `ChatEngine` run through a host. That comes next, in INFRA-1 Phase 3 and Phase
 4, when we define session saving and prove a complete fixture host.
+
+## Local account lifecycle and future messaging — 2026-11-21
+
+The standalone host now establishes its local owner before loading owner-scoped
+data and ends that access on sign-out. No remote identity or messaging service
+is part of the current setup. See [accounts and collaboration](accounts-and-collaboration.md)
+for implementation details; future shared messaging remains separate work.
+
+## Global ownership and local first slice — 2026-11-21
+
+The [global ownership model](accounts-and-collaboration.md) classifies all stores
+and defines user, device and conversation scope. Implement one local user/login
+first under T33/T22g; cloud identity and authenticated collaboration follow later.
+Local account ownership is implemented for the current single-owner app. See
+[accounts and collaboration](accounts-and-collaboration.md) for implementation
+details and open Android acceptance. No hosted account service is part of the
+current setup.

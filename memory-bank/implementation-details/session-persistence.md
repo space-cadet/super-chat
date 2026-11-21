@@ -1,6 +1,6 @@
 # Shared session persistence
 
-*Last Updated: 2026-09-07 21:02:51 IST*
+*Last Updated: 2026-11-21 00:44:54 IST*
 
 Phase 3 makes the `ChatEngine` the owner of session and turn state. A product
 or host supplies storage operations through `PersistenceAdapter`; it does not
@@ -11,6 +11,13 @@ switching, in-memory unloading, persistence scheduling, archive intent, and
 delete intent are shared lifecycle concerns. The host performs physical
 storage operations. Unloading an inactive session from client memory is not a
 durable delete operation.
+
+## Canonical saved conversation boundary — 2026-11-21
+
+The engine's `ChatSession` remains runtime state. Standalone persistence adapts
+it to Obsidian-AI's canonical saved conversation value and stores runtime-only
+state separately. No previous-format chat migration was added. See
+[data parity](obsidian-ai-data-parity.md) for the schema and round-trip behavior.
 
 ## Identity
 
@@ -116,3 +123,23 @@ reproduces the saved terminal retrieval outcome without calling the host again.
 `refreshRetrieval: true` explicitly enables a new host search. Older-turn
 replay is rejected until a separate branching model can define how later
 history should be handled.
+
+## Planned account scope and concurrent conversations — 2026-11-21
+
+T33 scopes private local data to an account; T22g resolves identity before
+loading it and disposes the engine on account changes. The existing external
+session identity maps a conversation and does not establish data ownership.
+The one-write-owner rule describes each engine's local lifecycle. A shared
+backend must arbitrate concurrent message writes across clients, preserve stable
+IDs/order and prevent stale whole-session snapshots from losing others' input.
+T22h/T33 own acknowledgements, idempotency and missed-event recovery. These are
+planned requirements, not guarantees of the current snapshot adapter.
+See [accounts and collaboration](accounts-and-collaboration.md).
+
+## Local account ownership — 2026-11-21
+
+Standalone session and settings access uses the current local owner's context.
+Implementation mechanics and browser evidence are recorded in
+[accounts and collaboration](accounts-and-collaboration.md). This is one local
+owner, not a multi-account or remote conversation system. Platform interruption
+checks remain open.

@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { openOwnerSession, closeOwnerSession } from '../src/ownerSession';
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const storage = vi.hoisted(() => ({ load: vi.fn(), save: vi.fn(), values: new Map<string, unknown>() }));
 vi.mock("../src/persistence", () => ({ standaloneSettingsStore: storage, standalonePersistence: {} }));
 vi.mock("@standalone-host", () => ({ standaloneHost: { capabilities: {} } }));
@@ -9,7 +10,9 @@ vi.mock("../src/providerSettings", () => ({
 import { exportSettings, importSettings } from "../src/dataManagement";
 import { SETTINGS_PRESENTATION_KEY } from "../src/settingsPresentation";
 
+afterEach(closeOwnerSession);
 beforeEach(() => {
+  openOwnerSession("local-test");
   storage.values.clear();
   storage.load.mockReset().mockImplementation(async (key: string) => storage.values.get(key) ?? null);
   storage.save.mockReset().mockImplementation(async (key: string, value: unknown) => { storage.values.set(key, value); });
@@ -18,6 +21,7 @@ describe("Settings presentation exchange", () => {
   it("round-trips the source field through Settings export/import (also used by app-settings sync)", async () => {
     storage.values.set(SETTINGS_PRESENTATION_KEY, { showAdvancedSettings: true });
     const content = await exportSettings();
+    expect(JSON.parse(content).ownership).toEqual({ownerId:"local-test",access:"private"});
     expect(JSON.parse(content).presentation).toEqual({ showAdvancedSettings: true });
     storage.values.delete(SETTINGS_PRESENTATION_KEY);
     await importSettings(content);

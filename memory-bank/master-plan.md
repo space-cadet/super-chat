@@ -1,13 +1,36 @@
 # Super Chat Master Delivery Plan
 
-*Updated: 2026-11-20 16:08:58 IST*
+*Updated: 2026-11-21 15:31:01 IST*
 *Program owner: INFRA-1 · shared application: T22 · reference comparison: T15*
+
+## Current delivery status — 2026-11-21
+
+Local account ownership, Obsidian-AI conversation format parity and the
+reference toolbar are implemented. The current app is one local owner on one
+Android device; hosted authentication and multi-user networking are deferred.
+The latest toolbar APK was installed and launched on `.128`; on-device visual
+and interaction acceptance remains open. The relay action stays disabled.
+
+The user confirmed importing an Obsidian-AI JSON archive into Super Chat on
+Android. Reverse transfer and JSONL remain unverified. Obsidian-AI Markdown
+exports are not recognised by the importer; the user asked to defer that fix.
+No chat-format migration was added. See [data parity](implementation-details/obsidian-ai-data-parity.md),
+[toolbar](implementation-details/reference-toolbar.md),
+[local ownership](implementation-details/accounts-and-collaboration.md) and
+[Android install evidence](implementation-details/standalone-android.md).
+
+## Next work
+
+Check the installed toolbar and overflow on Android, then resume Settings PG02.
+Keep build and browser evidence separate from device interaction acceptance.
 
 ## Start here
 
 This is the single execution plan for completing Super Chat. It owns delivery
 order, feature coverage, owner assignments, acceptance checks, and the next work
-item. Existing task files own implementation detail and evidence; their separate
+item. Implementation details and technical evidence belong in
+`implementation-details/`; task files track ownership, status and acceptance.
+Their separate
 historical phase numbers do not determine the order of current work.
 
 The behavioral reference is the full
@@ -144,8 +167,8 @@ and gaps in working behavior. Address layout issues as the user reports them.
   **Owners:** T26, T30, T22.
   **Complete when:** Local transcript stays complete; memory changes can be audited/recovered; imports preserve existing chats; tags and retention behave predictably.
 
-- [ ] **Stage 7 — Participants and collaboration** — Multiple AI profiles, addressing/debate, remote humans, separate saved-history sync.
-  **Owners:** T6, T7, T22; T18/T31/T32 host services.
+- [ ] **Stage 7 — Participants and collaboration** — Account ownership prerequisites, multiple AI profiles, addressing/debate, remote humans, separate saved-history sync.
+  **Owners:** T33 accounts; T6, T7, T22; T18/T31/T32 host services.
   **Complete when:** Attribution and selection survive tab changes; agents fail independently; humans-only and mixed chats work; relay does not replace stored history.
 
 - [ ] **Stage 8 — Host and release completion** — Desktop/Obsidian adoption, Android recovery, diagnostics, signing and distribution.
@@ -191,6 +214,12 @@ and live WebDAV/backup acceptance remain open. The small-screen Settings layout
 was checked on `.108` and approved by the user; this is visual acceptance only.
 
 ### Next executable work
+
+**User steering — 2026-11-21:** The current app is for one person on one Android
+device with local data. Local login and ownership are implemented; no hosted
+authentication or multi-user networking is in scope. Check the installed toolbar
+and local account flow on-device, then resume PG02. See the
+[account implementation](implementation-details/accounts-and-collaboration.md).
 
 **PG01 implementation:** Show advanced settings is wired in the standalone UI.
 Its source field/default and classification data are preserved; focused tests,
@@ -296,15 +325,15 @@ not new task IDs.
 
 - [ ] **UI01 — Full visible toolbar: New, History, Search, Models, Agents, Sync, Zen, Settings and session actions; clear unavailable states**
   **Owner:** T22/T8. **Reference:** 3.1, 12.
-  **Current state:** Partial; Search and Settings are wired, while several unfinished actions remain unavailable. Layout changes wait for user-reported issues.
+  **Current state:** Reference toolbar and local actions are implemented; Android visual and interaction acceptance remains open. Connect relay stays disabled.
 
 - [ ] **UI02 — Compact model picker plus readable profile/provider/model identity; all actions reachable at narrow widths**
   **Owner:** T28/T22. **Reference:** 3.1, 6.1.
-  **Current state:** Partial; configured controls are truncated on device.
+  **Current state:** Compact model and agent pickers are implemented and fit the browser mobile check; Android acceptance remains open.
 
 - [ ] **UI03 — Attributed user, assistant, agent, human and diagnostic messages; timestamp, model, duration, real usage or labelled estimates**
   **Owner:** T22/T8/T29. **Reference:** 3.2.
-  **Current state:** Partial; message timestamps, draft estimates, and prepared-request estimates are configurable. Provider-reported usage, model/duration details, and broader attribution remain open.
+  **Current state:** Agent attribution and saved usage/error fields are supported; provider/runtime and full visual acceptance remain open.
 
 - [ ] **UI04 — Markdown, links, code, tables, equations, files and references render; wide content scrolls within its block**
   **Owner:** T22/T8. **Reference:** 3.2.
@@ -484,7 +513,7 @@ not new task IDs.
 
 - [ ] **TL07 — Tool-specific preview, approve/reject/auto-approval policy; unknown tools fail; conflicting target writes serialized**
   **Owner:** T25/T22/T8. **Reference:** 8.3.
-  **Current state:** Partial approval foundation; full reference comparison needed.
+  **Current state:** Auto-approve persistence and its effect on active and pending approvals are implemented and tested; tool-specific previews and broader comparison remain open.
 
 - [ ] **TL08 — Multiple ordered calls/results, cancellation/rejection/retry, bounded steps; no execution or continuation after stop**
   **Owner:** T25/T15. **Reference:** 5, 8.3.
@@ -499,19 +528,31 @@ not new task IDs.
   **Current state:** Partial retrieval/context foundation; full agentic flow open.
 
 
-### AI participants, remote humans and saved-chat sync
+### Accounts, AI participants, remote humans and saved-chat sync
+
+- [ ] **AC01 — Account lifecycle and private data ownership**
+  **Owner:** T33; T22g identity lifecycle; T31i/T32i platform acceptance.
+  **Current state:** Local login and owner-scoped data are implemented; browser checks passed. Android account-flow acceptance, recovery and any future remote account work remain open.
+  **Complete when:** Sign-in/recovery/refresh/sign-out and account switching preserve isolation; legacy local data has an explicit migration path.
+- [ ] **AC02 — Authenticated shared-conversation backend and permissions**
+  **Owner:** T33/T22h; T6/T28 AI execution ownership.
+  **Complete when:** Membership, verified senders, durable human/AI messages, access removal and two-client recovery work without duplicate AI runs.
+
+See [accounts and collaboration](implementation-details/accounts-and-collaboration.md).
+No remote account provider is selected or provisioned. Networked collaboration
+is deferred; the legacy relay remains disabled.
 
 - [ ] **CO01 — Select several profiles per chat, restore selections, route each turn and attribute replies, thinking/activity and errors**
   **Owner:** T6/T28/T22. **Reference:** 6.2.
-  **Current state:** Phase A orchestration recorded; standalone Agents control disabled.
+  **Current state:** Standalone profile selection, saved roster and attributed sequential replies are implemented; Android acceptance remains open.
 
 - [ ] **CO02 — Named-agent addressing, sequential/parallel/debate behavior, earlier replies as input and optional pass**
   **Owner:** T6/T7/T15. **Reference:** 6.2.
-  **Current state:** Partial orchestration foundation; chat integration open.
+  **Current state:** Sequential multi-agent replies are implemented; parallel/debate behavior and broader parity remain open.
 
 - [ ] **CO03 — Relay connection/room/local identity/member and recipient selection, presence/typing, human-only and mixed chat**
   **Owner:** T22/T18/T31/T32. **Reference:** 6.3.
-  **Current state:** Planned; message-envelope/dedup foundation recorded.
+  **Current state:** Networked human chat is not part of the current local app; Connect relay remains disabled. Revisit only when requested.
 
 - [ ] **CO04 — Reconnect/replay/order/dedup, sender identity, permission failures, session participant restore**
   **Owner:** T22. **Reference:** 6.3, 11.
@@ -519,7 +560,7 @@ not new task IDs.
 
 - [ ] **CO05 — Saved-history sync configured separately from relay; progress/conflicts/errors, offline/partial merge and explicit deletions**
   **Owner:** T22/T18/T31/T32. **Reference:** 10–11.
-  **Current state:** Planned; select host backend when implementing.
+  **Current state:** WebDAV implementation exists with acceptance open; account-backed shared history is proposed under T33. Define their interaction before enabling overlapping sync.
 
 
 ### Settings, durability, access and release

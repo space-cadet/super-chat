@@ -1,3 +1,4 @@
+import { toStoredMessage } from "../../core/conversationFormat";
 import { ChatEngine } from "../../core/ChatEngine";
 import { vi } from "vitest";
 import type { LLMAdapter, PersistenceAdapter } from "../../core/types";
@@ -106,7 +107,7 @@ describe("saved chat export and import", () => {
 
     expect(imported[0].title).toBe("Old export");
     expect(imported[0].tags).toEqual([]);
-    expect(imported[0].messages).toEqual(session.messages);
+    expect(imported[0].messages.map(toStoredMessage)).toEqual(session.messages);
   });
 
   it("assigns a new ID when an imported session conflicts with existing or archived IDs", () => {

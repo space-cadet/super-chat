@@ -114,3 +114,10 @@ backup/recovery and lifecycle behavior; OS-protected credentials; approved
 document/file access; signing and updates; and runtime acceptance on each
 supported desktop OS. Keep package build, CI artifact, and manual OS evidence
 separate.
+
+## Local account runtime acceptance — 2026-11-21
+
+The app-level local login and owner-scoped persistence are implemented. Packaged
+Electron login, data continuity and sign-out behavior have not been checked.
+Remote authentication is outside the current scope. See
+[accounts and collaboration](accounts-and-collaboration.md).

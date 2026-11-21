@@ -15,6 +15,8 @@ export interface SuperChatAppProps {
 	initialSessionId?: string;
 	onNewChat?: () => void;
  onOpenSettings?: () => void;
+ onToolbarAction?: (action: "sync" | "updates") => Promise<string | void>;
+ onChatPreferencesChange?: (patch: Partial<ChatSettings>) => Promise<void>;
 	chatSettings?: Partial<ChatSettings>;
 }
 
@@ -126,6 +128,7 @@ export function SuperChatApp({
 	onNewChat,
  onOpenSettings,
  chatSettings,
+ onToolbarAction, onChatPreferencesChange,
 }: SuperChatAppProps) {
 	const [engine, setEngine] = useState<ChatEngine | null>(null);
 	const [providerProfiles, setProviderProfiles] = useState<ProviderProfileSnapshot | null>(null);
@@ -296,6 +299,8 @@ export function SuperChatApp({
 			initialSessionId={initialSessionId}
 			onNewChat={onNewChat}
  onOpenSettings={onOpenSettings}
+ onToolbarAction={onToolbarAction}
+ onChatPreferencesChange={onChatPreferencesChange}
 			loadSessionsOnMount={false}
       onSaveExport={host.capabilities.documents?.createDocument ? async (filename, content) => {
         await host.capabilities.documents!.createDocument!({ id: filename, title: filename, content }, { requestId: crypto.randomUUID() });

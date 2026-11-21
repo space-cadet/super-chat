@@ -1,8 +1,15 @@
+import { toStoredSession, fromStoredSession, sessionRuntimeState, restoreRuntimeState, type StoredChatSession, type SessionRuntimeState } from "../../../src/core/conversationFormat";
+import { requireOwnerSession, assertOwnerSession, type OwnerSession } from "./ownerSession";
 import type { ChatSession } from "super-chat";
 import type { ChatPersistenceCapability } from "super-chat/contracts";
 
 const DATABASE_NAME = "super-chat-standalone";
-const DATABASE_VERSION = 1;
+const DATABASE_VERSION = 3;
+// Direct format cutover. Previous chat stores are neither read nor converted.
+const OWNED_SESSIONS = "conversation-sessions";
+const OWNED_SETTINGS = "owned-settings";
+const META_STORE = "ownership";
+const ACCOUNT_KEY = "standalone.local-account-v1";
 const SESSIONS_STORE = "sessions";
 const SETTINGS_STORE = "settings";
 
@@ -25,6 +32,9 @@ function openDatabase(): Promise<IDBDatabase> {
 
 			request.onupgradeneeded = () => {
 				const database = request.result;
+                if (!database.objectStoreNames.contains(OWNED_SESSIONS)) database.createObjectStore(OWNED_SESSIONS, { keyPath: ["ownerId", "id"] });
+                if (!database.objectStoreNames.contains(OWNED_SETTINGS)) database.createObjectStore(OWNED_SETTINGS, { keyPath: ["ownerId", "key"] });
+                if (!database.objectStoreNames.contains(META_STORE)) database.createObjectStore(META_STORE);
 				if (!database.objectStoreNames.contains(SESSIONS_STORE)) {
 					database.createObjectStore(SESSIONS_STORE, { keyPath: "id" });
 				}
@@ -109,64 +119,96 @@ function requireKey(key: string): void {
 	if (!key.trim()) throw new Error("A settings key is required.");
 }
 
-/** Durable session storage for the standalone Capacitor hosts. */
-export const standalonePersistence: ChatPersistenceCapability = {
-	id: "standalone-indexeddb-persistence",
-	kind: "persistence",
-	schemaVersion: DATABASE_VERSION,
-	loadWorkspace() {
-		return standaloneSettingsStore.load("chat-workspace");
-	},
-	saveWorkspace(workspace) {
-		return standaloneSettingsStore.save("chat-workspace", workspace);
-	},
-	async loadSessions() {
-		const sessions = await runRequest<ChatSession[]>(SESSIONS_STORE, "readonly", (store) => store.getAll());
-		return sessions.sort((left, right) => right.updatedAt - left.updatedAt);
-	},
-	async saveSession(session) {
-		await runWrite(SESSIONS_STORE, (store) => {
-			store.put(session);
-		});
-	},
-	async deleteSession(sessionId) {
-		await runWrite(SESSIONS_STORE, (store) => {
-			store.delete(sessionId);
-		});
-	},
-	async archiveSession(sessionId) {
-		await runWrite(SESSIONS_STORE, (store) => {
-			const request = store.get(sessionId);
-			request.onsuccess = () => {
-				if (request.result) {
-					store.put({ ...request.result, archived: true, updatedAt: Date.now() });
-				}
-			};
-		});
-	},
-};
+/** Only the login record is readable before unlocking; never exported or synced. */
+export async function loadLocalAccountRecord<T>(): Promise<T | null> {
+ const record = await runRequest<SettingRecord<T> | undefined>(SETTINGS_STORE, "readonly", store => store.get(ACCOUNT_KEY));
+ return record?.value ?? null;
+}
+export async function createLocalAccountRecord(value: { id: string }): Promise<void> {
+ await runWrite(SETTINGS_STORE, (store, tx) => {
+  const request = store.get(ACCOUNT_KEY);
+  request.onsuccess = () => {
+   if (request.result) { tx.abort(); return; }
+   store.add({ key: ACCOUNT_KEY, value, updatedAt: Date.now() });
+  };
+ });
+}
 
-/** Store non-secret preferences here; provider credentials belong in the native credential capability. */
+/** Atomically associate the legacy data once. Original records are removed in the same transaction after copying. */
+export async function prepareLocalOwner(userId: string): Promise<void> {
+ const database = await openDatabase();
+ const tx = database.transaction([SETTINGS_STORE, SESSIONS_STORE, OWNED_SESSIONS, OWNED_SETTINGS, META_STORE], "readwrite");
+ const complete = transactionCompletion(tx);
+ const meta = tx.objectStore(META_STORE);
+ const account = tx.objectStore(SETTINGS_STORE).get(ACCOUNT_KEY);
+ account.onsuccess = () => {
+  if (account.result?.value?.id !== userId) { tx.abort(); return; }
+  const claim = meta.get("legacy-owner");
+  claim.onsuccess = () => {
+   if (claim.result) {
+    if (claim.result.userId !== userId) { tx.abort(); return; }
+    // An earlier migration already committed the owned records.
+    tx.objectStore(SESSIONS_STORE).clear();
+    const old = tx.objectStore(SETTINGS_STORE).openCursor();
+    old.onsuccess = () => { const cursor = old.result; if (!cursor) return; if (cursor.key !== ACCOUNT_KEY) cursor.delete(); cursor.continue(); };
+    return;
+   }
+   const settings = tx.objectStore(SETTINGS_STORE).openCursor();
+   settings.onsuccess = () => { const cursor = settings.result; if (!cursor) return;
+    if (cursor.key !== ACCOUNT_KEY) { tx.objectStore(OWNED_SETTINGS).add({ ...cursor.value, ownerId: userId }); cursor.delete(); } cursor.continue(); };
+   meta.add({ userId, migratedAt: Date.now(), version: 1 }, "legacy-owner");
+  };
+ };
+ await complete;
+}
+
+interface OwnedSession { ownerId: string; id: string; value: StoredChatSession; runtime?: SessionRuntimeState }
+async function ownerRequest<T>(storeName: string, mode: IDBTransactionMode, action: (store: IDBObjectStore, owner: OwnerSession) => IDBRequest<T>): Promise<T> {
+ const owner = requireOwnerSession();
+ const database = await openDatabase();
+ assertOwnerSession(owner);
+ const tx = database.transaction(storeName, mode);
+ const completed = transactionCompletion(tx);
+ const revoke = () => { try { tx.abort(); } catch { /* Transaction already complete. */ } };
+ owner.signal.addEventListener("abort", revoke, { once: true });
+ try {
+  const [result] = await Promise.all([requestResult(action(tx.objectStore(storeName), owner)), completed]);
+  assertOwnerSession(owner); return result;
+ } finally { owner.signal.removeEventListener("abort", revoke); }
+}
+function ownerRange(owner: OwnerSession) { return IDBKeyRange.bound([owner.userId, ""], [owner.userId, []]); }
+
+export const standalonePersistence: ChatPersistenceCapability = {
+ id: "standalone-owned-indexeddb-persistence", kind: "persistence", schemaVersion: 1,
+ loadWorkspace() { return standaloneSettingsStore.load("chat-workspace"); },
+ saveWorkspace(workspace) { return standaloneSettingsStore.save("chat-workspace", workspace); },
+ async loadSessions() {
+  const records = await ownerRequest<OwnedSession[]>(OWNED_SESSIONS, "readonly", (store, owner) => store.getAll(ownerRange(owner)));
+  return records.map(record => restoreRuntimeState(fromStoredSession(record.value),record.runtime)).sort((a,b) => b.updatedAt-a.updatedAt);
+ },
+ async saveSession(session) {
+  await ownerRequest(OWNED_SESSIONS, "readwrite", (store, owner) => store.put({ ownerId: owner.userId, id: session.id, value: toStoredSession(session), runtime: sessionRuntimeState(session) }));
+ },
+ async deleteSession(id) { await ownerRequest(OWNED_SESSIONS, "readwrite", (store, owner) => store.delete([owner.userId, id])); },
+ async archiveSession(id) {
+  const owner = requireOwnerSession();
+  const record = await ownerRequest<OwnedSession | undefined>(OWNED_SESSIONS, "readonly", store => store.get([owner.userId, id]));
+  assertOwnerSession(owner);
+  if (record) await standalonePersistence.saveSession({ ...restoreRuntimeState(fromStoredSession(record.value),record.runtime), archived: true, updatedAt: Date.now() }, { requestId: crypto.randomUUID() });
+ },
+};
 export const standaloneSettingsStore = {
-	async load<T>(key: string): Promise<T | null> {
-		requireKey(key);
-		const record = await runRequest<SettingRecord<T> | undefined>(
-			SETTINGS_STORE,
-			"readonly",
-			(store) => store.get(key),
-		);
-		return record?.value ?? null;
-	},
-	async save<T>(key: string, value: T): Promise<void> {
-		requireKey(key);
-		await runWrite(SETTINGS_STORE, (store) => {
-			store.put({ key, value, updatedAt: Date.now() } satisfies SettingRecord<T>);
-		});
-	},
-	async remove(key: string): Promise<void> {
-		requireKey(key);
-		await runWrite(SETTINGS_STORE, (store) => {
-			store.delete(key);
-		});
-	},
+ async load<T>(key: string): Promise<T | null> {
+  requireKey(key);
+  const record = await ownerRequest<SettingRecord<T> | undefined>(OWNED_SETTINGS, "readonly", (store, owner) => store.get([owner.userId, key]));
+  return record?.value ?? null;
+ },
+ async save<T>(key: string, value: T): Promise<void> {
+  requireKey(key);
+  await ownerRequest(OWNED_SETTINGS, "readwrite", (store, owner) => store.put({ ownerId: owner.userId, key, value, updatedAt: Date.now() }));
+ },
+ async remove(key: string): Promise<void> {
+  requireKey(key);
+  await ownerRequest(OWNED_SETTINGS, "readwrite", (store, owner) => store.delete([owner.userId, key]));
+ },
 };

@@ -7,6 +7,7 @@ import type { ChatSession } from '../../../core/types';
 function createMockEngine() {
   return {
     getActiveSession: vi.fn(),
+    getSettings: vi.fn(() => ({})),
     getSessions: vi.fn(),
     loadSessions: vi.fn(),
     createSession: vi.fn(),

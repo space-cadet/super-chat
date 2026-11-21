@@ -1,3 +1,6 @@
+import { ownedService } from "../ownedServices";
+import { assertOwnerSession, requireOwnerSession, ownerRequestSignal } from "../ownerSession";
+import { loadLocalAccountRecord } from "../persistence";
 import type {
 	CredentialCapability,
 	DocumentCapability,
@@ -54,7 +57,54 @@ export function createStandaloneHost(
 	platform: StandalonePlatform,
 	services: StandalonePlatformServices,
 ): StandaloneAppHost {
-	const webDavTransport: WebDAVTransport = (request) => services.httpTransport({
+ const credentials = services.credentials ? ownedService<CredentialCapability>({
+  ...services.credentials,
+  async listCredentials(context) {
+   const owner = requireOwnerSession(); const prefix = `owner:${owner.userId}:`;
+   const values = await services.credentials!.listCredentials(context);
+   return values.filter(value => value.id.startsWith(prefix)).map(value => ({ ...value, id: value.id.slice(prefix.length) }));
+  },
+  async getCredential(id, context) {
+   const owner = requireOwnerSession(); const scoped = `owner:${owner.userId}:${id}`;
+   let secret = await services.credentials!.getCredential(scoped, context);
+   assertOwnerSession(owner);
+   // Only the installation's original account may adopt its legacy secrets.
+   if (secret === null && (await loadLocalAccountRecord<{ id: string }>())?.id === owner.userId) {
+    assertOwnerSession(owner);
+    secret = await services.credentials!.getCredential(id, context);
+    assertOwnerSession(owner);
+    if (secret !== null && services.credentials!.setCredential) {
+     await services.credentials!.setCredential({ id: scoped, label: id }, secret, context);
+     assertOwnerSession(owner);
+     await services.credentials!.deleteCredential?.(id, context);
+    }
+   }
+   return secret;
+  },
+  async setCredential(credential, secret, context) {
+   const owner = requireOwnerSession();
+   if (!services.credentials!.setCredential) throw new Error("Credential storage is unavailable.");
+   await services.credentials!.setCredential({ ...credential, id: `owner:${owner.userId}:${credential.id}` }, secret, context);
+  },
+  async deleteCredential(id, context) {
+   const owner = requireOwnerSession();
+   await services.credentials!.deleteCredential?.(`owner:${owner.userId}:${id}`, context);
+   // Remove the recovery source too, so a deleted key cannot be re-adopted.
+   if ((await loadLocalAccountRecord<{ id: string }>())?.id === owner.userId) {
+    assertOwnerSession(owner); await services.credentials!.deleteCredential?.(id, context);
+   }
+  },
+ }) : undefined;
+ const httpTransport: StandaloneHttpTransport = async request => {
+  const owner = requireOwnerSession();
+  const response = await services.httpTransport({ ...request, signal: ownerRequestSignal(request.signal) });
+  assertOwnerSession(owner); return response;
+ };
+ const request: StandaloneWebRequester = async (input, signal) => {
+  const result = await httpTransport({ ...input, signal });
+  return { status: result.status, text: result.text };
+ };
+ const webDavTransport: WebDAVTransport = (request) => httpTransport({
 		...request,
 		timeoutMs: 30_000,
 	});
@@ -64,7 +114,7 @@ export function createStandaloneHost(
 		platform,
 		standalone: {
 			diagnostics: services.diagnostics,
-			httpTransport: services.httpTransport,
+			httpTransport,
 			webDavTransport,
 		},
 		capabilities: {
@@ -76,16 +126,16 @@ export function createStandaloneHost(
 				subscribe: subscribeStandaloneProviderSettings,
 			},
 			persistence: standalonePersistence,
-			documents: services.documents,
+			documents: ownedService(services.documents),
 			tools: [
-				standaloneTools,
-				standaloneMemoryTools,
-				createStandaloneSearchDocumentTools({
-					credentials: services.credentials,
-					request: services.request,
-				}),
+				ownedService(standaloneTools),
+				ownedService(standaloneMemoryTools),
+				ownedService(createStandaloneSearchDocumentTools({
+					credentials,
+					request,
+				})),
 			],
-			...(services.credentials ? { credentials: services.credentials } : {}),
+			...(credentials ? { credentials } : {}),
 		},
 	};
 }

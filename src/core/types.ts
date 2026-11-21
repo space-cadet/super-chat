@@ -83,6 +83,7 @@ export type ChatTurnStatus =
   | 'failed';
 
 export interface ChatModelMessage {
+  resolvedParts?: ResolvedMessagePart[];
   attachments?: Attachment[];
   role: string;
   content: string;
@@ -162,6 +163,9 @@ export interface ChatTurn {
 }
 
 export interface ChatMessage {
+  resolvedParts?: ResolvedMessagePart[];
+  /** Canonical saved fields retained while this object carries runtime presentation state. */
+  conversation?: import("./conversation").ChatMessage;
   reasoning?: string;
   attachments?: Attachment[];
   id: string;
@@ -186,6 +190,8 @@ export type ChatContentPart =
   | { type: 'tool_call'; call: ToolCall; result?: ToolResult };
 
 export interface ChatSession {
+  /** Canonical conversation data; runtime turn state is stored separately. */
+  conversation?: import("./conversation").ChatSession;
   /** Stable super-chat-owned session ID. */
   id: SessionId;
   title: string;
@@ -295,7 +301,8 @@ export type StreamEvent =
   | { type: 'finish'; reason: string }
   | { type: 'error'; message: string }
   | { type: 'request-token-estimate'; tokens: number }
-  | { type: 'usage'; promptTokens: number; completionTokens: number; totalTokens: number }
+  | { type: 'message-parts-resolved'; messageId: string; parts: ResolvedMessagePart[] }
+  | { type: 'usage'; promptTokens: number; completionTokens: number; totalTokens: number; providerUsage?: import('./conversation').ProviderTokenUsage }
   | { type: 'metrics'; ttftMs: number; totalDurationMs: number };
 
 export interface ChatEngineSnapshot {

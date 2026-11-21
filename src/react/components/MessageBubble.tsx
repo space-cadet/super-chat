@@ -284,6 +284,9 @@ export function MessageBubble({
             </div>
           )}
 
+        {/* Reference metadata is retained even when this host did not generate the message. */}
+        {message.conversation?.isError && <div role="note" className="text-xs text-red-700">Response error</div>}
+        {message.conversation?.isDebug && <div className="text-xs text-gray-500">Debug message</div>}
         {/* Metadata row */}
         <div
           className={`flex items-center gap-2 mt-2 ${isUser ? "text-blue-200" : "text-gray-400"}`}
@@ -291,8 +294,8 @@ export function MessageBubble({
           {showTimestamps && <span className="text-xs">
             {new Date(message.timestamp).toLocaleTimeString()}
           </span>}
-          {showTokenCount && message.tokenCount !== undefined && (
-            <span className="text-xs">{message.tokenCount} tokens</span>
+          {showTokenCount && (message.conversation?.providerUsage?.outputTokens !== undefined || message.tokenCount !== undefined) && (
+            <span className="text-xs">{message.conversation?.providerUsage?.outputTokens ?? message.tokenCount} tokens</span>
           )}
         </div>
 

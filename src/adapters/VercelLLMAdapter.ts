@@ -179,6 +179,7 @@ export class VercelLLMAdapter implements LLMAdapter {
 
 		const sdkTools = this.buildSdkTools(tools);
 		const prepared = await this.prepareRequest(messages, sdkTools, request);
+        for(const resolved of prepared.resolved)yield {type:'message-parts-resolved',...resolved};
 
 		const result = streamText({
 			model: model as any,
@@ -289,7 +290,8 @@ export class VercelLLMAdapter implements LLMAdapter {
 	private async prepareRequest(messages: ChatModelMessage[], tools?: ToolSet, request?: LLMRequestOptions) {
 		const system = [this.systemPrompt, ...messages.filter(message => message.role === "system").map(message => message.content)]
 			.filter(Boolean).join("\n\n") || undefined;
-		const uiMessages = await this.toUIMessages(messages.filter(message => message.role !== "system"));
+		const resolved: {messageId:string;parts:NonNullable<ChatModelMessage['resolvedParts']>}[]=[];
+        const uiMessages = await this.toUIMessages(messages.filter(message => message.role !== "system"), (message,parts)=>{ if(message.messageId)resolved.push({messageId:message.messageId,parts}); });
 		const modelMessages = await convertToModelMessages(uiMessages, { tools, ignoreIncompleteToolCalls: true });
 		const modelContextWindow = this.profile.models.find(model => model.id === this.profile.model)?.contextWindow ?? 128000;
 		const contextWindow = Math.min(modelContextWindow, request?.maxRequestTokens ?? modelContextWindow);
@@ -310,11 +312,12 @@ export class VercelLLMAdapter implements LLMAdapter {
 			},
 		});
 		if (budget.overBudget) throw new Error("The latest message and its attachments exceed this model's context budget. Remove an attachment or shorten the message.");
-		return { system, messages: budget.history };
+		return { system, messages: budget.history, resolved };
 	}
 
 	private async toUIMessages(
 		messages: ChatModelMessage[],
+        onResolved?: (message:ChatModelMessage,parts:NonNullable<ChatModelMessage['resolvedParts']>)=>void,
 	): Promise<UIMessage[]> {
 		const uiMessages: UIMessage[] = [];
 		const toolPartsById = new Map<string, {
@@ -334,9 +337,16 @@ export class VercelLLMAdapter implements LLMAdapter {
 			};
 
 			if (!structuredParts) {
-				uiMessage.parts.push({ type: "text", text: message.content });
-				if (message.attachments?.length) {
+				if (message.resolvedParts?.length) {
+     for(const part of message.resolvedParts){
+      if(part.type==='text')uiMessage.parts.push(part);
+      else if(part.type==='image')uiMessage.parts.push({type:'file',mediaType:part.image.startsWith('data:')?part.image.slice(5,part.image.indexOf(';')):'image/png',url:part.image});
+      else uiMessage.parts.push({type:'file',mediaType:part.mediaType,url:'data:'+part.mediaType+';base64,'+part.data});
+     }
+    } else uiMessage.parts.push({ type: "text", text: message.content });
+				if (!message.resolvedParts?.length && message.attachments?.length) {
 					const attachmentParts = await resolveAttachments(message.attachments, undefined, this.profile.provider, this.extractPdf);
+					onResolved?.(message,[{type:"text",text:message.content},...attachmentParts]);
 					for (const part of attachmentParts) {
 						if (part.type === "text") uiMessage.parts.push(part);
 						else if (part.type === "image") uiMessage.parts.push({ type: "file", mediaType: part.image.slice(5, part.image.indexOf(";")), url: part.image });
@@ -581,7 +591,7 @@ export class VercelLLMAdapter implements LLMAdapter {
 				return { type: "step-finish", step: 0 };
 
 			case "finish":
-				return null;
+                return {type:'usage',promptTokens:chunk.totalUsage.inputTokens??0,completionTokens:chunk.totalUsage.outputTokens??0,totalTokens:chunk.totalUsage.totalTokens??0,providerUsage:{inputTokens:chunk.totalUsage.inputTokens,outputTokens:chunk.totalUsage.outputTokens,totalTokens:chunk.totalUsage.totalTokens,cachedInputTokens:chunk.totalUsage.inputTokenDetails?.cacheReadTokens,reasoningTokens:chunk.totalUsage.outputTokenDetails?.reasoningTokens}};
 
 			default:
 				return null;

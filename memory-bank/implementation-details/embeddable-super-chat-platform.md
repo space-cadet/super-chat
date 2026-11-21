@@ -5,7 +5,7 @@ This document defines architecture; its historical sequence is superseded by the
 master plan for current delivery.
 
 *Created: 2026-08-31 22:25:18 IST*
-*Last Updated: 2026-11-19 19:03:26 IST*
+*Last Updated: 2026-11-21 00:25:09 IST*
 *Program Owner: INFRA-1*
 *Shared-Core Workstream: T22*
 
@@ -426,3 +426,20 @@ Do not begin the broad Obsidian migration until these steps are green.
 T22 is complete only when `super-chat` is demonstrably the chat application in
 the fixture and Obsidian environments, with hosts restricted to data/platform
 capabilities and no duplicate chat mechanics in active product paths.
+
+## Standalone account ownership — 2026-11-21
+
+The standalone host owns its local login and owner-scoped storage under T33.
+T22 owns shared chat lifecycle; T31/T32 own platform behavior. Obsidian supplies
+vault storage and its own host identity. No hosted account backend is part of
+the current setup. See [accounts and collaboration](accounts-and-collaboration.md).
+
+## Global ownership and local first slice — 2026-11-21
+
+The [global ownership model](accounts-and-collaboration.md) classifies all stores
+and defines user, device and conversation scope. Implement one local user/login
+first under T33/T22g; cloud identity and authenticated collaboration follow later.
+Local account ownership is implemented for the current single-owner app. See
+[accounts and collaboration](accounts-and-collaboration.md) for implementation
+details and open Android acceptance. Hosted identity and collaboration remain
+deferred.

@@ -121,8 +121,10 @@ function toAdapterMessages(
 ): ChatModelMessage[] {
 	return messages.map((m) => ({
 		role: m.role,
+        messageId:m.id,
 		content: m.content,
 		...(m.attachments ? { attachments: structuredClone(m.attachments) } : {}),
+            ...(m.resolvedParts ? {resolvedParts:structuredClone(m.resolvedParts)} : {}),
 	}));
 }
 
@@ -137,6 +139,8 @@ export class AgentLoop {
 		this.opts = opts;
 		this.formatResult = formatResult;
 	}
+
+	setAutoApply(value: boolean): void { this.opts.autoApply = value; }
 
 	/**
 	 * Runs the agent loop with the given initial messages and tools.
@@ -162,7 +166,7 @@ export class AgentLoop {
 		signal?: AbortSignal,
 		runtimeOptions?: { maxSteps?: number; maxRequestTokens?: number; maxContextMessages?: number },
 	): AsyncGenerator<StreamEvent, AgentLoopResult> {
-		const { llmAdapter, toolExecutor, maxSteps: configuredMaxSteps = 5, autoApply = false } =
+		const { llmAdapter, toolExecutor, maxSteps: configuredMaxSteps = 5 } =
 			this.opts;
 		const maxSteps = runtimeOptions?.maxSteps ?? configuredMaxSteps;
 		const request: LLMRequestOptions = {
@@ -218,6 +222,8 @@ export class AgentLoop {
 						break;
 					case "error":
 						throw new Error(event.message);
+					case "message-parts-resolved":
+                    case "usage":
 					case "request-token-estimate":
 						yield event;
 						break;
@@ -276,13 +282,13 @@ export class AgentLoop {
 					call.args,
 				);
 
-				let approved = autoApply;
+				let approved = this.opts.autoApply ?? false;
 				let rejectionReason = "Tool approval is required but unavailable";
 				const definition = tools.find((tool) => tool.name === call.name);
 				const requiresApproval = definition?.approval !== "never";
 				if (!requiresApproval) approved = true;
 
-				if (requiresApproval && !autoApply && this.opts.requestApproval) {
+				if (requiresApproval && !this.opts.autoApply && this.opts.requestApproval) {
 					// Notify consumer that approval is needed
 					yield { type: "pending-approval", call };
 					approved = await this.opts.requestApproval(call, signal);

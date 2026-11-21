@@ -38,6 +38,8 @@ interface ChatAppProps {
   initialSessionId?: string;
   onNewChat?: () => void;
   onOpenSettings?: () => void;
+ onToolbarAction?: (action: "sync" | "updates") => Promise<string | void>;
+ onChatPreferencesChange?: (patch: Partial<ChatSettings>) => Promise<void>;
   loadSessionsOnMount?: boolean;
   providerProfiles?: ProviderProfileSnapshot | null;
   chatSettings?: Partial<ChatSettings>;
@@ -64,6 +66,7 @@ export function ChatApp({
   loadSessionsOnMount = true,
   providerProfiles,
   chatSettings,
+  onToolbarAction, onChatPreferencesChange,
 }: ChatAppProps) {
   const {
     messages,
@@ -89,6 +92,16 @@ export function ChatApp({
   const effectiveChatSettings = { ...engine.getSettings(), ...chatSettings };
 
   const selection = useMessageSelection(currentSession?.id);
+  const [sheetPanel,setSheetPanel]=useState<'menu'|'agents'|'members'|'rename'|'models'>('menu');
+  const [renameDraft,setRenameDraft]=useState('');
+  const [actionBusy,setActionBusy]=useState(false);
+  const [zenMode,setZenMode]=useState(false);
+  const [overflowOpen, setOverflowOpen] = useState(false);
+  const overflowRef = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const dialog = overflowRef.current;
+    if (overflowOpen && !dialog?.open) dialog?.showModal(); else if (!overflowOpen && dialog?.open) dialog.close();
+  }, [overflowOpen]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [workspaceNotice, setWorkspaceNotice] = useState<string | null>(null);
@@ -464,9 +477,16 @@ export function ChatApp({
   const profiles = providerProfiles?.profiles ?? [];
   const selectedProfile =
     profiles.find((profile) => profile.id === currentSession?.llmProfileId) ??
-    profiles.find(
+    (currentSession?.llmProfileId ? {id:currentSession.llmProfileId,name:"Unavailable profile",provider:currentSession.llmProvider??"unknown",model:currentSession.llmModel??""} : profiles.find(
       (profile) => profile.id === providerProfiles?.defaultProfileId,
-    );
+    ));
+  const selectedAgentIds=currentSession?.conversation?.selectedProfileIds??(selectedProfile?[selectedProfile.id]:[]);
+  useEffect(()=>{engine.configureGroupProfiles?.(profiles.filter(profile=>selectedAgentIds.includes(profile.id)));},[engine,profiles,selectedAgentIds.join('|')]);
+  const openPanel=(panel:typeof sheetPanel)=>{setSheetPanel(panel);if(panel==='rename')setRenameDraft(currentSession?.title??'');setOverflowOpen(true);};
+  const preference=async(patch:Partial<ChatSettings>)=>{try{if(onChatPreferencesChange)await onChatPreferencesChange(patch);engine.updateSettings(patch);}catch(cause){reportError(cause);}};
+  const toolbarAction=async(action:'sync'|'updates')=>{setOverflowOpen(false);setActionBusy(true);try{if(!onToolbarAction)throw new Error('This host does not provide this action.');const notice=await onToolbarAction(action);if(notice)setWorkspaceNotice(notice);}catch(cause){reportError(cause);}finally{setActionBusy(false);}};
+  const generateTagsNow=async()=>{if(!currentSession||!llmAdapter||!selectedProfile)return;setOverflowOpen(false);setActionBusy(true);try{const tags=await generateSessionTags(currentSession.messages,llmAdapter,{providerProfileId:selectedProfile.id,provider:selectedProfile.provider,model:currentSession.llmModel??selectedProfile.model});await engine.updateSessionMetadata(currentSession.id,{tags:normalizeSessionTags([...(currentSession.tags??[]),...tags])});setWorkspaceNotice(tags.length?`Tags: ${tags.join(', ')}`:'No tags were suggested.');}catch(cause){reportError(cause);}finally{setActionBusy(false);}};
+  const toggleAgent=async(id:string)=>{if(!currentSession||isStreaming)return;const ids=selectedAgentIds.includes(id)?selectedAgentIds.filter(value=>value!==id):[...selectedAgentIds,id];if(!ids.length)return;currentSession.conversation={...(currentSession.conversation??{id:currentSession.id,title:currentSession.title,createdAt:currentSession.createdAt,updatedAt:currentSession.updatedAt,messages:[],contextItems:[]}),selectedProfileIds:ids,isGroupChat:ids.length>1,participants:profiles.filter(profile=>ids.includes(profile.id)).map((profile,index)=>({id:profile.id,name:profile.name,profileId:profile.id,color:["#8b5cf6","#0d9488","#d97706","#2563eb"][index%4]}))};await engine.saveSession(currentSession);};
   const modelSuggestions = selectedProfile
     ? engine.getModels(selectedProfile.provider)
     : [];
@@ -509,6 +529,8 @@ export function ChatApp({
           provider: profile.provider,
           model: profile.model,
         });
+        currentSession.conversation={...(currentSession.conversation??{id:currentSession.id,title:currentSession.title,createdAt:currentSession.createdAt,updatedAt:currentSession.updatedAt,messages:[],contextItems:[]}),selectedProfileIds:[profile.id],isGroupChat:false};
+        await engine.saveSession(currentSession);
         setModelDraft(profile.model);
         setModelNotice(null);
       } catch (cause) {
@@ -521,7 +543,7 @@ export function ChatApp({
   return (
     <div
       className={
-        "super-chat-workspace flex flex-col h-full min-h-0 overflow-hidden bg-gray-50"
+        "super-chat-workspace reference-toolbar-layout flex flex-col h-full min-h-0 overflow-hidden bg-gray-50" + (zenMode?" is-zen":"")
       }
     >
       <div className="chat-toolbar-wrap">
@@ -560,7 +582,7 @@ export function ChatApp({
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                d="M4 6h16M4 12h16M4 18h16"
+                d="M3 11a9 9 0 1 1 2 7M3 4v7h7M12 7v5l3 2"
               />
             </svg>
           </button>
@@ -574,18 +596,63 @@ export function ChatApp({
           >
             <ChatIcon icon="search" />
           </button>
-          {selectedProfile && currentSession && (
+          <button className="chat-toolbar-icon" type="button" aria-label="Choose models" title="Choose models" onClick={()=>openPanel('models')}><ChatIcon icon="cpu" /><span>{selectedAgentIds.length}</span></button>
+          <button className="chat-toolbar-icon toolbar-members" type="button" aria-label="Manage agents" title="Manage agents" onClick={()=>openPanel('agents')}><ChatIcon icon="users" /><span className="toolbar-count">{selectedAgentIds.length}</span></button>
+          <button className="chat-toolbar-icon" type="button" aria-label="Sync" title="Sync" disabled={!onToolbarAction||actionBusy||isStreaming} onClick={()=>void toolbarAction('sync')}><ChatIcon icon="refresh-cw" /></button>
+          <button className="chat-toolbar-icon" type="button" aria-label="Zen mode" title="Zen mode" aria-pressed={zenMode} onClick={()=>setZenMode(value=>!value)}><ChatIcon icon="maximize" /></button>
+          <button className="chat-toolbar-icon" type="button" onClick={onOpenSettings} disabled={!onOpenSettings} title="Settings" aria-label="Settings"><ChatIcon icon="settings" /></button>
+          <button className="chat-toolbar-icon" type="button" aria-label="More chat actions" title="More chat actions" aria-haspopup="dialog" aria-expanded={overflowOpen} onClick={() => openPanel("menu")}><svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+          <input
+            ref={importInputRef}
+            type="file"
+            accept=".json,.jsonl,application/json"
+            className="sr-only"
+            aria-label="Chat archive"
+            onChange={(event) => {
+              const file = event.currentTarget.files?.[0];
+              event.currentTarget.value = "";
+              void importArchive(file);
+            }}
+          />
+          <button type="button" className="reference-profile-chip" aria-label="Choose provider and model" onClick={()=>openPanel('models')}><span aria-hidden="true">●</span><span>{selectedProfile?.provider??'No provider'}</span><code>{currentSession?.llmModel??selectedProfile?.model??'Connect a model'}</code></button>
+        </div>
+        {modelNotice && (
+          <div className="chat-toolbar-notice" role="alert">
+            {modelNotice}
+          </div>
+        )}
+      </div>
+
+      <dialog ref={overflowRef} className="chat-actions-sheet" aria-labelledby="chat-actions-title" onCancel={() => setOverflowOpen(false)} onClose={() => setOverflowOpen(false)} onClick={event => { if (event.target === event.currentTarget) setOverflowOpen(false); }}>
+        <div className="chat-actions-sheet-content">
+          <div className={`chat-actions-sheet-heading ${sheetPanel==='menu'?'reference-menu-heading':''}`}><h2 id="chat-actions-title">{sheetPanel==='menu'?'Chat actions':sheetPanel==='agents'?'Select agents':sheetPanel==='members'?'Room members':sheetPanel==='rename'?'Rename session':'Provider and model'}</h2><button type="button" aria-label="Close chat actions" onClick={()=>setOverflowOpen(false)}>×</button></div>
+          {sheetPanel==='menu'&&<>
+            <div className="chat-actions-group">
+              <button type="button" disabled={!currentSession||isStreaming} onClick={()=>openPanel('rename')}><ChatIcon icon="pencil"/>Rename session…</button>
+              <button type="button" role="checkbox" aria-checked={!!effectiveChatSettings.autoNameSessions} onClick={()=>void preference({autoNameSessions:!effectiveChatSettings.autoNameSessions})}><ChatIcon icon="text-cursor"/>Auto-name new chats <span className="menu-check">{effectiveChatSettings.autoNameSessions?'✓':''}</span></button>
+              <button type="button" disabled={!currentSession?.messages.length||!llmAdapter||!selectedProfile||isStreaming||actionBusy} onClick={()=>void generateTagsNow()}><ChatIcon icon="tag"/>Generate tags for this session</button>
+            </div>
+            <div className="chat-actions-group"><button type="button" role="checkbox" aria-checked={!!effectiveChatSettings.autoApply} onClick={()=>void preference({autoApply:!effectiveChatSettings.autoApply})}><ChatIcon icon="bot"/>Auto-approve tool calls <span className="menu-check">{effectiveChatSettings.autoApply?'✓':''}</span></button></div>
+            <div className="chat-actions-group"><button type="button" onClick={()=>openPanel('members')}><ChatIcon icon="users"/>Room members (0)</button><button type="button" disabled title="Relay connection is deferred"><ChatIcon icon="plug"/>Connect relay</button></div>
+            <div className="chat-actions-group"><button type="button" onClick={()=>{setOverflowOpen(false);setExportOpen(true);}}><ChatIcon icon="download"/>Export sessions…</button></div>
+            <div className="chat-actions-group"><button type="button" disabled={!onToolbarAction||actionBusy} onClick={()=>void toolbarAction('updates')}><ChatIcon icon="refresh-cw"/>Check for Updates</button></div>
+          </>}
+          {sheetPanel==='rename'&&<form className="toolbar-picker" onSubmit={event=>{event.preventDefault();if(currentSession&&renameDraft.trim()){void engine.updateSessionMetadata(currentSession.id,{title:renameDraft}).then(()=>setOverflowOpen(false)).catch(reportError);}}}><label>Session name<input autoFocus value={renameDraft} onChange={event=>setRenameDraft(event.target.value)} maxLength={200}/></label><button type="submit" disabled={!renameDraft.trim()}>Save</button></form>}
+          {sheetPanel==='agents'&&<div className="toolbar-picker">{profiles.length?profiles.map(profile=><label key={profile.id}><input type="checkbox" checked={selectedAgentIds.includes(profile.id)} disabled={isStreaming} onChange={()=>void toggleAgent(profile.id).catch(reportError)}/><span>{profile.name}<small>{currentSession?.conversation?.modelOverrides?.[profile.id]??profile.model}</small></span></label>):<p>Add a provider profile in Settings to select an agent.</p>}</div>}
+          {sheetPanel==='members'&&<div className="toolbar-picker"><p>You · local participant</p><p>No remote members. Relay connection is deferred.</p></div>}
+          {sheetPanel==='models'&&<div className="toolbar-picker">{selectedAgentIds.length>1&&profiles.filter(profile=>selectedAgentIds.includes(profile.id)).map(profile=><label key={profile.id}>{profile.name}<input aria-label={`Model for ${profile.name}`} defaultValue={currentSession?.conversation?.modelOverrides?.[profile.id]??profile.model} disabled={isStreaming} onBlur={event=>{if(currentSession&&event.currentTarget.value.trim())void engine.setSessionModelSelection(currentSession.id,{providerProfileId:profile.id,provider:profile.provider,model:event.currentTarget.value.trim()}).catch(reportError);}}/></label>)}          {selectedProfile && currentSession && (
             <>
               <label className="chat-toolbar-field">
                 <span className="sr-only">Provider for this chat</span>
                 <select
                   aria-label="Provider for this chat"
                   value={selectedProfile.id}
-                  disabled={isStreaming || profiles.length < 2}
+                  disabled={isStreaming || profiles.length === 0 || (profiles.length === 1 && profiles[0].id === selectedProfile.id)}
                   onChange={(event) =>
                     void changeChatProfile(event.target.value)
                   }
                 >
+                  {selectedProfile && !profiles.some(profile=>profile.id===selectedProfile.id) && <option value={selectedProfile.id}>Unavailable profile</option>}
                   {profiles.map((profile) => (
                     <option key={profile.id} value={profile.id}>
                       {profile.name} · {profile.provider}
@@ -645,82 +712,11 @@ export function ChatApp({
               <span>Connect a model</span>
             </div>
           )}
-          <button
-            className="chat-toolbar-icon"
-            type="button"
-            disabled
-            title="Agents — unavailable"
-            aria-label="Agents — unavailable"
-          >
-            ♧
-          </button>
-          <button
-            className="chat-toolbar-icon"
-            type="button"
-            disabled
-            title="Sync — unavailable"
-            aria-label="Sync — unavailable"
-          >
-            ↻
-          </button>
-          <button
-            className="chat-toolbar-icon"
-            type="button"
-            disabled
-            title="Zen mode — unavailable"
-            aria-label="Zen mode — unavailable"
-          >
-            ⛶
-          </button>
-          <button
-            className="chat-toolbar-icon"
-            type="button"
-            onClick={onOpenSettings}
-            disabled={!onOpenSettings}
-            title="Settings"
-            aria-label="Settings"
-          >
-            ⚙
-          </button>
-          <button
-            type="button"
-            className="chat-toolbar-icon"
-            aria-label="Import chats"
-            title="Import chats"
-            disabled={isImporting}
-            onClick={() => importInputRef.current?.click()}
-          >
-            <ChatIcon icon="upload" />
-          </button>
-          <input
-            ref={importInputRef}
-            type="file"
-            accept=".json,.jsonl,application/json"
-            className="sr-only"
-            aria-label="Chat archive"
-            onChange={(event) => {
-              const file = event.currentTarget.files?.[0];
-              event.currentTarget.value = "";
-              void importArchive(file);
-            }}
-          />
-          <button
-            className="chat-toolbar-icon"
-            type="button"
-            onClick={() => setExportOpen(true)}
-            title="Export chats"
-            aria-label="Export chats"
-          >
-            <ChatIcon icon="download" />
-          </button>
+<button type="button" disabled={isImporting} onClick={()=>{setOverflowOpen(false);importInputRef.current?.click();}}><ChatIcon icon="upload"/>Import chats</button></div>}
         </div>
-        {modelNotice && (
-          <div className="chat-toolbar-notice" role="alert">
-            {modelNotice}
-          </div>
-        )}
-      </div>
+      </dialog>
 
+      {zenMode&&<button className="zen-exit" type="button" onClick={()=>setZenMode(false)} aria-label="Exit zen mode">Exit zen mode</button>}
       <ChatTabBar
         sessions={sessions}
         openSessionIds={openSessionIds}
@@ -985,6 +981,7 @@ export function ChatApp({
               .catch(reportError);
         }}
         onSend={async (text, attachments) => {
+          if(selectedAgentIds.some(id=>!profiles.some(profile=>profile.id===id)))throw new Error("A selected agent profile is unavailable. Choose a local profile before sending.");
           const command = await dispatchLocalCommand(text, { session: currentSession, settings: effectiveChatSettings });
           if (command.handled) { setLocalCommandOutput(command.output); return; }
           setLocalCommandOutput("");

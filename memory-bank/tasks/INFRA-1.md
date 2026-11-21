@@ -5,11 +5,21 @@ It defines the feature checklist, current delivery order, owners, and completion
 The numbered phases below retain historical progress; use the master plan for next work.
 
 *Created: 2026-08-31 22:44:08 IST*
-*Last Updated: 2026-11-19 11:41:40 IST*
+*Last Updated: 2026-11-21 15:31:01 IST*
 
 **Status**: 🔄 **IN PROGRESS**
 **Priority**: CRITICAL
 **Scope**: shared Super Chat, fixture, Obsidian host, standalone Android and desktop; Arxivite integration is historical
+
+## Current delivery status — 2026-11-21
+
+Local account ownership, Obsidian-AI conversation parity and the reference
+toolbar have implementation records. The latest Android APK is installed and
+launched; device interaction acceptance is still open. See the
+[account](../implementation-details/accounts-and-collaboration.md),
+[data-parity](../implementation-details/obsidian-ai-data-parity.md),
+[toolbar](../implementation-details/reference-toolbar.md) and
+[Android](../implementation-details/standalone-android.md) records.
 
 ## Arxivite Decision — 2026-09-08
 
@@ -484,3 +494,9 @@ typechecks, package build, and Android debug build passed. The APK installed
 and launched on the OPPO CPH2661IN. Remaining Settings parity, feature-specific
 runtime acceptance, Obsidian host adoption, and full Android recovery remain
 open.
+
+## Local account scope — 2026-11-21
+
+T33 records the local account work. The current app remains one local owner with
+no hosted authentication or multi-user networking. Broader shared-conversation
+work is deferred; see [accounts and collaboration](../implementation-details/accounts-and-collaboration.md).

@@ -1,3 +1,4 @@
+import { buildConversationHistory } from "./conversationHistory";
 import { normalizeSessionTags } from "./sessionTags";
 import type {
 	ChatMessage,
@@ -105,7 +106,7 @@ export function normalizePersistedSession(
 	}
 
 	const rawVersion = getSchemaVersion(value.persistence);
-	const migrated = rawVersion !== CURRENT_SESSION_SCHEMA_VERSION;
+	const migrated = !isRecord(value.conversation) && rawVersion !== CURRENT_SESSION_SCHEMA_VERSION;
 	const validMessages = value.messages.filter(isChatMessage).map((message) =>
 		({ ...structuredClone(message), ...(message.attachments ? { attachments: normalizeAttachments(message.attachments) } : {}) }),
 	);
@@ -152,6 +153,7 @@ export function normalizePersistedSession(
 	const participants = mergeParticipants(storedParticipants, messageParticipants);
 
 	const session: ChatSession = {
+        ...(isRecord(value.conversation) ? {conversation: structuredClone(value.conversation) as unknown as NonNullable<ChatSession["conversation"]>} : {}),
 		id: value.id,
 		title: value.title,
 		createdAt: value.createdAt,
@@ -191,7 +193,7 @@ export function normalizePersistedSession(
 	// model-history field existed. This preserves continuation without inventing
 	// provider-specific tool messages.
 	if (!session.modelHistory) {
-		session.modelHistory = messages.map(({ role, content, attachments }) => ({ role, content, ...(attachments ? { attachments } : {}) }));
+		session.modelHistory = buildConversationHistory(session);
 	}
 
 	return { session, migrated, recovered };

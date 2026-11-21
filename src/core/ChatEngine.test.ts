@@ -337,10 +337,10 @@ describe("ChatEngine", () => {
 
 			expect(events).toContainEqual({ type: "rag-status", status: "complete", progress: 1 });
 			expect(retrieveSources).toHaveBeenCalledOnce();
-			expect(prompts.at(-1)).toContainEqual({
+			expect(prompts.at(-1)).toContainEqual(expect.objectContaining({
 				role: "system",
 				content: expect.stringContaining("Evidence saved with the original turn."),
-			});
+			}));
 			expect(second.getActiveSession()?.turns).toHaveLength(2);
 			expect(second.getActiveSession()?.turns?.at(-1)).toMatchObject({
 				retrievalStatus: "complete",

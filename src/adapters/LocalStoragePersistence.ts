@@ -1,3 +1,4 @@
+import { toStoredSession, fromStoredSession, sessionRuntimeState, restoreRuntimeState } from "../core/conversationFormat";
 /**
  * LocalStoragePersistenceAdapter — Browser localStorage session persistence.
  *
@@ -10,14 +11,21 @@
 
 import type { PersistenceAdapter, ChatSession } from "../core/types";
 
-const STORAGE_KEY = "super-chat:sessions";
-const SESSION_PREFIX = "super-chat:session:";
+
 
 export class LocalStoragePersistenceAdapter implements PersistenceAdapter {
 	private maxSessions: number;
+ private storageKey: string;
+ private sessionPrefix: string;
 
-	constructor(options?: { maxSessions?: number }) {
+	constructor(options?: { maxSessions?: number; ownerId?: string }) {
 		this.maxSessions = options?.maxSessions ?? 100;
+  // Omitted ownerId preserves the original single-owner adapter contract.
+  // Account-based hosts must supply a stable ownerId; legacy keys are never adopted automatically.
+  const prefix = options?.ownerId === undefined ? "super-chat:" : `super-chat:owner:${encodeURIComponent(options.ownerId)}:`;
+  if (options?.ownerId !== undefined && !options.ownerId.trim()) throw new Error("An owner ID is required.");
+  this.storageKey = prefix + "sessions";
+  this.sessionPrefix = prefix + "session:";
 	}
 
 	async loadSessions(): Promise<ChatSession[]> {
@@ -26,15 +34,15 @@ export class LocalStoragePersistenceAdapter implements PersistenceAdapter {
 		}
 
 		try {
-			const idsJson = localStorage.getItem(STORAGE_KEY);
+			const idsJson = localStorage.getItem(this.storageKey);
 			const ids: string[] = idsJson ? JSON.parse(idsJson) : [];
 
 			const sessions: ChatSession[] = [];
 			for (const id of ids) {
-				const sessionJson = localStorage.getItem(`${SESSION_PREFIX}${id}`);
+				const sessionJson = localStorage.getItem(`${this.sessionPrefix}${id}`);
 				if (sessionJson) {
 					try {
-						sessions.push(JSON.parse(sessionJson));
+						sessions.push(restoreRuntimeState(fromStoredSession(JSON.parse(sessionJson)), JSON.parse(localStorage.getItem(`${this.sessionPrefix}${id}:runtime`) ?? "null")));
 					} catch {
 						// Skip corrupted sessions
 					}
@@ -59,12 +67,13 @@ export class LocalStoragePersistenceAdapter implements PersistenceAdapter {
 				updatedAt: Date.now(),
 			};
 			localStorage.setItem(
-				`${SESSION_PREFIX}${session.id}`,
-				JSON.stringify(updatedSession),
+				`${this.sessionPrefix}${session.id}`,
+				JSON.stringify(toStoredSession(updatedSession)),
 			);
 
+			localStorage.setItem(`${this.sessionPrefix}${session.id}:runtime`, JSON.stringify(sessionRuntimeState(session)));
 			// Update index
-			const idsJson = localStorage.getItem(STORAGE_KEY);
+			const idsJson = localStorage.getItem(this.storageKey);
 			const ids: string[] = idsJson ? JSON.parse(idsJson) : [];
 			if (!ids.includes(session.id)) {
 				ids.unshift(session.id);
@@ -74,11 +83,12 @@ export class LocalStoragePersistenceAdapter implements PersistenceAdapter {
 			while (ids.length > this.maxSessions) {
 				const removed = ids.pop();
 				if (removed) {
-					localStorage.removeItem(`${SESSION_PREFIX}${removed}`);
+					localStorage.removeItem(`${this.sessionPrefix}${removed}`);
+ localStorage.removeItem(`${this.sessionPrefix}${removed}:runtime`);
 				}
 			}
 
-			localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
+			localStorage.setItem(this.storageKey, JSON.stringify(ids));
 		} catch (err) {
 			if (this.isQuotaError(err)) {
 				// Try to free space by removing oldest sessions
@@ -96,12 +106,13 @@ export class LocalStoragePersistenceAdapter implements PersistenceAdapter {
 			return;
 		}
 
-		localStorage.removeItem(`${SESSION_PREFIX}${sessionId}`);
+		localStorage.removeItem(`${this.sessionPrefix}${sessionId}`);
+ localStorage.removeItem(`${this.sessionPrefix}${sessionId}:runtime`);
 
-		const idsJson = localStorage.getItem(STORAGE_KEY);
+		const idsJson = localStorage.getItem(this.storageKey);
 		const ids: string[] = idsJson ? JSON.parse(idsJson) : [];
 		const filtered = ids.filter((id) => id !== sessionId);
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+		localStorage.setItem(this.storageKey, JSON.stringify(filtered));
 	}
 
 	async archiveSession(sessionId: string): Promise<void> {
@@ -109,19 +120,9 @@ export class LocalStoragePersistenceAdapter implements PersistenceAdapter {
 			return;
 		}
 
-		const sessionJson = localStorage.getItem(`${SESSION_PREFIX}${sessionId}`);
-		if (sessionJson) {
-			const session = JSON.parse(sessionJson) as ChatSession;
-			localStorage.setItem(
-				`${SESSION_PREFIX}${sessionId}`,
-				JSON.stringify({
-					...session,
-					archived: true,
-					updatedAt: Date.now(),
-				}),
-			);
-		}
-	}
+        const session = (await this.loadSessions()).find(item => item.id === sessionId);
+        if (session) await this.saveSession({...session,archived:true});
+    }
 
 	private isQuotaError(err: unknown): boolean {
 		return (
@@ -133,7 +134,7 @@ export class LocalStoragePersistenceAdapter implements PersistenceAdapter {
 	}
 
 	private async evictOldestSessions(): Promise<void> {
-		const idsJson = localStorage.getItem(STORAGE_KEY);
+		const idsJson = localStorage.getItem(this.storageKey);
 		const ids: string[] = idsJson ? JSON.parse(idsJson) : [];
 
 		// Remove oldest 10% of sessions
@@ -142,9 +143,10 @@ export class LocalStoragePersistenceAdapter implements PersistenceAdapter {
 		const remaining = ids.slice(0, -toRemove);
 
 		for (const id of removed) {
-			localStorage.removeItem(`${SESSION_PREFIX}${id}`);
+			localStorage.removeItem(`${this.sessionPrefix}${id}`);
+ localStorage.removeItem(`${this.sessionPrefix}${id}:runtime`);
 		}
 
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(remaining));
+		localStorage.setItem(this.storageKey, JSON.stringify(remaining));
 	}
 }

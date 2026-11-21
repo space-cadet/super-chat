@@ -198,3 +198,25 @@ provides native document output for exported chats. The final debug APK at
 installed with non-streaming ADB install and launched on the OPPO CPH2661IN.
 No live memory/tool round trip, credential save, restart recovery, or
 provider-specific file acceptance was performed.
+
+## Local account scope and latest install — 2026-11-21
+
+The standalone app uses one local account with no remote authentication. The
+login and owner-scoped data implementation is recorded in
+[accounts and collaboration](accounts-and-collaboration.md). Browser checks
+passed; a detailed Android login/logout and interrupted-operation acceptance
+check remains open. Remote authentication is outside the current scope.
+
+Pending Android document exports carry an owner-session cancellation token.
+Sign-out invalidates it so a late native picker result is rejected before file
+output. This source behavior has not yet been checked on-device.
+
+The latest toolbar debug APK was installed with `adb install --no-streaming -r`
+and launched on the OPPO CPH2661 at `192.168.1.128` (`.128`). Package metadata
+reported `com.spacecadet.superchat`, version `0.1.0`, versionCode `1`, and
+`lastUpdateTime=2026-11-21 15:24:03`. The existing app data was preserved.
+
+Artifact: `apps/standalone/android/app/build/outputs/apk/debug/app-debug.apk`,
+SHA-256 `d22f1289ded3696ff55bd02972e7f007a493d293af75c51aaafc716cea0e07f8`.
+Installation and launch are confirmed; the user has not yet reported visual or
+interaction acceptance of this toolbar build on the device.

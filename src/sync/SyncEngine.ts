@@ -1,3 +1,4 @@
+import { toStoredSession, fromStoredSession } from "../core/conversationFormat";
 import type { ChatSession } from "./sessionTypes";
 import type {
 	StorageAdapter,
@@ -1250,7 +1251,7 @@ export class SyncEngine {
 			direction: "upload",
 			status: "start",
 		});
-		const plaintext = JSON.stringify(session);
+		const plaintext = JSON.stringify(toStoredSession(session));
 		const sessionChecksum = await checksum(plaintext);
 		const encrypted = await this.crypto.encrypt(plaintext);
 
@@ -1346,7 +1347,7 @@ export class SyncEngine {
 			throw new Error(`Checksum mismatch for session ${meta.id}`);
 		}
 
-		const session: ChatSession = JSON.parse(plaintext);
+		const session: ChatSession = fromStoredSession(JSON.parse(plaintext));
 		const cached: ChatSession = {
 			...session,
 			// This copy carries the full decrypted remote payload — mark it
@@ -1417,7 +1418,7 @@ export class SyncEngine {
 						payload,
 						this.passphrase,
 					);
-					const remoteSession: ChatSession = JSON.parse(plaintext);
+					const remoteSession: ChatSession = fromStoredSession(JSON.parse(plaintext));
 					const newSession: ChatSession = {
 						...remoteSession,
 						id: crypto.randomUUID(),

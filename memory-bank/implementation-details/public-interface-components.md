@@ -1,9 +1,13 @@
 # Public Interface Components
 
 *Created: 2026-09-07 15:45:36 IST*
-*Last Updated: 2026-09-07 17:32:30 IST*
+*Last Updated: 2026-11-21 00:25:09 IST*
 *Program Owner: INFRA-1*
 *Workstream: T22*
+
+## Reference toolbar callbacks — 2026-11-21 15:21:17 IST
+
+SuperChatApp/ChatApp expose onToolbarAction for sync/update host services and onChatPreferencesChange for persistent preference patches. Model/agent pickers use canonical profile/roster/model fields. See [reference toolbar](reference-toolbar.md).
 
 ## Purpose
 
@@ -132,3 +136,20 @@ acceptance belong in Arxivite's
 shared compatibility during the retired experiment. Arxivite T101's product
 adoption work is superseded; current Arxivite parity work belongs to its native
 T102/T102a records.
+
+## Local account and future messaging — 2026-11-21
+
+The standalone app's local account lifecycle is implemented behind the host
+boundary. No remote identity or authenticated messaging API was added. Any
+future shared-conversation contract belongs in T22/T33 and needs separate
+compatibility evidence. See [accounts and collaboration](accounts-and-collaboration.md).
+
+## Global ownership and local first slice — 2026-11-21
+
+The [global ownership model](accounts-and-collaboration.md) classifies all stores
+and defines user, device and conversation scope. Implement one local user/login
+first under T33/T22g; cloud identity and authenticated collaboration follow later.
+Local owner enforcement is implemented in the standalone host and persistence
+adapter; see [accounts and collaboration](accounts-and-collaboration.md). No
+remote identity or messaging API was added. Future messaging changes remain
+separate from this local account slice.

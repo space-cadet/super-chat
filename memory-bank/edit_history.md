@@ -1,6 +1,193 @@
 # Edit History
 *Created: 2026-05-19 11:15:00 IST*
-*Last Updated: 2026-11-20 16:44:12 IST*
+*Last Updated: 2026-11-21 15:31:01 IST*
+
+### 2026-11-21
+
+#### 15:31:01 IST - INFRA-1, T33/T15/T22/T30/T32: Reconcile implementation records
+- Updated `memory-bank/implementation-details/accounts-and-collaboration.md` - Recorded current local-account scope, implementation status, evidence and open device checks.
+- Updated `memory-bank/implementation-details/obsidian-ai-data-parity.md` - Recorded user transfer acceptance and deferred Markdown import.
+- Updated `memory-bank/implementation-details/reference-toolbar.md` - Recorded layout, visual treatment and current Android acceptance.
+- Updated `memory-bank/implementation-details/standalone-android.md` - Recorded the latest `.128` install and launch evidence.
+- Updated `memory-bank/implementation-details/session-persistence.md` - Clarified the runtime and saved-conversation documentation boundary.
+- Updated `memory-bank/implementation-details/session-export-import.md` - Pointed to the canonical transfer record and current acceptance.
+- Updated `memory-bank/implementation-details/standalone-sync.md` - Reconciled local ownership status with the optional sync feature.
+- Updated `memory-bank/implementation-details/standalone-desktop.md` - Recorded local-account scope and outstanding desktop acceptance.
+- Updated `memory-bank/implementation-details/host-services.md` - Reconciled account lifecycle documentation with the local implementation.
+- Updated `memory-bank/implementation-details/embeddable-super-chat-platform.md` - Recorded the current host ownership boundary.
+- Updated `memory-bank/implementation-details/public-interface-components.md` - Recorded current local account and future messaging boundaries.
+- Updated `memory-bank/implementation-details/obsidian-ai-source-compatibility.md` - Removed stale pending status and linked current format evidence.
+- Updated `memory-bank/implementation-details/obsidian-ai-source-mapping.md` - Reconciled the agent-control status.
+- Updated `memory-bank/tasks/` - Replaced copied implementation notes with concise progress and links to implementation documents.
+- Updated `memory-bank/tasks.md` and `memory-bank/master-plan.md` - Corrected current priorities and acceptance status.
+- Updated `memory-bank/activeContext.md` and `memory-bank/session_cache.md` - Replaced stale summaries with current state and documentation links.
+- Updated `memory-bank/sessions/2026-11-21-accounts-collaboration-plan.md` - Kept a concise session summary with decisions, outcomes and pointers.
+- Updated `memory-bank/edit_history.md` - Added this closeout to the history view after creating its canonical chunk.
+
+#### 15:21:17 IST - T22/T15/T28: Implement reference toolbar and functional local actions
+- Updated `src/react/components/ChatApp.tsx` - Implemented or checked reference toolbar workflows.
+- Updated `src/react/components/SuperChatApp.tsx` - Implemented or checked reference toolbar workflows.
+- Updated `src/react/components/ChatIcon.tsx` - Implemented or checked reference toolbar workflows.
+- Updated `src/core/ChatEngine.ts` - Implemented or checked reference toolbar workflows.
+- Updated `src/core/AgentLoop.ts` - Implemented or checked reference toolbar workflows.
+- Updated `src/core/toolbarActions.test.ts` - Implemented or checked reference toolbar workflows.
+- Updated `src/react/components/__tests__/ReferenceToolbar.test.tsx` - Implemented or checked reference toolbar workflows.
+- Updated `apps/standalone/src/App.tsx` - Implemented or checked reference toolbar workflows.
+- Updated `apps/standalone/src/appSettings.ts` - Implemented or checked reference toolbar workflows.
+- Updated `apps/standalone/src/styles.css` - Implemented or checked reference toolbar workflows.
+- Updated `memory-bank/implementation-details/reference-toolbar.md` - Recorded implementation, user transfer evidence and deferred work.
+- Updated `memory-bank/master-plan.md` - Recorded implementation, user transfer evidence and deferred work.
+- Updated `memory-bank/activeContext.md` - Recorded implementation, user transfer evidence and deferred work.
+- Updated `memory-bank/session_cache.md` - Recorded implementation, user transfer evidence and deferred work.
+- Updated `memory-bank/tasks/T22.md` - Recorded implementation, user transfer evidence and deferred work.
+- Updated `memory-bank/tasks/T15.md` - Recorded implementation, user transfer evidence and deferred work.
+- Updated `memory-bank/tasks/T25.md` - Recorded implementation, user transfer evidence and deferred work.
+- Updated `memory-bank/tasks/T28.md` - Recorded implementation, user transfer evidence and deferred work.
+- Updated `memory-bank/tasks/T30.md` - Recorded implementation, user transfer evidence and deferred work.
+- Updated `memory-bank/tasks/T32.md` - Recorded implementation, user transfer evidence and deferred work.
+- Updated `memory-bank/tasks/INFRA-1.md` - Recorded implementation, user transfer evidence and deferred work.
+- Updated `memory-bank/sessions/2026-11-21-accounts-collaboration-plan.md` - Recorded implementation, user transfer evidence and deferred work.
+- Updated `memory-bank/implementation-details/session-export-import.md` - Recorded implementation, user transfer evidence and deferred work.
+- Updated `memory-bank/implementation-details/public-interface-components.md` - Recorded implementation, user transfer evidence and deferred work.
+
+
+#### 13:18:55 IST - T15/T22/T30: Implement canonical Obsidian-AI conversations
+- Updated `memory-bank/implementation-details/obsidian-ai-data-parity.md` - Recorded direct format implementation, tests and pending native acceptance.
+- Updated `memory-bank/master-plan.md` - Recorded direct format implementation, tests and pending native acceptance.
+- Updated `memory-bank/activeContext.md` - Recorded direct format implementation, tests and pending native acceptance.
+- Updated `memory-bank/session_cache.md` - Recorded direct format implementation, tests and pending native acceptance.
+- Updated `memory-bank/tasks/T15.md` - Recorded direct format implementation, tests and pending native acceptance.
+- Updated `memory-bank/tasks/T22.md` - Recorded direct format implementation, tests and pending native acceptance.
+- Updated `memory-bank/tasks/T25.md` - Recorded direct format implementation, tests and pending native acceptance.
+- Updated `memory-bank/tasks/T27.md` - Recorded direct format implementation, tests and pending native acceptance.
+- Updated `memory-bank/tasks/T28.md` - Recorded direct format implementation, tests and pending native acceptance.
+- Updated `memory-bank/tasks/T30.md` - Recorded direct format implementation, tests and pending native acceptance.
+- Updated `memory-bank/tasks/T33.md` - Recorded direct format implementation, tests and pending native acceptance.
+- Updated `memory-bank/tasks/T31.md` - Recorded direct format implementation, tests and pending native acceptance.
+- Updated `memory-bank/tasks/T32.md` - Recorded direct format implementation, tests and pending native acceptance.
+- Updated `memory-bank/tasks/INFRA-1.md` - Recorded direct format implementation, tests and pending native acceptance.
+- Updated `memory-bank/implementation-details/session-persistence.md` - Recorded direct format implementation, tests and pending native acceptance.
+- Updated `memory-bank/implementation-details/session-export-import.md` - Recorded direct format implementation, tests and pending native acceptance.
+- Updated `memory-bank/implementation-details/obsidian-ai-source-compatibility.md` - Recorded direct format implementation, tests and pending native acceptance.
+- Updated `memory-bank/implementation-details/accounts-and-collaboration.md` - Recorded direct format implementation, tests and pending native acceptance.
+- Updated `memory-bank/sessions/2026-11-21-accounts-collaboration-plan.md` - Recorded direct format implementation, tests and pending native acceptance.
+- Updated `memory-bank/tasks.md` - Reconciled current priority with implemented source and pending Android acceptance.
+
+
+#### 12:55:15 IST - T15/T22/T30: Plan direct Obsidian-AI conversation data parity
+- Updated `memory-bank/master-plan.md` - Recorded schema parity scope, ownership and pending acceptance with no migration.
+- Updated `memory-bank/implementation-details/obsidian-ai-data-parity.md` - Recorded schema parity scope, ownership and pending acceptance with no migration.
+- Updated `memory-bank/tasks/T15.md` - Recorded schema parity scope, ownership and pending acceptance with no migration.
+- Updated `memory-bank/tasks/T22.md` - Recorded schema parity scope, ownership and pending acceptance with no migration.
+- Updated `memory-bank/tasks/T25.md` - Recorded schema parity scope, ownership and pending acceptance with no migration.
+- Updated `memory-bank/tasks/T27.md` - Recorded schema parity scope, ownership and pending acceptance with no migration.
+- Updated `memory-bank/tasks/T28.md` - Recorded schema parity scope, ownership and pending acceptance with no migration.
+- Updated `memory-bank/tasks/T30.md` - Recorded schema parity scope, ownership and pending acceptance with no migration.
+- Updated `memory-bank/tasks/T33.md` - Recorded schema parity scope, ownership and pending acceptance with no migration.
+- Updated `memory-bank/tasks/T31.md` - Recorded schema parity scope, ownership and pending acceptance with no migration.
+- Updated `memory-bank/tasks/T32.md` - Recorded schema parity scope, ownership and pending acceptance with no migration.
+- Updated `memory-bank/tasks/INFRA-1.md` - Recorded schema parity scope, ownership and pending acceptance with no migration.
+- Updated `memory-bank/activeContext.md` - Recorded schema parity scope, ownership and pending acceptance with no migration.
+- Updated `memory-bank/session_cache.md` - Recorded schema parity scope, ownership and pending acceptance with no migration.
+- Updated `memory-bank/implementation-details/obsidian-ai-source-compatibility.md` - Recorded schema parity scope, ownership and pending acceptance with no migration.
+- Updated `memory-bank/implementation-details/session-persistence.md` - Recorded schema parity scope, ownership and pending acceptance with no migration.
+- Updated `memory-bank/implementation-details/session-export-import.md` - Recorded schema parity scope, ownership and pending acceptance with no migration.
+- Updated `memory-bank/implementation-details/accounts-and-collaboration.md` - Recorded schema parity scope, ownership and pending acceptance with no migration.
+- Updated `memory-bank/tasks.md` - Recorded schema parity scope, ownership and pending acceptance with no migration.
+- Updated `memory-bank/sessions/2026-11-21-accounts-collaboration-plan.md` - Recorded schema parity scope, ownership and pending acceptance with no migration.
+
+
+#### 00:44:54 IST - T33: Enforce local user ownership and session revocation
+- Updated `apps/standalone/src/ownerSession.ts` - Implemented or verified owner isolation and sign-out handling.
+- Updated `apps/standalone/src/ownedServices.ts` - Implemented or verified owner isolation and sign-out handling.
+- Updated `apps/standalone/src/persistence.ts` - Implemented or verified owner isolation and sign-out handling.
+- Updated `apps/standalone/src/localAccount.ts` - Implemented or verified owner isolation and sign-out handling.
+- Updated `apps/standalone/src/App.tsx` - Implemented or verified owner isolation and sign-out handling.
+- Updated `apps/standalone/src/hosts/createStandaloneHost.ts` - Implemented or verified owner isolation and sign-out handling.
+- Updated `apps/standalone/src/llm.ts` - Implemented or verified owner isolation and sign-out handling.
+- Updated `apps/standalone/src/dataManagement.ts` - Implemented or verified owner isolation and sign-out handling.
+- Updated `apps/standalone/tests/localAccount.test.ts` - Implemented or verified owner isolation and sign-out handling.
+- Updated `apps/standalone/tests/ownerSession.test.ts` - Implemented or verified owner isolation and sign-out handling.
+- Updated `apps/standalone/tests/ownedCredentials.test.ts` - Implemented or verified owner isolation and sign-out handling.
+- Updated `memory-bank/tasks/T33.md` - Recorded ownership correction and acceptance limits.
+- Updated `memory-bank/implementation-details/accounts-and-collaboration.md` - Recorded ownership correction and acceptance limits.
+- Updated `memory-bank/activeContext.md` - Recorded ownership correction and acceptance limits.
+- Updated `memory-bank/session_cache.md` - Recorded ownership correction and acceptance limits.
+- Updated `memory-bank/tasks/T22.md` - Recorded ownership correction and acceptance limits.
+- Updated `memory-bank/tasks/T26.md` - Recorded ownership correction and acceptance limits.
+- Updated `memory-bank/tasks/T28.md` - Recorded ownership correction and acceptance limits.
+- Updated `memory-bank/tasks/T29.md` - Recorded ownership correction and acceptance limits.
+- Updated `memory-bank/tasks/T30.md` - Recorded ownership correction and acceptance limits.
+- Updated `memory-bank/tasks/T31.md` - Recorded ownership correction and acceptance limits.
+- Updated `memory-bank/tasks/T32.md` - Recorded ownership correction and acceptance limits.
+- Updated `memory-bank/implementation-details/session-persistence.md` - Recorded ownership correction and acceptance limits.
+- Updated `memory-bank/implementation-details/standalone-sync.md` - Recorded ownership correction and acceptance limits.
+- Updated `memory-bank/master-plan.md` - Recorded ownership correction and acceptance limits.
+- Updated `memory-bank/sessions/2026-11-21-accounts-collaboration-plan.md` - Recorded ownership correction and acceptance limits.
+- Updated `memory-bank/edit_history.md` - Derived this entry from its canonical chunk.
+
+#### 00:33:30 IST - T33: Implement single local user login
+- Created `apps/standalone/src/localAccount.ts` - Store a stable local identity and salted password verifier.
+- Created `apps/standalone/src/screens/LocalLogin.tsx` - Add setup and sign-in forms.
+- Updated `apps/standalone/src/App.tsx` - Mount the app after login and expose sign-out.
+- Updated `apps/standalone/src/styles.css` - Style the accessible local login form.
+- Updated `src/adapters/HostAdapters.ts` - Use host identity for message attribution.
+- Created `apps/standalone/tests/localAccount.test.ts` - Verify real password derivation and account continuity.
+- Updated `memory-bank/tasks/T33.md` - Record implementation and incomplete ownership requirements.
+- Updated `memory-bank/implementation-details/accounts-and-collaboration.md` - Record local lock behavior and limits.
+- Updated `memory-bank/sessions/2026-11-21-accounts-collaboration-plan.md` - Record implementation checks.
+- Updated `memory-bank/activeContext.md` - Record current local-login slice.
+- Updated `memory-bank/session_cache.md` - Record current local-login slice.
+- Updated `memory-bank/edit_history.md` - Derive this entry from its canonical chunk.
+
+#### 00:25:09 IST - T33: Define global ownership and local login scope
+- Updated `memory-bank/implementation-details/accounts-and-collaboration.md` - Recorded global ownership, local-first sequence or task responsibility.
+- Updated `memory-bank/tasks/T33.md` - Recorded global ownership, local-first sequence or task responsibility.
+- Updated `memory-bank/tasks.md` - Recorded global ownership, local-first sequence or task responsibility.
+- Updated `memory-bank/tasks/T31.md` - Recorded global ownership, local-first sequence or task responsibility.
+- Updated `memory-bank/tasks/T32.md` - Recorded global ownership, local-first sequence or task responsibility.
+- Updated `memory-bank/tasks/INFRA-1.md` - Recorded global ownership, local-first sequence or task responsibility.
+- Updated `memory-bank/tasks/T22.md` - Recorded global ownership, local-first sequence or task responsibility.
+- Updated `memory-bank/master-plan.md` - Recorded global ownership, local-first sequence or task responsibility.
+- Updated `memory-bank/implementation-details/standalone-android.md` - Recorded global ownership, local-first sequence or task responsibility.
+- Updated `memory-bank/implementation-details/standalone-desktop.md` - Recorded global ownership, local-first sequence or task responsibility.
+- Updated `memory-bank/implementation-details/embeddable-super-chat-platform.md` - Recorded global ownership, local-first sequence or task responsibility.
+- Updated `memory-bank/implementation-details/host-services.md` - Recorded global ownership, local-first sequence or task responsibility.
+- Updated `memory-bank/implementation-details/public-interface-components.md` - Recorded global ownership, local-first sequence or task responsibility.
+- Updated `memory-bank/implementation-details/session-persistence.md` - Recorded global ownership, local-first sequence or task responsibility.
+- Updated `memory-bank/implementation-details/standalone-sync.md` - Recorded global ownership, local-first sequence or task responsibility.
+- Updated `memory-bank/activeContext.md` - Recorded global ownership, local-first sequence or task responsibility.
+- Updated `memory-bank/session_cache.md` - Recorded global ownership, local-first sequence or task responsibility.
+- Updated `memory-bank/sessions/2026-11-21-accounts-collaboration-plan.md` - Recorded global ownership, local-first sequence or task responsibility.
+- Updated `memory-bank/edit_history.md` - Derived this entry from its canonical edit chunk.
+
+#### 00:15:07 IST - T33: Record accounts and collaborative conversation plan
+- Created `memory-bank/tasks/T33.md` - Recorded account/collaboration ownership, design, dependencies or planning evidence.
+- Created `memory-bank/implementation-details/accounts-and-collaboration.md` - Recorded account/collaboration ownership, design, dependencies or planning evidence.
+- Updated `memory-bank/tasks/T22.md` - Recorded account/collaboration ownership, design, dependencies or planning evidence.
+- Updated `memory-bank/tasks/T31.md` - Recorded account/collaboration ownership, design, dependencies or planning evidence.
+- Updated `memory-bank/tasks/T32.md` - Recorded account/collaboration ownership, design, dependencies or planning evidence.
+- Updated `memory-bank/tasks/T6.md` - Recorded account/collaboration ownership, design, dependencies or planning evidence.
+- Updated `memory-bank/tasks/T7.md` - Recorded account/collaboration ownership, design, dependencies or planning evidence.
+- Updated `memory-bank/tasks/T15.md` - Recorded account/collaboration ownership, design, dependencies or planning evidence.
+- Updated `memory-bank/tasks/T26.md` - Recorded account/collaboration ownership, design, dependencies or planning evidence.
+- Updated `memory-bank/tasks/T27.md` - Recorded account/collaboration ownership, design, dependencies or planning evidence.
+- Updated `memory-bank/tasks/T28.md` - Recorded account/collaboration ownership, design, dependencies or planning evidence.
+- Updated `memory-bank/tasks/T30.md` - Recorded account/collaboration ownership, design, dependencies or planning evidence.
+- Updated `memory-bank/tasks/INFRA-1.md` - Recorded account/collaboration ownership, design, dependencies or planning evidence.
+- Updated `memory-bank/tasks.md` - Recorded account/collaboration ownership, design, dependencies or planning evidence.
+- Updated `memory-bank/master-plan.md` - Recorded account/collaboration ownership, design, dependencies or planning evidence.
+- Updated `memory-bank/implementation-details/embeddable-super-chat-platform.md` - Recorded account/collaboration ownership, design, dependencies or planning evidence.
+- Updated `memory-bank/implementation-details/host-services.md` - Recorded account/collaboration ownership, design, dependencies or planning evidence.
+- Updated `memory-bank/implementation-details/public-interface-components.md` - Recorded account/collaboration ownership, design, dependencies or planning evidence.
+- Updated `memory-bank/implementation-details/session-persistence.md` - Recorded account/collaboration ownership, design, dependencies or planning evidence.
+- Updated `memory-bank/implementation-details/standalone-sync.md` - Recorded account/collaboration ownership, design, dependencies or planning evidence.
+- Updated `memory-bank/implementation-details/standalone-android.md` - Recorded account/collaboration ownership, design, dependencies or planning evidence.
+- Updated `memory-bank/implementation-details/standalone-desktop.md` - Recorded account/collaboration ownership, design, dependencies or planning evidence.
+- Updated `memory-bank/activeContext.md` - Recorded account/collaboration ownership, design, dependencies or planning evidence.
+- Updated `memory-bank/session_cache.md` - Recorded account/collaboration ownership, design, dependencies or planning evidence.
+- Created `memory-bank/sessions/2026-11-21-accounts-collaboration-plan.md` - Recorded account/collaboration ownership, design, dependencies or planning evidence.
+- Updated `memory-bank/edit_history.md` - Refreshed this entry from the canonical edit chunk.
 
 ### 2026-11-20
 

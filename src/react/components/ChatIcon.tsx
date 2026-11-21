@@ -2,6 +2,13 @@ import type { CSSProperties } from "react";
 
 // Host-neutral replacement for the Obsidian icon wrapper used by copied UI.
 const paths: Record<string, string> = {
+  cpu: "M5 5h14v14H5zM9 9h6v6H9zM9 2v3m6-3v3M9 19v3m6-3v3M2 9h3m-3 6h3m14-6h3m-3 6h3",
+  users: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M16 3a4 4 0 0 1 0 8M22 21v-2a4 4 0 0 0-3-3.87M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0",
+  maximize: "M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5",
+  bot: "M5 7h14v13H5zM12 3v4M2 11v5m20-5v5M9 11v3m6-3v3M9 17h6",
+  plug: "M9 2v5m6-5v5M7 7h10v4a5 5 0 0 1-10 0zM12 16v6",
+  "text-cursor": "M4 4h10M9 4v16M5 20h8M16 3h4m-2 0v18m-2 0h4",
+  settings: "M9 3h6l1 3 3 1 2 5-2 5-3 1-1 3H9l-1-3-3-1-2-5 2-5 3-1ZM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8",
   brain:
     "M12 18V5a3 3 0 0 0-5-2 4 4 0 0 0-4 6 4 4 0 0 0 1 7 4 4 0 0 0 8 3m0-14a3 3 0 0 1 5-2 4 4 0 0 1 4 6 4 4 0 0 1-1 7 4 4 0 0 1-8 3M7 8l3 2m7-2-3 2",
   x: "M18 6 6 18M6 6l12 12",

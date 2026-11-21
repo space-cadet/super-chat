@@ -4,7 +4,16 @@
 full feature checklist, existing task owners, evidence, and next work.
 
 *Created: 2026-05-19 11:15:00 IST*
-*Last Updated: 2026-11-19 19:03:26 IST*
+*Last Updated: 2026-11-21 15:31:01 IST*
+
+## Current priority: Android toolbar acceptance, then Settings PG02
+
+The reference toolbar APK is installed and launched on `.128`; its on-device
+visual and interaction check remains open. Obsidian-AI conversation parity is
+implemented. The user confirmed inbound JSON transfer; reverse transfer and
+JSONL remain unverified, and Markdown import is deferred. See the
+[toolbar](implementation-details/reference-toolbar.md) and
+[data-parity](implementation-details/obsidian-ai-data-parity.md) records.
 
 ## Overview
 
@@ -62,14 +71,15 @@ acceptance criteria, and Arxivite adoption remains a separate consumer step.
 | T30 | Session Export and Import | 🔄 | HIGH | T21, T22 | [Details](tasks/T30.md) |
 | T31 | Standalone Desktop App and Host | 🔄 | HIGH | INFRA-1, T22, T21 | [Details](tasks/T31.md) |
 | T32 | Standalone Android App and Host | 🔄 | HIGH | INFRA-1, T22, T21 | [Details](tasks/T32.md) |
+| T33 | User Accounts and Data Ownership | 🔄 | HIGH | T22; T31/T32 platform acceptance | [Details](tasks/T33.md) |
 
 ## Status Summary
 
 - **Completed**: 12 full task records (including T17 retired/superseded)
-- **In Progress**: 15 (T6 later phases; INFRA-1 program; T8 React UI; T15 extraction; T16 agentic RAG; T21 publishing; T22 core platform; T25 tools; T26 memory; T27 attachments; T28 provider profiles; T29 diagnostics; T30 archive exchange; T31 desktop host; T32 Android host)
+- **In Progress**: 16 (T33 account ownership design; T6 later phases; INFRA-1 program; T8 React UI; T15 extraction; T16 agentic RAG; T21 publishing; T22 core platform; T25 tools; T26 memory; T27 attachments; T28 provider profiles; T29 diagnostics; T30 archive exchange; T31 desktop host; T32 Android host)
 - **Pending**: 2 (T7, T18)
 - **Superseded**: 2 (T13; T19 Arxivite host migration)
-- **Total**: 31 task records including INFRA-1
+- **Total**: 32 task records including INFRA-1
 
 ## Current Phase
 
@@ -94,3 +104,9 @@ T31 and T32 own the standalone desktop and Android host features respectively.
 Their current shell/build baseline is implemented; host-contract integration,
 durability, release signing, and broader platform acceptance remain tracked in
 the platform tasks and INFRA-1 phases.
+
+## Local account status — 2026-11-21
+
+T33's single local account and owner-scoped data work is implemented; Android
+login/logout acceptance remains open. The current setup has no hosted
+authentication or multi-user networking. See [account implementation](implementation-details/accounts-and-collaboration.md).

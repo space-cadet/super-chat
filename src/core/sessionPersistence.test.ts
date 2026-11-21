@@ -243,7 +243,7 @@ describe("session persistence contract", () => {
 		expect(turn?.toolCalls).toHaveLength(1);
 		expect(turn?.toolResults["call-1"]).toMatchObject({ success: true });
 		expect(engine.getActiveSession()?.modelHistory).toHaveLength(4);
-		expect(engine.getActiveSession()?.modelHistory?.at(-1)).toEqual({
+		expect(engine.getActiveSession()?.modelHistory?.at(-1)).toMatchObject({
 			role: "assistant",
 			content: "The fixture is readable.",
 		});

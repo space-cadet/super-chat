@@ -1,0 +1,158 @@
+// Saved tool schema copied from Obsidian-AI 7b7e735.
+export interface ToolCall {
+	toolCallId: string;
+	toolName: string;
+	args: Record<string, unknown>;
+	/**
+	 * Provider-owned data associated with this exact call. Gemini stores its
+	 * required thought signature here, so an agent loop must return it unchanged
+	 * with the matching function call on the next step.
+	 */
+	providerMetadata?: Record<string, unknown>;
+}
+
+
+
+/** Stable address for a persisted tool result in one chat session. */
+export interface ToolResultReference {
+	session_id: string;
+	tool_call_id: string;
+	tool_name: string;
+	message_id?: string;
+	source?: string;
+	content_fingerprint?: string;
+	content_length: number;
+}
+
+export interface ToolResult {
+	success?: boolean;
+	content?: string;
+	/** Reference to the complete persisted result when replay is bounded. */
+	result_reference?: ToolResultReference;
+	/** Range metadata returned by exact historical-result retrieval. */
+	total_chars?: number;
+	returned_start?: number;
+	returned_end?: number;
+	/** Character range metadata returned by read_note. */
+	start_char?: number;
+	end_char?: number;
+	/** Line range metadata returned by read_note. */
+	start_line?: number;
+	end_line?: number;
+	total_lines?: number;
+	query_match_offset?: number;
+	next_offset?: number;
+	/** Fingerprint returned with note reads for safe follow-up edits. */
+	content_fingerprint?: string;
+	error?: string;
+	warning?: string;
+	path?: string;
+	oldPath?: string;
+	entry?: string;
+	matches?: Array<{
+		path: string;
+		basename: string;
+		modified?: number;
+		created?: number;
+		size?: number;
+	}>;
+	count?: number;
+	totalCount?: number;
+	markdownCount?: number;
+	directCount?: number;
+	directMarkdownCount?: number;
+	subfolderCount?: number;
+	subfolders?: string[];
+	query?: string;
+	folder?: string;
+	/** Total number of matches found (may exceed returned count if truncated). */
+	total_matches?: number;
+	/** Whether results were truncated due to limit. */
+	truncated?: boolean;
+	/** Whether another bounded result page is available. */
+	has_more?: boolean;
+	/** Opaque cursor for requesting the next bounded result page. */
+	next_cursor?: string;
+	/** Total number of items in the bounded result set. */
+	total_count?: number;
+	/** Starting PDF page for an extracted page range. */
+	page_start?: number;
+	/** Ending PDF page for an extracted page range. */
+	page_end?: number;
+	/** Total pages in a PDF, when known. */
+	total_pages?: number;
+	/** Next PDF page to request, when more pages are available. */
+	next_page?: number;
+	/** Array of paths for count-only search results. */
+	paths?: string[];
+	session_id?: string;
+	session_title?: string;
+	total_messages?: number;
+	start_message_index?: number;
+	next_message_index?: number;
+	next_char_offset?: number;
+	/** Results array for batch operations like check_paths. */
+	results?: Array<Record<string, unknown>>;
+	/** Summary string for batch operations. */
+	summary?: string;
+	notes?: Array<{
+		path: string;
+		basename: string;
+		modified?: number;
+		created?: number;
+		size?: number;
+	}>;
+	folders?: string[];
+	parent?: string;
+	basename?: string;
+	wordCount?: number;
+	created?: number;
+	modified?: number;
+	size?: number;
+	sessionResults?: Array<{
+		sessionId: string;
+		messageId: string;
+		timestamp: number;
+		snippet: string;
+	}>;
+	createdPaths?: string[];
+	skippedPaths?: string[];
+	/** Memory entry ID returned by memory CRUD operations. */
+	id?: string;
+	/** Public provider metadata for a redacted tool-result card. */
+	providerId?: string;
+	providerName?: string;
+	capabilityTitle?: string;
+	risk?: "read" | "write" | "remote-write" | "destructive";
+	/** Sanitized plugin settings returned by read_settings. */
+	settings?: Record<string, unknown>;
+	/** Editable main agent prompt returned by get_agent_prompt. */
+	prompt?: string;
+	/** Most recent complete system message used for a model request. */
+	latest_system_prompt?: {
+		label: string;
+		content: string;
+		captured_at: number;
+	} | null;
+	/** Explains the scope of latest_system_prompt. */
+	latest_system_prompt_note?: string;
+	/** Whether the configured prompt equals the built-in default. */
+	prompt_is_default?: boolean;
+	/** Character count for an updated prompt. */
+	prompt_length?: number;
+	/** Resolved profile and thinking selection for the current chat turn. */
+	currentTurn?: {
+		profileId: string;
+		provider: string;
+		profileName: string;
+		configuredModel: string;
+		thinkingMode: string;
+		thinkingModeRequest: string;
+	} | null;
+	/** Explains the scope and limitations of currentTurn. */
+	currentTurnNote?: string;
+	/** Updated setting key returned by update_setting. */
+	key?: string;
+	/** Updated setting value returned by update_setting. */
+	value?: unknown;
+}

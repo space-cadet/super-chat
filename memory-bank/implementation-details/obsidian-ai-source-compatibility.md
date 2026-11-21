@@ -1,8 +1,14 @@
 # Obsidian-AI source reuse and compatibility
 
-*Created / updated: 2026-11-20 15:58:54 IST*
+*Created / updated: 2026-11-21 15:31:01 IST*
 
 *Owners: T15 extraction and comparison; T22 shared app integration; master plan OP01.*
+
+## Canonical conversation format — 2026-11-21
+
+The saved conversation format follows Obsidian-AI `7b7e735`; no previous-chat
+format migration was added. See [data parity](obsidian-ai-data-parity.md) for
+the implementation and current transfer acceptance.
 
 ## Agreed execution rule
 

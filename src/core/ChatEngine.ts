@@ -1,3 +1,4 @@
+import { buildConversationHistory } from "./conversationHistory";
 import { makeImportedSessionsUnique } from "../utils/importChat";
 import { normalizeSessionTags } from "./sessionTags";
 /**
@@ -184,6 +185,11 @@ export class ChatEngine {
 		skippedSessionIds: [],
 	};
 	private disposed = false;
+ private groupProfiles: {id:string;name:string;provider:string;model:string}[]=[];
+ private groupAbort:AbortController|null=null;
+ private activeAgent: import('./types').ChatParticipant | undefined;
+ configureGroupProfiles(profiles:{id:string;name:string;provider:string;model:string}[]):void { this.groupProfiles=profiles; }
+
 
 	constructor(options: ChatEngineOptions) {
 		this.opts = options;
@@ -207,7 +213,7 @@ export class ChatEngine {
 			sessions: [],
 			activeSessionId: null,
 			openSessionIds: [],
-			settings: { ...defaultSettings },
+			settings: { ...defaultSettings, autoApply: options.agentLoopOptions?.autoApply ?? false },
 			isStreaming: false,
 			abortController: null,
 			retrieval: {
@@ -461,6 +467,7 @@ export class ChatEngine {
 		session.llmProfileId = selection.providerProfileId.trim();
 		session.llmProvider = selection.provider.trim();
 		session.llmModel = selection.model.trim();
+        session.conversation={...(session.conversation??{id:session.id,title:session.title,createdAt:session.createdAt,updatedAt:session.updatedAt,messages:[],contextItems:[]}),profileId:session.llmProfileId,modelOverrides:{...session.conversation?.modelOverrides,[session.llmProfileId]:session.llmModel}};
 		if (!this.opts.persistenceAdapter) {
 			session.updatedAt = Date.now();
 			this.emitState();
@@ -606,7 +613,21 @@ export class ChatEngine {
 		text: string,
 		options?: SendOptions,
 	): AsyncIterable<StreamEvent> {
-		yield* this.runMessage(text, options);
+		if(this.groupAbort){yield {type:'error',message:'A response is already streaming'};return;}
+        const profiles=[...this.groupProfiles];
+        if(profiles.length===0){yield* this.runMessage(text, options);return;}
+        const session=this.getActiveSession();if(!session)return;
+        const controller=new AbortController();this.groupAbort=controller;
+        let user:ChatMessage|undefined;
+        try {for(const [index,profile] of profiles.entries()){
+         if(controller.signal.aborted||this.getActiveSession()?.id!==session.id)break;
+         await this.setSessionModelSelection(session.id,{providerProfileId:profile.id,provider:profile.provider,model:session.conversation?.modelOverrides?.[profile.id]??profile.model});
+         this.activeAgent={id:profile.id,name:profile.name,kind:'agent',color:['#8b5cf6','#0d9488','#d97706','#2563eb'][index%4]};
+         const before=new Set(session.messages.map(message=>message.id));
+         for await(const event of this.runMessage(text,{...options,signal:controller.signal},undefined,user))yield event;
+         user??=session.messages.find(message=>message.role==='user'&&!before.has(message.id));
+        }}finally {this.activeAgent=undefined;this.groupAbort=null;}
+
 	}
 
 	/**
@@ -712,6 +733,7 @@ export class ChatEngine {
 		text: string,
 		options?: SendOptions,
 		replayContext?: ReplayContext,
+        reusedUser?:ChatMessage,
 	): AsyncIterable<StreamEvent> {
 		if (this.disposed) {
 			yield { type: "error", message: "ChatEngine has been disposed" };
@@ -751,7 +773,7 @@ export class ChatEngine {
 				.filter((message) => message.metadata?.remote === true)
 				.map((message) => message.id),
 		);
-		const userMessage: ChatMessage = {
+		const userMessage: ChatMessage = reusedUser ?? {
 			id: `msg-${crypto.randomUUID()}`,
 			role: "user",
 			content: text,
@@ -765,6 +787,7 @@ export class ChatEngine {
 			role: "user",
 			content: text,
 			...(userMessage.attachments ? { attachments: structuredClone(userMessage.attachments) } : {}),
+            ...(userMessage.resolvedParts ? {resolvedParts:structuredClone(userMessage.resolvedParts)} : {}),
 		};
 		const turn = createTurn(userMessage, [userModelMessage]);
 		turn.assistantMessageId = `assistant-${turn.id}`;
@@ -797,7 +820,7 @@ export class ChatEngine {
 
 		// The engine is the only write owner. Persist the user input before
 		// retrieval or provider work starts so a reload cannot lose the turn.
-		session.messages.push(userMessage);
+		if(!reusedUser)session.messages.push(userMessage);
 		session.participants = mergeParticipants(
 			session.participants ?? [],
 			[userMessage.sender!],
@@ -997,6 +1020,7 @@ export class ChatEngine {
 					role: message.role as ChatMessage["role"],
 					content: message.content,
 			...(message.attachments ? { attachments: structuredClone(message.attachments) } : {}),
+            ...(message.resolvedParts ? {resolvedParts:structuredClone(message.resolvedParts)} : {}),
 					timestamp: 0,
 				})),
 				...(turn.retrievedSources?.length
@@ -1057,6 +1081,7 @@ export class ChatEngine {
 	 * Stop the current streaming response.
 	 */
 	stopStreaming(): void {
+        this.groupAbort?.abort();
 		if (this.state.abortController) {
 			this.state.abortController.abort();
 			this.state.abortController = null;
@@ -1162,6 +1187,7 @@ export class ChatEngine {
 
 	updateSettings(settings: Partial<ChatSettings>): void {
 		this.state.settings = { ...this.state.settings, ...settings };
+        if(settings.autoApply !== undefined){this.agentLoop.setAutoApply(settings.autoApply);if(settings.autoApply)for(const id of [...this.pendingApprovals.keys()])this.approveTool(id);}
 		this.emitState();
 	}
 
@@ -1204,6 +1230,15 @@ export class ChatEngine {
 					break;
 				}
 
+                if (value.type === "usage" || value.type === "request-token-estimate") {
+                    this.updateAssistantMessage(session, turn, assistantMessageId, assistantText, "streaming");
+                    const message=session.messages.find(item=>item.id===assistantMessageId)!;
+                    message.conversation={...(message.conversation??{id:message.id,role:"assistant",content:message.content,timestamp:message.timestamp}),...(value.type==='request-token-estimate'?{requestTokenEstimate:value.tokens}:value.providerUsage?{providerUsage:Object.fromEntries(Object.entries(value.providerUsage).filter(([,count])=>count!==undefined).map(([key,count])=>[key,(message.conversation?.providerUsage?.[key as keyof import('./conversation').ProviderTokenUsage]??0)+(count??0)]))}:{})};
+                }
+                if (value.type === "message-parts-resolved") {
+                    const source=session.messages.find(message=>message.id===value.messageId);
+                    if(source){source.resolvedParts=structuredClone(value.parts);await this.persistSession(session,{owner:"chat-engine",reason:"partial-output",turnId:turn.id});}
+                }
 				// Track first chunk for metrics
 				if (value.type === "text-delta" && firstChunkTime === null) {
 					firstChunkTime = performance.now();
@@ -1314,7 +1349,7 @@ export class ChatEngine {
 			const assistantMessage = session.messages.find(
 				(message) => message.id === assistantMessageId,
 			);
-			if (assistantMessage) assistantMessage.tokenCount = result.tokenEstimate;
+			if (assistantMessage) { assistantMessage.tokenCount = result.tokenEstimate; assistantMessage.conversation = { ...(assistantMessage.conversation ?? {id:assistantMessage.id,role:"assistant",content:assistantMessage.content,timestamp:assistantMessage.timestamp}),modelName:session.llmModel,responseTimeMs:totalDurationMs }; }
 			await this.persistSession(session, {
 				owner: "chat-engine",
 				reason: "turn-complete",
@@ -1359,9 +1394,11 @@ export class ChatEngine {
 		_options?: SendOptions,
 	): AsyncIterable<StreamEvent> {
 		const adapterMessages = messages.map((m) => ({
+            messageId:m.id,
 			role: m.role,
 			content: m.content,
 			...(m.attachments ? { attachments: structuredClone(m.attachments) } : {}),
+            ...(m.resolvedParts ? {resolvedParts:structuredClone(m.resolvedParts)} : {}),
 		}));
 
 		let assistantText = "";
@@ -1384,7 +1421,16 @@ export class ChatEngine {
 				},
 			)) {
 				if (signal.aborted) break;
+                if (event.type === "message-parts-resolved") {
+                    const source=session.messages.find(message=>message.id===event.messageId);
+                    if(source){source.resolvedParts=structuredClone(event.parts);await this.persistSession(session,{owner:"chat-engine",reason:"partial-output",turnId:turn.id});}
+                }
 				if (event.type === "error") throw new Error(event.message);
+                if (event.type === "usage" || event.type === "request-token-estimate") {
+                    this.updateAssistantMessage(session, turn, assistantMessageId, assistantText, "streaming");
+                    const message=session.messages.find(item=>item.id===assistantMessageId)!;
+                    message.conversation={...(message.conversation??{id:message.id,role:"assistant",content:message.content,timestamp:message.timestamp}),...(event.type==='request-token-estimate'?{requestTokenEstimate:event.tokens}:event.providerUsage?{providerUsage:Object.fromEntries(Object.entries(event.providerUsage).filter(([,count])=>count!==undefined).map(([key,count])=>[key,(message.conversation?.providerUsage?.[key as keyof import('./conversation').ProviderTokenUsage]??0)+(count??0)]))}:{})};
+                }
 				if (event.type === "request-token-estimate") {
 					yield event;
 					continue;
@@ -1478,7 +1524,7 @@ export class ChatEngine {
 			const assistantMessage = session.messages.find(
 				(message) => message.id === assistantMessageId,
 			);
-			if (assistantMessage) assistantMessage.tokenCount = tokenEstimate;
+			if (assistantMessage) { assistantMessage.tokenCount = tokenEstimate; assistantMessage.conversation = { ...(assistantMessage.conversation ?? {id:assistantMessage.id,role:"assistant",content:assistantMessage.content,timestamp:assistantMessage.timestamp}),modelName:session.llmModel,responseTimeMs:totalDurationMs }; }
 			await this.persistSession(session, {
 				owner: "chat-engine",
 				reason: "turn-complete",
@@ -1516,13 +1562,8 @@ export class ChatEngine {
 	// --------------------------------------------------------------------------
 
 	private getModelHistory(session: ChatSession): ChatModelMessage[] {
-		if (session.modelHistory) {
-			return this.withoutSystemMessages(session.modelHistory);
-		}
-		return session.messages
-			.filter((message) => message.role !== "system")
-			.map(({ role, content, attachments }) => ({ role, content, ...(attachments ? { attachments: structuredClone(attachments) } : {}) }));
-	}
+        return buildConversationHistory(session);
+    }
 
 	private withoutSystemMessages(
 		messages: ChatModelMessage[],
@@ -1540,6 +1581,7 @@ export class ChatEngine {
 			role: message.role,
 			content: message.content,
 			...(message.attachments ? { attachments: structuredClone(message.attachments) } : {}),
+            ...(message.resolvedParts ? {resolvedParts:structuredClone(message.resolvedParts)} : {}),
 			messageId: message.id,
 			timestamp: message.timestamp,
 		};
@@ -1581,6 +1623,7 @@ export class ChatEngine {
 				role: message.role,
 				content: message.content,
 			...(message.attachments ? { attachments: structuredClone(message.attachments) } : {}),
+            ...(message.resolvedParts ? {resolvedParts:structuredClone(message.resolvedParts)} : {}),
 				messageId: message.id,
 				timestamp: message.timestamp,
 			}));
@@ -1625,6 +1668,7 @@ export class ChatEngine {
 		const existing = session.messages.find((message) => message.id === messageId);
 		if (existing) {
 			existing.content = content;
+            if(this.activeAgent)existing.sender={...this.activeAgent};
 			existing.status = status;
 			existing.turnId = turn.id;
 			existing.sources = turn.retrievedSources;
@@ -1644,7 +1688,7 @@ export class ChatEngine {
 			role: "assistant",
 			content,
 			timestamp: Date.now(),
-			sender: { id: "assistant", name: "Assistant", kind: "assistant" },
+			sender: this.activeAgent ? {...this.activeAgent} : { id: "assistant", name: "Assistant", kind: "assistant" },
 			status,
 			turnId: turn.id,
 			sources: turn.retrievedSources,

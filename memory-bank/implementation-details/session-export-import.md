@@ -1,5 +1,13 @@
 # Session Export and Import
 
+## Current Obsidian-AI transfer status — 2026-11-21
+
+Super Chat uses the Obsidian-AI conversation format; implementation details and
+round-trip evidence are in [data parity](obsidian-ai-data-parity.md). The user
+confirmed inbound JSON import on Android. Reverse transfer and JSONL remain
+unverified. Obsidian-AI Markdown exports are not recognised by the importer;
+the user asked to defer that fix. No old-chat format migration is included.
+
 ## Round-Trip Flow
 
 ```text
@@ -48,3 +56,10 @@ evidence fidelity, and recovery after restart remain unverified. Obsidian
 file-format migration and rolling `data.json` backups do not apply to
 IndexedDB. See [`T30`](../tasks/T30.md) and the
 [`Settings port inventory`](settings-port-inventory.md).
+
+## Deferred user report: Obsidian-AI Markdown import
+
+Obsidian-AI Markdown exports are not recognised by Super Chat's importer.
+The user requested recording this only and fixing it later. JSON import from
+Obsidian-AI to Super Chat is user-confirmed on Android; reverse transfer and
+JSONL remain unconfirmed by the user.

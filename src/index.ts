@@ -193,3 +193,6 @@ export type { MemoryEntry, MemoryCategory, MemoryStorage, MemorySnapshotStore } 
 
 export * from "./web/WebSearchService";
 export * from "./documents/PdfExtractor";
+
+export type { StoredChatSession, StoredChatMessage, StoredChatData } from "./core/conversationFormat";
+export { toStoredSession, fromStoredSession } from "./core/conversationFormat";

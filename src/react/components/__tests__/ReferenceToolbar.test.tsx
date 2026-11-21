@@ -1,0 +1,32 @@
+import { render,screen,fireEvent,waitFor } from '@testing-library/react';
+import { beforeAll,expect,it,vi } from 'vitest';
+import { ChatApp } from '../ChatApp';
+import { ChatEngine } from '../../../core/ChatEngine';
+import type { LLMAdapter } from '../../../core/types';
+beforeAll(()=>{HTMLDialogElement.prototype.showModal=function(){this.setAttribute('open','');};HTMLDialogElement.prototype.close=function(){this.removeAttribute('open');};});
+it('wires reference menu rename, persisted toggles, tagging, zen and host actions; relay stays disabled',async()=>{
+ const adapter={getProviders:()=>[],getModels:()=>[],async *streamChat(){yield '["physics"]';}} as unknown as LLMAdapter;
+ const engine=new ChatEngine({llmAdapter:adapter});const session=engine.createSession('Before');session.messages.push({id:'u',role:'user',content:'Discuss physics',timestamp:1});
+ const onPreferences=vi.fn(async()=>{}),onAction=vi.fn(async()=> 'Checked');
+ render(<ChatApp engine={engine} loadSessionsOnMount={false} llmAdapter={adapter} onChatPreferencesChange={onPreferences} onToolbarAction={onAction} providerProfiles={{profiles:[{id:'one',name:'Agent',provider:'openai',model:'gpt-4o-mini'}],defaultProfileId:'one'}}/>);
+ const menu=()=>fireEvent.click(screen.getByRole('button',{name:'More chat actions'}));
+ menu();expect(screen.getByRole('button',{name:'Connect relay'})).toBeDisabled();
+ fireEvent.click(screen.getByRole('checkbox',{name:'Auto-name new chats'}));await waitFor(()=>expect(engine.getSettings().autoNameSessions).toBe(true));expect(onPreferences).toHaveBeenCalledWith({autoNameSessions:true});
+ fireEvent.click(screen.getByRole('checkbox',{name:'Auto-approve tool calls'}));await waitFor(()=>expect(engine.getSettings().autoApply).toBe(true));
+ fireEvent.click(screen.getByRole('button',{name:'Rename session…'}));fireEvent.change(screen.getByRole('textbox',{name:'Session name'}),{target:{value:'Renamed'}});fireEvent.click(screen.getByRole('button',{name:'Save'}));await waitFor(()=>expect(session.title).toBe('Renamed'));
+ menu();fireEvent.click(screen.getByRole('button',{name:'Generate tags for this session'}));await waitFor(()=>expect(session.tags).toEqual(['physics']));
+ fireEvent.click(screen.getByRole('button',{name:'Zen mode'}));expect(screen.getByRole('button',{name:'Exit zen mode'})).toBeInTheDocument();fireEvent.click(screen.getByRole('button',{name:'Exit zen mode'}));
+ fireEvent.click(screen.getByRole('button',{name:/^Sync$/}));await waitFor(()=>expect(onAction).toHaveBeenCalledWith('sync'));
+ menu();fireEvent.click(screen.getByRole('button',{name:'Check for Updates'}));await waitFor(()=>expect(onAction).toHaveBeenCalledWith('updates'));
+});
+it('people manages agent selection and the CPU picker saves each selected agent model',async()=>{
+ const {MemoryPersistenceAdapter}=await import('../../../adapters/MemoryPersistence');
+ const adapter={getProviders:()=>[],getModels:()=>[],async *streamChat(){yield 'Answer';}} as unknown as LLMAdapter;
+ const engine=new ChatEngine({llmAdapter:adapter,persistenceAdapter:new MemoryPersistenceAdapter()});engine.createSession('Agents');
+ render(<ChatApp engine={engine} loadSessionsOnMount={false} llmAdapter={adapter} providerProfiles={{profiles:[{id:'one',name:'First',provider:'openai',model:'model-one'},{id:'two',name:'Second',provider:'openai',model:'model-two'}],defaultProfileId:'one'}}/>);
+ fireEvent.click(screen.getByRole('button',{name:'Manage agents'}));fireEvent.click(screen.getByRole('checkbox',{name:/Second/}));await waitFor(()=>expect(engine.getActiveSession()?.conversation?.selectedProfileIds).toEqual(['one','two']));
+ expect(engine.getActiveSession()?.conversation?.participants).toHaveLength(2);
+ fireEvent.click(screen.getByRole('button',{name:'Close chat actions'}));fireEvent.click(screen.getByRole('button',{name:'Choose models'}));
+ const model=screen.getByRole('textbox',{name:'Model for Second'});fireEvent.change(model,{target:{value:'custom-model'}});fireEvent.blur(model);
+ await waitFor(()=>expect(engine.getActiveSession()?.conversation?.modelOverrides?.two).toBe('custom-model'));
+});

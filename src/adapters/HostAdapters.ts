@@ -169,7 +169,8 @@ export async function createChatEngineForHost(options: HostEngineOptions): Promi
 	if (capabilities.retrieval) {
 		adapters.ragAdapter = new HostRAGAdapter(capabilities.retrieval);
 	}
-	return new ChatEngine({ ...engineOptions, ...adapters });
+	const identity = capabilities.identity ? await capabilities.identity.getIdentity({ requestId: crypto.randomUUID() }) : null;
+ return new ChatEngine({ ...engineOptions, ...adapters, participant: engineOptions.participant ?? (identity ? { id: identity.id, name: identity.displayName ?? "You", kind: "human" } : undefined) });
 }
 
 export function hasHostTools(host: SuperChatHost): host is SuperChatHost & {

@@ -58,3 +58,11 @@ No live WebDAV endpoint, multi-device conflict, interrupted transfer, or full
 backup/restore round trip has been accepted. Keep those checks open under
 [`T26`](../tasks/T26.md), [`T30`](../tasks/T30.md), and the
 [`master plan`](../master-plan.md).
+
+## Local account ownership — 2026-11-21
+
+The current app uses one local owner. Session/settings access, credentials and
+sync cache references follow that owner; implementation details are recorded in
+[accounts and collaboration](accounts-and-collaboration.md). This does not add
+remote account history or turn on sync. Existing WebDAV behavior remains a
+separate optional feature, and live transfer/interruption acceptance is open.

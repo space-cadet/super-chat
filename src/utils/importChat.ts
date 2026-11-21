@@ -1,5 +1,6 @@
 // Copied from obsidian-ai importChat.
-import type { ChatMessage, ChatSession } from "../core/types";
+import type { ChatMessage, ChatSession } from "../core/conversation";
+import { fromStoredSession } from "../core/conversationFormat";
 import { normalizeSessionTags } from "../core/sessionTags";
 
 type SessionRecord = Record<string, unknown>;
@@ -79,6 +80,7 @@ function sanitizeSession(
         ? metadata.updatedAt
         : createdAt,
     messages,
+    contextItems: Array.isArray(metadata.contextItems) ? metadata.contextItems as ChatSession["contextItems"] : [],
     tags: normalizeSessionTags(metadata.tags),
     autoTagPending: false,
   };
@@ -97,7 +99,7 @@ function parseJsonArchive(value: unknown): ChatSession[] | null {
 }
 
 /** Parse the JSON and JSONL formats produced by Chat History export. */
-export function parseSessionArchive(
+export function parseStoredSessionArchive(
   text: string,
   fallbackTitle = "Imported chat",
 ): ChatSession[] {
@@ -169,11 +171,11 @@ export function parseSessionArchive(
 }
 
 /** Keep existing sessions intact when an imported archive reuses their IDs. */
-export function makeImportedSessionsUnique(
-  sessions: ChatSession[],
+export function makeImportedSessionsUnique<T extends {id:string}>(
+  sessions: T[],
   existingIds: ReadonlySet<string>,
   createId: () => string = () => crypto.randomUUID(),
-): { sessions: ChatSession[]; copiedIdCount: number } {
+): { sessions: T[]; copiedIdCount: number } {
   const usedIds = new Set(existingIds);
   let copiedIdCount = 0;
   const uniqueSessions = sessions.map((session) => {
@@ -188,4 +190,8 @@ export function makeImportedSessionsUnique(
     return id === session.id ? session : { ...session, id };
   });
   return { sessions: uniqueSessions, copiedIdCount };
+}
+
+export function parseSessionArchive(text: string, fallbackTitle = "Imported chat") {
+ return parseStoredSessionArchive(text, fallbackTitle).map(fromStoredSession);
 }

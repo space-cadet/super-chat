@@ -1,3 +1,4 @@
+import { ownerRequestSignal, onOwnerSessionClosed, requireOwnerSession, assertOwnerSession } from "./ownerSession";
 import { extractStandalonePdf } from './searchDocuments';
 import { getMemoryContext } from "./memory";
 import { loadStandaloneChatPreferences } from "./appSettings";
@@ -135,6 +136,7 @@ async function configuredAdapterForProfile(profileId: string, modelOverride?: st
 }
 
 async function createAdapter(profile: StandaloneProviderProfile, modelOverride?: string): Promise<VercelLLMAdapter> {
+ const owner = requireOwnerSession();
 	const model = modelOverride?.trim() || profile.model;
 	const configurationKey = `${profile.id}|${profile.provider}|${model}|${profile.baseUrl ?? ""}`;
 	if (cachedAdapters.get(configurationKey)) return cachedAdapters.get(configurationKey)!.adapter;
@@ -154,6 +156,7 @@ async function createAdapter(profile: StandaloneProviderProfile, modelOverride?:
 		profile: adapterProfile,
 		extractPdf: (data) => extractStandalonePdf(data, standaloneHost.capabilities.credentials),
 	});
+	assertOwnerSession(owner);
 	cachedAdapters.set(configurationKey, { configurationKey, adapter });
 	return adapter;
 }
@@ -180,8 +183,11 @@ async function withMemoryContext(messages: import("super-chat").ChatModelMessage
  return systemContext ? [{ role: "system", content: systemContext }, ...messages] : messages;
 }
 
+onOwnerSessionClosed(() => cachedAdapters.clear());
+
 export class StandaloneLLMAdapter implements LLMAdapter {
  async *streamChatEvents(messages: import("super-chat").ChatModelMessage[], signal?: AbortSignal, request?: LLMRequestOptions): AsyncIterable<StreamEvent> {
+  signal = ownerRequestSignal(signal);
   const adapter = await configuredAdapter(request);
   const preparedMessages = await withMemoryContext(messages);
   yield { type: "request-token-estimate", tokens: estimateStructuredTokens(preparedMessages) };
@@ -193,6 +199,7 @@ export class StandaloneLLMAdapter implements LLMAdapter {
 		signal?: AbortSignal,
 		request?: LLMRequestOptions,
 	): AsyncIterable<string> {
+		signal = ownerRequestSignal(signal);
 		const adapter = await configuredAdapter(request);
 		yield* adapter.streamChat(await withMemoryContext(messages), signal, request);
 	}
@@ -202,6 +209,7 @@ export class StandaloneLLMAdapter implements LLMAdapter {
 		signal?: AbortSignal,
 		request?: LLMRequestOptions,
 	): AsyncIterable<string> {
+		signal = ownerRequestSignal(signal);
 		const adapter = await configuredAdapter(request);
 		yield* adapter.streamChat(messages, signal, request);
 	}
@@ -212,6 +220,7 @@ export class StandaloneLLMAdapter implements LLMAdapter {
 		signal?: AbortSignal,
 		request?: LLMRequestOptions,
 	): AsyncIterable<StreamEvent> {
+		signal = ownerRequestSignal(signal);
 		const adapter = await configuredAdapter(request);
 		const preparedMessages = await withMemoryContext(messages);
 		yield { type: "request-token-estimate", tokens: estimateStructuredTokens(preparedMessages) };
